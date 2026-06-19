@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router";
 import { AppLayout } from "@/components/AppLayout";
+import DashboardPage from "@/pages/DashboardPage";
 import CompaniesPage from "@/pages/CompaniesPage";
 import JobLeadsPage from "@/pages/JobLeadsPage";
 import JobLeadDetailsPage from "@/pages/JobLeadDetailsPage";
@@ -10,7 +11,8 @@ const router = createBrowserRouter([
     path: "/",
     element: <AppLayout />,
     children: [
-      { index: true, element: <Navigate to="/job-leads" replace /> },
+      { index: true, element: <Navigate to="/dashboard" replace /> },
+      { path: "dashboard", element: <DashboardPage /> },
       { path: "job-leads", element: <JobLeadsPage /> },
       { path: "job-leads/new", element: <JobLeadDetailsPage /> },
       { path: "job-leads/:id", element: <JobLeadDetailsPage /> },
