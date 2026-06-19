@@ -201,3 +201,17 @@ only by adding a new dated entry here — never silently. All entries below are 
 - **Rejected:** Hand-authoring project/dependency files (drift and version-mismatch risk).
 - **Scope:** Source code and CLI-unowned config files are still hand-edited. Full detail in
   `06-engineering-practices.md`.
+
+### D20 — Solution file is `.slnx` (XML), not classic `.sln`
+*(2026-06-19, S0.1 execution)*
+- **Decision:** The solution is `backend/CareerOps.slnx` — the XML solution format the .NET 10
+  SDK now emits by default from `dotnet new sln`. Build/test/format target it directly
+  (`dotnet build backend/CareerOps.slnx`); the `justfile` `sln` variable points at it.
+- **Why:** It is the CLI default (consistent with D19 — the CLI owns the solution file), and is
+  cleaner/diff-friendlier than the legacy `.sln`. Fully supported by the .NET 10 CLI and current
+  IDEs/CI (GitHub Actions uses the dotnet CLI).
+- **Rejected:** Forcing a legacy `.sln` for maximum tool familiarity — unnecessary churn against
+  the SDK default; no concrete tool in our pipeline requires it.
+- **Consequence:** Docs and the plan that said `CareerOps.sln` now read `.slnx`. The PRD §8
+  folder diagram still shows `CareerOps.sln` (governed PRD body; the deviation is noted here and
+  in the PRD amendment banner).

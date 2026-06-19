@@ -44,7 +44,7 @@ Goal: correct repository structure, agent instructions, and tooling — **no bus
 ### Task 1: Backend solution + five projects + test projects
 
 **Files:**
-- Create: `backend/CareerOps.sln`
+- Create: `backend/CareerOps.slnx`
 - Create: `backend/src/CareerOps.Domain/CareerOps.Domain.csproj`
 - Create: `backend/src/CareerOps.Application/CareerOps.Application.csproj`
 - Create: `backend/src/CareerOps.Infrastructure/CareerOps.Infrastructure.csproj`
@@ -136,7 +136,7 @@ public partial class Program { } // exposed for WebApplicationFactory in tests
 
 - [ ] **Step 7: Build the whole solution**
 
-Run: `dotnet build backend/CareerOps.sln`
+Run: `dotnet build backend/CareerOps.slnx`
 Expected: `Build succeeded`, 0 warnings, 0 errors.
 
 - [ ] **Step 8: Commit**
@@ -203,29 +203,61 @@ VITE_API_BASE_URL=http://localhost:8080
 
 - [ ] **Step 3: Create the `justfile`** (recipes resolve now; bodies that need compose/frontend are filled as those land in S1.1/S1.2)
 
-```makefile
+Use native `just` recipe syntax (indented bodies — the Make-style `recipe: ; body`
+inline form is not valid `just`):
+
+```just
 set dotenv-load := true
 compose := "deploy/compose/docker-compose.yml"
+sln := "backend/CareerOps.slnx"
+
+# list available recipes
+default:
+    @just --list
 
 # --- full stack / parity ---
-up:        ; docker compose -f {{compose}} up --build -d
-down:      ; docker compose -f {{compose}} down
-build:     ; docker compose -f {{compose}} build
-logs:      ; docker compose -f {{compose}} logs -f
+
+up:
+    docker compose -f {{compose}} up --build -d
+
+down:
+    docker compose -f {{compose}} down
+
+build:
+    docker compose -f {{compose}} build
+
+logs:
+    docker compose -f {{compose}} logs -f
 
 # --- inner loops (host) ---
-api:       ; dotnet watch --project backend/src/CareerOps.Api run
-web:       ; cd frontend && npm run dev
-gen-client:; cd frontend && npm run gen:client
+
+api:
+    dotnet watch --project backend/src/CareerOps.Api run
+
+web:
+    cd frontend && npm run dev
+
+gen-client:
+    cd frontend && npm run gen:client
 
 # --- quality gates ---
-test:      ; dotnet test backend/CareerOps.sln
-format:    ; dotnet format backend/CareerOps.sln && cd frontend && npm run lint
-verify:    ; dotnet build backend/CareerOps.sln && dotnet test backend/CareerOps.sln && cd frontend && npm run typecheck && npm run build
+
+test:
+    dotnet test {{sln}}
+
+format:
+    dotnet format {{sln}} && cd frontend && npm run lint
+
+verify:
+    dotnet build {{sln}} && dotnet test {{sln}} && cd frontend && npm run typecheck && npm run build
 
 # --- database ---
-migrate name="":; dotnet ef migrations add {{name}} --project backend/src/CareerOps.Infrastructure --startup-project backend/src/CareerOps.Api --output-dir Persistence/Migrations
-db-reset:  ; docker compose -f {{compose}} down -v && docker compose -f {{compose}} up -d careerops-postgres
+
+migrate name="":
+    dotnet ef migrations add {{name}} --project backend/src/CareerOps.Infrastructure --startup-project backend/src/CareerOps.Api --output-dir Persistence/Migrations
+
+db-reset:
+    docker compose -f {{compose}} down -v && docker compose -f {{compose}} up -d careerops-postgres
 ```
 
 - [ ] **Step 4: Create `CLAUDE.md`** — PRD §9.2 instructions + the verbatim Implementation Guardrails from `04-conventions.md`, pointing at the knowledge base.
@@ -362,7 +394,7 @@ git add frontend
 git commit -m "chore(s0.1): scaffold host-only React/Vite/TS frontend with Tailwind + shadcn"
 ```
 
-**S0.1 done when:** `dotnet build backend/CareerOps.sln` succeeds, `cd frontend && npm run build` succeeds, `just --list` shows all recipes, and `CLAUDE.md` carries the guardrails. No business feature exists yet.
+**S0.1 done when:** `dotnet build backend/CareerOps.slnx` succeeds, `cd frontend && npm run build` succeeds, `just --list` shows all recipes, and `CLAUDE.md` carries the guardrails. No business feature exists yet.
 
 ---
 
@@ -477,7 +509,7 @@ public partial class Program { }
 
 - [ ] **Step 6: Build**
 
-Run: `dotnet build backend/CareerOps.sln`
+Run: `dotnet build backend/CareerOps.slnx`
 Expected: succeeds (after Task 5 lands `AddInfrastructure` + `IAppDbContext`).
 
 ### Task 5: `IAppDbContext`, `CareerOpsDbContext` (empty), `IClock`, Infrastructure DI
@@ -595,7 +627,7 @@ public static class DependencyInjection
 
 - [ ] **Step 7: Build**
 
-Run: `dotnet build backend/CareerOps.sln`
+Run: `dotnet build backend/CareerOps.slnx`
 Expected: succeeds.
 
 - [ ] **Step 8: Commit (Tasks 4 + 5 together — they compile as a unit)**
@@ -1022,7 +1054,7 @@ if (app.Environment.IsDevelopment())
 
 - [ ] **Step 6: Build + verify the table is created**
 
-Run: `dotnet build backend/CareerOps.sln` → succeeds.
+Run: `dotnet build backend/CareerOps.slnx` → succeeds.
 With `just up` running (rebuild: `just build && just up`), confirm the `user_profiles` table exists (e.g. `docker exec` `psql -U careerops -d careerops -c "\dt"`).
 
 - [ ] **Step 7: Commit**
@@ -1348,13 +1380,13 @@ app.MapGroup("/api/settings").WithTags("Settings").MapSettings();
 
 - [ ] **Step 5: Build**
 
-Run: `dotnet build backend/CareerOps.sln` → succeeds.
+Run: `dotnet build backend/CareerOps.slnx` → succeeds.
 
 - [ ] **Step 6: Endpoint test — PUT validation returns 400 ProblemDetails**
 
 `backend/tests/CareerOps.IntegrationTests/SettingsEndpointTests.cs` — write a test posting an invalid body (blank `FullName`) and asserting `400` with a `validation` problem. (This test needs a database; guard it to run against compose Postgres or skip when unavailable — mark with a trait so `just verify` can run unit + liveness without compose, and run the DB-backed endpoint test manually / in CI at Phase 8.)
 
-Run the unit + liveness suite: `dotnet test backend/CareerOps.sln --filter "Category!=RequiresDb"`
+Run the unit + liveness suite: `dotnet test backend/CareerOps.slnx --filter "Category!=RequiresDb"`
 Expected: PASS.
 
 - [ ] **Step 7: Manual check via Scalar/curl**

@@ -18,6 +18,8 @@
 >   §11.4, §18.2, §26).
 > - **Backend targets .NET 10 (LTS)**; **CLI-first** for project/dependency/migration ops; and
 >   **pragmatic/tactical DDD** consistent with §11 (no repositories/MediatR). See D14, D18, D19.
+> - **Solution file is `CareerOps.slnx`** (the .NET 10 SDK's XML solution format), not the
+>   legacy `CareerOps.sln` shown in the §8 diagram. See D20.
 > - **Enums persist as integers with pinned values, never reordered** (specifies §13).
 > - **CI** lands in the polish phase; **seed data** is added only if manual entry proves
 >   painful (sequencing per §10.3 / §7.2, not scope change).
