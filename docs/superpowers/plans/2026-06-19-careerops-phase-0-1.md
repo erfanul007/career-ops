@@ -208,6 +208,7 @@ inline form is not valid `just`):
 
 ```just
 set dotenv-load := true
+set windows-shell := ["cmd.exe", "/c"]   # just defaults to `sh`; Windows hosts lack it
 compose := "deploy/compose/docker-compose.yml"
 sln := "backend/CareerOps.slnx"
 
