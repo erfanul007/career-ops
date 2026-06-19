@@ -44,6 +44,7 @@ app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = _ => false }
 app.MapHealthChecks("/health/db", new HealthCheckOptions { Predicate = c => c.Tags.Contains("db") }).ExcludeFromDescription();
 
 app.MapGroup("/api/settings").WithTags("Settings").MapSettings();
+app.MapGroup("/api/companies").WithTags("Companies").MapCompanies();
 
 app.Run();
 
