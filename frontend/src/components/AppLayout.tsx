@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router";
 
 const links = [
+  { to: "/job-leads", label: "Job Leads" },
   { to: "/companies", label: "Companies" },
   { to: "/settings/profile", label: "Settings" },
 ];
