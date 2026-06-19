@@ -1,5 +1,6 @@
 using CareerOps.Application.Common;
 using CareerOps.Domain.Common;
+using CareerOps.Domain.Companies;
 using CareerOps.Domain.UserProfiles;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +10,7 @@ public sealed class CareerOpsDbContext(DbContextOptions<CareerOpsDbContext> opti
     : DbContext(options), IAppDbContext
 {
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
+    public DbSet<Company> Companies => Set<Company>();
 
     public Task<bool> CanConnectAsync(CancellationToken cancellationToken = default)
         => Database.CanConnectAsync(cancellationToken);
