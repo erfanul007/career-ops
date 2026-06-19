@@ -1,6 +1,8 @@
 using CareerOps.Api.HealthChecks;
 using CareerOps.Infrastructure;
+using CareerOps.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Serilog;
 
@@ -15,6 +17,12 @@ builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("db", tags: ["db"]);
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment() && !EF.IsDesignTime)
+{
+    using var scope = app.Services.CreateScope();
+    await scope.ServiceProvider.GetRequiredService<CareerOpsDbContext>().Database.MigrateAsync();
+}
 
 app.UseSerilogRequestLogging();
 app.MapOpenApi();
