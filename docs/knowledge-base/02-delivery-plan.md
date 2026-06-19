@@ -35,7 +35,7 @@ migration → Minimal-API endpoint → orval-generated client → React page —
 ### S1.1 — Backend stack runs
 - `docker-compose.yml`: `careerops-postgres` (volume) + `careerops-api`, health checks,
   shared network, env from `.env`.
-- ASP.NET Core Minimal-API app: `GET /health`, `GET /health/db`, Serilog, Swagger.
+- ASP.NET Core Minimal-API app: `GET /health`, `GET /health/db`, Serilog, OpenAPI (built-in) + Scalar.
 - Vite app on host loads and calls `/health`, shows API status.
 - **Acceptance:** `just up` runs Postgres + API; `just web` runs the frontend; health works;
   frontend reaches backend; Postgres reachable.

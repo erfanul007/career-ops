@@ -2,6 +2,9 @@
 
 Clean Architecture, applied pragmatically. The goal is a codebase that demonstrates clean
 .NET engineering without ceremony the personal-use baseline does not need (PRD §5.3, §11).
+Pragmatic/tactical DDD (Decision D18, `06-engineering-practices.md`): ubiquitous language and
+aggregates as consistency boundaries, with behaviour on entities where it protects an invariant
+— but no repositories, MediatR, or domain-event infrastructure until a slice needs them.
 
 ## Layers & dependency rule
 
@@ -56,7 +59,8 @@ reverse.
 ### Api (`CareerOps.Api`)
 - Composition root: DI registration, configuration, Serilog.
 - Minimal-API endpoint modules (one `MapGroup` per resource), middleware, exception
-  handling → `ProblemDetails`, Swagger/OpenAPI, health checks.
+  handling → `ProblemDetails`, OpenAPI (built-in `Microsoft.AspNetCore.OpenApi`) + Scalar UI,
+  health checks.
 - References Application + Infrastructure.
 
 ### Contracts (`CareerOps.Contracts`) — minimal / deferred

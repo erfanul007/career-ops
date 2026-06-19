@@ -97,7 +97,7 @@ CareerOps.Application     (→Domain, +EF Core) use-case services, DTOs, FluentV
 CareerOps.Infrastructure  (→Application) DbContext (impl IAppDbContext), EF configs,
                           migrations, AI providers, SystemClock
 CareerOps.Api             (→Application, Infrastructure) Minimal-API modules, DI, middleware,
-                          ProblemDetails exception handling, Swagger, health checks
+                          ProblemDetails exception handling, OpenAPI/Scalar, health checks
 CareerOps.Contracts       minimal / deferred — orval reads the runtime OpenAPI doc, so a
                           shared DTO assembly is largely unnecessary in the baseline
 ```
@@ -111,7 +111,7 @@ API error envelope; `CreatedAtUtc`/`UpdatedAtUtc` set centrally in `SaveChanges`
 ```
 docker compose (deploy/compose/docker-compose.yml)
   ├─ careerops-postgres   :5432   volume-backed
-  └─ careerops-api        :8080   health checks, Swagger
+  └─ careerops-api        :8080   health checks, OpenAPI/Scalar
 
 host
   └─ frontend (Vite dev)  :5173   orval-generated client → http://localhost:8080
@@ -185,3 +185,22 @@ Calendar, RabbitMQ, Redis, Kubernetes, vector DB/RAG, resume builder, file uploa
 
 None blocking. The only deferred decision is **D7** (Anthropic vs OpenAI as the real AI
 provider), to be resolved at Phase 7.
+
+---
+
+## 14. Post-approval addendum (2026-06-19, plan kickoff)
+
+Decisions added after this design was approved, while writing the Phase 0–1 implementation plan.
+Full entries live in `docs/knowledge-base/03-decisions.md`; the knowledge base is authoritative.
+
+- **D14** — target framework **.NET 10 (LTS)**.
+- **D15** — OpenAPI via built-in `Microsoft.AspNetCore.OpenApi` at `/openapi/v1.json` + **Scalar**
+  UI; orval reads `/openapi/v1.json`. **Supersedes the "Swagger" mentions in §6 and §7 above.**
+- **D16** — `int` identity primary keys; `UserProfile` is a fixed singleton (`Id = 1`).
+- **D17** — `UserProfile` validation rules (PRD §20 omits them).
+- **D18** — **pragmatic/tactical DDD** (no repositories/MediatR/domain-event infra; preserves D3).
+- **D19** — **CLI-first** for project/dependency/migration ops (`dotnet`) and frontend scaffolding
+  (`npm`/`npx`). See `06-engineering-practices.md`.
+
+The engineering working agreement (CLI-first, clean code, pragmatic DDD, no-silent-decisions) is
+now `docs/knowledge-base/06-engineering-practices.md`.

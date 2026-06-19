@@ -86,7 +86,12 @@ API keys are **never** logged (PRD §19.3).
   under `/api/<resource>`.
 - **Every endpoint sets an `operationId`** via `.WithName("GetJobLeads")` — orval uses it to
   name generated hooks. Without it the generated client is unreadable.
-- Tag endpoints (`.WithTags(...)`) so Swagger/OpenAPI groups them.
+- Tag endpoints (`.WithTags(...)`) so the OpenAPI document groups them.
+- **OpenAPI** comes from the built-in `Microsoft.AspNetCore.OpenApi` at `/openapi/v1.json`
+  (orval's source); the browsable UI is **Scalar** at `/scalar/v1` (Decision D15).
+- **Api-layer folders** (Minimal APIs, so no `Controllers/`): `Endpoints/` (one module per
+  resource), `Filters/` (e.g. the validation filter), `Middleware/`, `Extensions/` (DI
+  composition), `HealthChecks/`.
 
 ## DTOs & mapping (Decision D2)
 - Request/response DTOs live in `Application/<Aggregate>`. Suffix: `...Request`, `...Response`,
@@ -145,6 +150,14 @@ If orval blocks progress for more than half a day, use the documented fallback.
 Add the manual AI prompt export (S3.4) before any real AI provider integration.
 Never reorder or renumber an existing enum member's integer value.
 Inject IClock; never call DateTime.UtcNow directly in app/domain code.
+Use the dotnet CLI for project/solution/package/migration ops and npm/vite/shadcn/orval for
+frontend scaffolding and deps — do not hand-author .sln/.csproj or package.json versions (D19).
+Follow Clean Architecture + pragmatic/tactical DDD: no repositories, MediatR, or domain-event
+infra until a slice needs them (D3, D18).
+Clean code: KISS and YAGNI; no dead code, commented-out code, or needless comments; small
+focused files; comment the non-obvious why, never the what.
+No silent decisions: debate the better option, ask when unclear, and log every decision in
+03-decisions.md.
 Push back on: auth, multi-user, MediatR/CQRS, generic repositories, RabbitMQ/Redis/
 Kubernetes, scraping, browser extension, calendar/email, vector DB/RAG, file upload —
 before the personal-use baseline works (PRD §7.3, §19.1).

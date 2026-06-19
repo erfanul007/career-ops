@@ -137,3 +137,67 @@ only by adding a new dated entry here — never silently. All entries below are 
   (Phase 6) and the real provider (Phase 7) — no throwaway work.
 - **Rejected:** Placing it after S2.2 (chosen later instead, so the core tracker is fully
   usable first); bringing real-provider AI forward (still deferred — App must work keyless).
+
+---
+
+### D14 — Target framework: .NET 10 (LTS)
+*(2026-06-19, plan kickoff)*
+- **Decision:** Backend targets **.NET 10** (LTS), C# latest, `Nullable` + `ImplicitUsings`
+  enabled, warnings as errors.
+- **Why:** Latest LTS (Nov 2025); modern Minimal APIs and built-in OpenAPI; longest support.
+- **Rejected:** .NET 9 (STS, superseded, shorter support window).
+
+### D15 — OpenAPI via built-in `Microsoft.AspNetCore.OpenApi` + Scalar
+*(2026-06-19, plan kickoff)*
+- **Decision:** The OpenAPI document is produced by the built-in
+  `Microsoft.AspNetCore.OpenApi` at **`/openapi/v1.json`**; the browsable UI is **Scalar** at
+  `/scalar/v1`. **orval reads `/openapi/v1.json`.**
+- **Why:** .NET-native, fewer dependencies, keeps pace with the framework major; Scalar is a
+  clean modern UI. orval only needs the JSON document.
+- **Rejected:** Swashbuckle/Swagger UI — familiar `/swagger/v1/swagger.json`, but historically
+  lags new .NET majors and adds a dependency we do not need.
+- **Consequence:** Supersedes the `/swagger/v1/swagger.json` URL previously referenced in
+  `05-feedback-loop.md` (updated in the same change). Endpoints still require explicit
+  `operationId`s (D1) for clean orval output.
+
+### D16 — Primary keys: `int` identity; `UserProfile` is a fixed singleton
+*(2026-06-19, plan kickoff)*
+- **Decision:** Entity primary keys are **`int`** (PostgreSQL `GENERATED … AS IDENTITY`).
+  `UserProfile` is a **single row with `Id = 1`** (`ValueGeneratedNever`), get-or-created on
+  first read.
+- **Why:** Simplest readable keys for a single-user app; the profile is genuinely one row
+  (PRD §12.9 "single local user profile").
+- **Rejected:** `Guid` keys (no enumeration benefit needed for a local personal app; larger,
+  less readable); a profile table with arbitrary ids (a singleton is clearer).
+
+### D17 — `UserProfile` validation rules
+*(2026-06-19, plan kickoff — PRD §20 omits UserProfile)*
+- **Decision:** `FullName` required (≤200); `Email` valid email if present;
+  `LinkedInUrl`/`GitHubUrl`/`PortfolioUrl` absolute http(s) URL if present;
+  `TargetSalaryMin ≥ 0` if present; `TargetSalaryCurrency` 3-letter code if present.
+- **Why:** PRD §20 lists no UserProfile rules; these are the minimal sensible guards consistent
+  with the validation discipline used elsewhere.
+- **Rejected:** No validation (lets bad data through, and the tracer bullet must exercise the
+  `ProblemDetails` path).
+
+### D18 — Pragmatic / tactical DDD (not full DDD, not anemic)
+*(2026-06-19, working-rules setup)*
+- **Decision:** Clean Architecture with **pragmatic/tactical DDD**: ubiquitous language,
+  aggregates as consistency boundaries, state-transition behaviour on entities where it protects
+  an invariant, value objects only when they remove real duplication. **No** repositories,
+  MediatR/CQRS, or domain-event infrastructure until a slice needs them.
+- **Why:** Matches PRD §11 ("pragmatic DDD") and KISS/YAGNI; preserves D3 (direct EF Core).
+- **Rejected:** Strict/full DDD (repositories + domain events + MediatR — contradicts D3, adds
+  ceremony); anemic-everywhere (loses the modeling benefit). Detail in
+  `06-engineering-practices.md`.
+
+### D19 — CLI-first for project, dependency, and migration operations
+*(2026-06-19, working-rules setup)*
+- **Decision:** Use the `dotnet` CLI for solution/project creation, references, NuGet packages,
+  EF migrations, and the tool manifest; use `npm` / `npx` (vite, shadcn, orval) for frontend
+  scaffolding, dependencies, and codegen. Do **not** hand-author `.sln`/`.csproj` package
+  entries or `package.json` dependency versions.
+- **Why:** Reproducible setup, correct version resolution, fewer transcription mistakes.
+- **Rejected:** Hand-authoring project/dependency files (drift and version-mismatch risk).
+- **Scope:** Source code and CLI-unowned config files are still hand-edited. Full detail in
+  `06-engineering-practices.md`.

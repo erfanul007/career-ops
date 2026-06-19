@@ -13,6 +13,7 @@ coding agents and humans follow day to day.
 | [`03-decisions.md`](03-decisions.md) | ADR-lite log: every locked decision with rationale + rejected alternatives | When questioning or changing a decision |
 | [`04-conventions.md`](04-conventions.md) | Naming, enums-as-int, snake_case, UTC, validation, error envelope, folders | While writing code |
 | [`05-feedback-loop.md`](05-feedback-loop.md) | Dev runtime, `just` commands, orval, hot reload, test cadence, per-slice DoD | While iterating |
+| [`06-engineering-practices.md`](06-engineering-practices.md) | CLI-first workflow, clean code, pragmatic DDD, collaboration rules | Always — the working agreement |
 
 ## Source documents
 
@@ -36,6 +37,7 @@ each runnable and usable the day it lands; a **tracer bullet** proves the toolch
 ## Where to find the standing rules
 
 The **Implementation Guardrails** (the seed copied into `CLAUDE.md` at S0.1) live at the end
-of [`04-conventions.md`](04-conventions.md). Manual AI prompt export lands early as **S3.4**
-(before any real provider) — see [`02-delivery-plan.md`](02-delivery-plan.md) and decision
-**D13**.
+of [`04-conventions.md`](04-conventions.md). The cross-cutting **working agreement** — CLI-first,
+clean code, pragmatic DDD, no-silent-decisions — is [`06-engineering-practices.md`](06-engineering-practices.md).
+Manual AI prompt export lands early as **S3.4** (before any real provider) — see
+[`02-delivery-plan.md`](02-delivery-plan.md) and decision **D13**.

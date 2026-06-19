@@ -14,7 +14,7 @@ as an omission.)
 ```
 docker compose (deploy/compose/docker-compose.yml)
   ├─ careerops-postgres  :5432   volume-backed, health-checked
-  └─ careerops-api       :8080   health-checked, Swagger at /swagger
+  └─ careerops-api       :8080   health-checked, OpenAPI at /openapi/v1.json, Scalar at /scalar/v1
 
 host (no Docker)
   ├─ API inner loop      dotnet watch  →  talks to :5432
@@ -66,7 +66,7 @@ The generated client **is** the backend↔frontend contract. The loop:
 
 ```
 1. change a Minimal-API endpoint (with its operationId)
-2. API is running (just up or just api) → OpenAPI doc at http://localhost:8080/swagger/v1/swagger.json
+2. API is running (just up or just api) → OpenAPI doc at http://localhost:8080/openapi/v1.json
 3. just gen-client  → orval regenerates lib/api/ (typed client + query hooks + Zod)
 4. TypeScript immediately flags every frontend call that no longer matches
 5. fix the call sites; commit the regenerated client with the change

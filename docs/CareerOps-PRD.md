@@ -13,6 +13,11 @@
 >   (softens §5.5's single-command goal).
 > - **API style = Minimal APIs** (resolves the open choice in §11.4).
 > - **Mapping = Mapster** (resolves §10.1).
+> - **OpenAPI = built-in `Microsoft.AspNetCore.OpenApi` + Scalar UI** (`/openapi/v1.json`,
+>   `/scalar/v1`), not Swashbuckle/Swagger UI (specifies the "Swagger" references in §10.1,
+>   §11.4, §18.2, §26).
+> - **Backend targets .NET 10 (LTS)**; **CLI-first** for project/dependency/migration ops; and
+>   **pragmatic/tactical DDD** consistent with §11 (no repositories/MediatR). See D14, D18, D19.
 > - **Enums persist as integers with pinned values, never reordered** (specifies §13).
 > - **CI** lands in the polish phase; **seed data** is added only if manual entry proves
 >   painful (sequencing per §10.3 / §7.2, not scope change).
