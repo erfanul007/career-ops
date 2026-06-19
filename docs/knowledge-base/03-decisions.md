@@ -262,3 +262,31 @@ only by adding a new dated entry here — never silently. All entries below are 
 - **Consequence:** client-side Zod validation can be layered in later for snappier UX without
   backend changes. Note: malformed JSON not produced by the generated client returns 500 (not
   400) in Development — an accepted edge, since the generated client always sends valid bodies.
+
+### D24 — Phase 2 search, filter, and dashboard counts are client-side
+*(2026-06-19, Phase 2 planning / S2.1 execution)*
+- **Decision:** `GET /api/job-leads` returns the full lead list; the Job Leads page filters
+  (status, priority, title/company contains) and the Phase 2 dashboard placeholder counts leads
+  **in the browser** over the fetched list. No server-side query params and no `/api/dashboard`
+  endpoint in Phase 2.
+- **Why:** the personal dataset is small (~30–50 leads); client-side keeps the fewest moving
+  parts (no extra endpoint surface, no orval regen, instant UX) and matches the design's
+  "simpler first" principle.
+- **Rejected:** server-side filtering query params now (more endpoint surface + tests for no
+  current benefit at this scale).
+- **Escape hatch:** add optional query params to `GET /api/job-leads` and a real
+  `GET /api/dashboard/summary` at Phase 5 if the list grows or the dashboard needs cross-entity
+  aggregates (follow-ups, interviews, stale applications).
+
+### D25 — JobLead create resolves company by CompanyId XOR NewCompanyName (find-or-create)
+*(2026-06-19, Phase 2 planning / S2.2 execution)*
+- **Decision:** `CreateJobLeadRequest` carries `int? CompanyId` and `string? NewCompanyName`;
+  the service uses `CompanyId` when present, otherwise find-or-creates a `Company` by
+  case-insensitive trimmed name (enums default to `Unknown`). Exactly one must be provided
+  (validator). `UpdateJobLeadRequest` takes `CompanyId` only (required) — no inline create on edit.
+- **Why:** PRD §12.2 fast-entry — entering 30–50 leads must not require a separate trip to the
+  Companies page. A single atomic call avoids a two-round-trip race and dedupes companies by name.
+- **Rejected:** two frontend round-trips (create company, then create lead) — duplicate-company
+  risk + non-atomic; a dedicated find-or-create endpoint — more surface than needed.
+- **Consequence:** `Company` stays required (PRD §20). Company resolution is set by the service,
+  so the Mapster request→entity config ignores `CompanyId`.
