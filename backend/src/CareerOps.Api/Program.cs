@@ -20,6 +20,10 @@ builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("db", tags: ["db"]);
 
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+builder.Services.AddCors(options => options.AddPolicy("frontend", policy =>
+    policy.WithOrigins(corsOrigins).AllowAnyHeader().AllowAnyMethod()));
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment() && !EF.IsDesignTime)
@@ -30,6 +34,7 @@ if (app.Environment.IsDevelopment() && !EF.IsDesignTime)
 
 app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
+app.UseCors("frontend");
 app.MapOpenApi();
 app.MapScalarApiReference();
 
