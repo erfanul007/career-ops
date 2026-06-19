@@ -215,3 +215,22 @@ only by adding a new dated entry here — never silently. All entries below are 
 - **Consequence:** Docs and the plan that said `CareerOps.sln` now read `.slnx`. The PRD §8
   folder diagram still shows `CareerOps.sln` (governed PRD body; the deviation is noted here and
   in the PRD amendment banner).
+
+### D21 — Connection string is set per run context, not in `.env`
+*(2026-06-19, S1.1 execution)*
+- **Decision:** The DB connection string is **not** carried in `.env`. The host inner loop
+  (`just api`) reads `appsettings.Development.json` → `Host=localhost`; the container
+  (`just up`) gets a **literal** `Host=careerops-postgres` from `docker-compose.yml`'s
+  `environment:` block (which overrides the Development appsettings inside the container).
+  `appsettings.json` keeps `Host=careerops-postgres` as a safe default. The host API loop runs
+  on **port 8080** (`launchSettings.json`), matching compose and `VITE_API_BASE_URL`.
+- **Why:** the `justfile` uses `dotenv-load`, so any connection string in `.env` would be
+  applied to **every** recipe — including the host loop, where `Host=careerops-postgres` does
+  not resolve. Splitting by context keeps both the host loop and the container correct, with no
+  per-recipe env juggling.
+- **Rejected:** (a) connection string in `.env` = `careerops-postgres` — breaks `just api`;
+  (b) `${ConnectionStrings__DefaultConnection}` interpolation in compose from `.env` — couples
+  the container's value to the host file and reintroduces (a); (c) dropping `dotenv-load` —
+  then `POSTGRES_*`/`ASPNETCORE_ENVIRONMENT` no longer reach compose/recipes reliably.
+- **Consequence:** copy `.env` from the updated `.env.example` (no `ConnectionStrings__` line).
+  compose vars also carry `:-` defaults so `just up` runs even without `.env`.

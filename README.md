@@ -67,10 +67,13 @@ Copy `.env.example` to `.env` and adjust as needed. Never commit `.env`.
 |----------|---------|
 | `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | PostgreSQL container credentials |
 | `ASPNETCORE_ENVIRONMENT` | `Development` for the local workflow |
-| `ConnectionStrings__DefaultConnection` | API → PostgreSQL connection (container host) |
 | `AI__Provider` | `Mock` until a real provider is configured (Phase 7) |
 | `AI__OpenAI__ApiKey` / `AI__Anthropic__ApiKey` | AI keys — env only, never logged or committed |
 | `VITE_API_BASE_URL` | Frontend → API base URL (`http://localhost:8080`) |
+
+The **DB connection string is not in `.env`** — it is set per run context: the host loop
+(`just api`) uses `appsettings.Development.json` (`Host=localhost`), and the container
+(`just up`) uses the value in `docker-compose.yml` (`Host=careerops-postgres`). See D21.
 
 ## Development workflow
 

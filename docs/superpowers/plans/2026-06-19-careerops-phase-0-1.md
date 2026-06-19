@@ -403,6 +403,17 @@ git commit -m "chore(s0.1): scaffold host-only React/Vite/TS frontend with Tailw
 
 Goal: `just up` brings up Postgres + API in Docker with health checks; `GET /health` and `GET /health/db` work; the host frontend shows API status. Introduces an (empty) `CareerOpsDbContext` + `IAppDbContext` purely for DB connectivity.
 
+> **Execution notes (2026-06-19) — minor deviations applied during S1.1:**
+> - The `Microsoft.Extensions.Diagnostics.HealthChecks` package (Task 4 Step 2) is **not**
+>   added — health-check APIs ship in the ASP.NET Core shared framework for `Sdk.Web` projects.
+> - `CareerOpsDbContext` (Task 5) stays minimal in S1.1: **no `IClock` ctor param and no
+>   `SaveChangesAsync` override** (both unused until auditing in S1.2 — YAGNI). S1.2 Task 10
+>   reintroduces them.
+> - compose (Task 6) sets the container connection string as a **literal** (not
+>   `${ConnectionStrings__DefaultConnection}`) and gives compose vars `:-` defaults; the
+>   connection string is removed from `.env`. Host loop runs on **port 8080**
+>   (`launchSettings.json`). Rationale recorded as **D21** in `03-decisions.md`.
+
 ### Task 4: Api dependencies, Serilog, OpenAPI/Scalar, health endpoints
 
 **Files:**
