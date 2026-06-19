@@ -1,4 +1,6 @@
+using CareerOps.Api.Endpoints;
 using CareerOps.Api.HealthChecks;
+using CareerOps.Application;
 using CareerOps.Infrastructure;
 using CareerOps.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -12,6 +14,8 @@ builder.Host.UseSerilog((ctx, cfg) => cfg.ReadFrom.Configuration(ctx.Configurati
     .WriteTo.Console());
 
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddApplication();
+builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("db", tags: ["db"]);
@@ -24,6 +28,7 @@ if (app.Environment.IsDevelopment() && !EF.IsDesignTime)
     await scope.ServiceProvider.GetRequiredService<CareerOpsDbContext>().Database.MigrateAsync();
 }
 
+app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
 app.MapOpenApi();
 app.MapScalarApiReference();
@@ -32,6 +37,8 @@ app.MapGet("/", () => Results.Redirect("/scalar/v1"));
 
 app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = _ => false });
 app.MapHealthChecks("/health/db", new HealthCheckOptions { Predicate = c => c.Tags.Contains("db") });
+
+app.MapGroup("/api/settings").WithTags("Settings").MapSettings();
 
 app.Run();
 

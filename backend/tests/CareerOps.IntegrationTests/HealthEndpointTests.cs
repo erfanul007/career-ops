@@ -1,11 +1,9 @@
 using System.Net;
 using FluentAssertions;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace CareerOps.IntegrationTests;
 
-public class HealthEndpointTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+public class HealthEndpointTests(ApiFactory factory) : IClassFixture<ApiFactory>
 {
     [Fact]
     public async Task Get_health_returns_200_healthy()
