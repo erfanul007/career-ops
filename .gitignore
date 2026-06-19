@@ -1,0 +1,25 @@
+# .NET
+bin/
+obj/
+*.user
+
+# EF
+*.db
+
+# Node / frontend
+node_modules/
+frontend/dist/
+
+# Env & secrets — never commit
+.env
+*.env
+!.env.example
+
+# IDE
+.vs/
+.idea/
+.vscode/
+
+# OS
+Thumbs.db
+.DS_Store
