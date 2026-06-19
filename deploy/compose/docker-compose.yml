@@ -1,0 +1,38 @@
+name: careerops
+
+services:
+  careerops-postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-careerops}
+      POSTGRES_USER: ${POSTGRES_USER:-careerops}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-careerops}
+    ports: ["5432:5432"]
+    volumes: ["careerops-pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-careerops} -d ${POSTGRES_DB:-careerops}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [careerops]
+
+  careerops-api:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/api.Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      # The API container reaches Postgres by its service name, not localhost.
+      # This overrides the host-oriented connection string in appsettings.Development.json.
+      ConnectionStrings__DefaultConnection: "Host=careerops-postgres;Port=5432;Database=careerops;Username=careerops;Password=careerops"
+    ports: ["8080:8080"]
+    depends_on:
+      careerops-postgres:
+        condition: service_healthy
+    networks: [careerops]
+
+volumes:
+  careerops-pgdata:
+
+networks:
+  careerops:
