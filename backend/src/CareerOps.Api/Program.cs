@@ -20,6 +20,8 @@ app.UseSerilogRequestLogging();
 app.MapOpenApi();
 app.MapScalarApiReference();
 
+app.MapGet("/", () => Results.Redirect("/scalar/v1"));
+
 app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = _ => false });
 app.MapHealthChecks("/health/db", new HealthCheckOptions { Predicate = c => c.Tags.Contains("db") });
 
