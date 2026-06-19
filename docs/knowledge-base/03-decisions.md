@@ -238,9 +238,10 @@ only by adding a new dated entry here — never silently. All entries below are 
 ### D22 — CORS allows the host frontend origin (config-driven)
 *(2026-06-19, S1.2 execution)*
 - **Decision:** The API enables CORS for the frontend origin, read from `Cors:AllowedOrigins`
-  in configuration. Development sets `http://localhost:5173` (Vite). Empty/absent config means
-  no cross-origin access (safe default).
-- **Why:** the frontend is host-only on a separate origin (`:5173`) from the API (`:8080`,
+  in configuration. Development sets `http://localhost:5280` (Vite; 5173 was taken by another
+  project, so the frontend uses a dedicated port). Empty/absent config means no cross-origin
+  access (safe default).
+- **Why:** the frontend is host-only on a separate origin (`:5280`) from the API (`:8080`,
   D10), so browser calls are cross-origin and require CORS. Config-driven keeps the origin out
   of code and ready for the frontend's eventual separate deployment.
 - **Rejected:** `AllowAnyOrigin` (too permissive, and incompatible with credentialed requests

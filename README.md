@@ -52,7 +52,7 @@ just api   # dotnet watch on the host, hot-reloading the API
 ## Run the frontend locally
 
 ```sh
-just web   # Vite dev server on http://localhost:5173
+just web   # Vite dev server on http://localhost:5280
 ```
 
 > The frontend runs on the host via Vite **by design** (Decision D10); it is intentionally

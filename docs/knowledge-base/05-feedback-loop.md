@@ -18,7 +18,7 @@ docker compose (deploy/compose/docker-compose.yml)
 
 host (no Docker)
   ├─ API inner loop      dotnet watch  →  talks to :5432
-  └─ frontend            Vite dev      :5173  →  talks to API :8080
+  └─ frontend            Vite dev      :5280  →  talks to API :8080
 ```
 
 - **Postgres** always in Docker (zero local install friction).
