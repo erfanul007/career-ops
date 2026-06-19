@@ -33,10 +33,10 @@ app.UseSerilogRequestLogging();
 app.MapOpenApi();
 app.MapScalarApiReference();
 
-app.MapGet("/", () => Results.Redirect("/scalar/v1"));
+app.MapGet("/", () => Results.Redirect("/scalar/v1")).ExcludeFromDescription();
 
-app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = _ => false });
-app.MapHealthChecks("/health/db", new HealthCheckOptions { Predicate = c => c.Tags.Contains("db") });
+app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = _ => false }).ExcludeFromDescription();
+app.MapHealthChecks("/health/db", new HealthCheckOptions { Predicate = c => c.Tags.Contains("db") }).ExcludeFromDescription();
 
 app.MapGroup("/api/settings").WithTags("Settings").MapSettings();
 
