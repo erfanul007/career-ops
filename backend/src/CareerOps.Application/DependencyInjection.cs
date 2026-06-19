@@ -1,4 +1,5 @@
 using System.Reflection;
+using CareerOps.Application.Companies;
 using CareerOps.Application.Settings;
 using FluentValidation;
 using Mapster;
@@ -14,6 +15,7 @@ public static class DependencyInjection
         TypeAdapterConfig.GlobalSettings.Scan(assembly);
         services.AddValidatorsFromAssembly(assembly);
         services.AddScoped<UserProfileService>();
+        services.AddScoped<CompanyService>();
         return services;
     }
 }
