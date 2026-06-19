@@ -234,3 +234,30 @@ only by adding a new dated entry here — never silently. All entries below are 
   then `POSTGRES_*`/`ASPNETCORE_ENVIRONMENT` no longer reach compose/recipes reliably.
 - **Consequence:** copy `.env` from the updated `.env.example` (no `ConnectionStrings__` line).
   compose vars also carry `:-` defaults so `just up` runs even without `.env`.
+
+### D22 — CORS allows the host frontend origin (config-driven)
+*(2026-06-19, S1.2 execution)*
+- **Decision:** The API enables CORS for the frontend origin, read from `Cors:AllowedOrigins`
+  in configuration. Development sets `http://localhost:5173` (Vite). Empty/absent config means
+  no cross-origin access (safe default).
+- **Why:** the frontend is host-only on a separate origin (`:5173`) from the API (`:8080`,
+  D10), so browser calls are cross-origin and require CORS. Config-driven keeps the origin out
+  of code and ready for the frontend's eventual separate deployment.
+- **Rejected:** `AllowAnyOrigin` (too permissive, and incompatible with credentialed requests
+  later); hard-coding the origin in `Program.cs` (less flexible than config).
+
+### D23 — Generated client uses server-authoritative validation (Zod not wired as form resolver)
+*(2026-06-19, S1.2 execution)*
+- **Decision:** orval generates the typed client, TanStack Query hooks, **and** Zod schemas
+  (all committed). The profile form uses the generated hooks but relies on the API's
+  FluentValidation (D17) for validation, displaying the returned 400 `ProblemDetails`. The
+  generated Zod is available but **not** wired as the React Hook Form resolver yet.
+- **Why:** the generated Zod encodes `number|string` unions (salary) and `iso.datetime`
+  (deadline) that don't map cleanly onto string-based HTML inputs without coercion gymnastics;
+  forcing it now would add fragile glue. Validation is already server-authoritative (D17), so
+  the form stays simple and correct.
+- **Rejected:** wiring `zodResolver(UpdateUserProfileBody)` now (coercion friction, little gain
+  over server validation); hand-writing a parallel client schema (drift from the contract).
+- **Consequence:** client-side Zod validation can be layered in later for snappier UX without
+  backend changes. Note: malformed JSON not produced by the generated client returns 500 (not
+  400) in Development — an accepted edge, since the generated client always sends valid bodies.

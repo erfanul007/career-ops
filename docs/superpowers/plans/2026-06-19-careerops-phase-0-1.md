@@ -894,6 +894,24 @@ git commit -m "feat(s1.1): frontend API status display via /health"
 
 Goal: the thinnest real feature through every layer (entity → migration → Minimal-API → orval client → React page) to prove EF migrations, OpenAPI output, orval generation, TanStack Query + RHF/Zod wiring, persistence, and the dev loop. **orval time-box applies** (½ day; fall back to openapi-typescript if not clean by slice end).
 
+> **Execution notes (2026-06-19) — deviations applied during S1.2:**
+> - **orval succeeded — no fallback needed** (D4 time-box met). Endpoints use `TypedResults`
+>   so OpenAPI carries response types; infra endpoints (root redirect, health) are
+>   `ExcludeFromDescription()` so only the Settings API generates.
+> - **Mutator shape:** orval's fetch client expects `{ data, status, headers }`; the
+>   `api-client.ts` mutator returns that wrapper and consumers read `.data`.
+> - **Generated Zod is committed but not wired as the form resolver** — the form uses
+>   server-authoritative validation (D17) and shows the 400 `ProblemDetails`. Rationale: **D23**.
+> - **CORS added** (config-driven, dev origin `http://localhost:5173`) — required for the
+>   cross-origin host frontend. Rationale: **D22**.
+> - EF Core packages + `dotnet-ef` pinned to **10.0.4** (match Npgsql) to remove a Relational
+>   version conflict; EF `Design` lives in the **Api** startup project (tools require it).
+> - The S1.1 health placeholder (`App.tsx`, `health.ts`) was removed — the profile page now
+>   proves connectivity.
+> - Browser e2e (the UI click-through) is the **human** acceptance step: the containerized
+>   Playwright MCP cannot reach host `localhost:5173`. All machine-verifiable parts pass
+>   (CORS preflight, API round-trip, codegen, tests, `just verify`).
+
 ### Task 9: `UserProfile` domain entity + auditing base
 
 **Files:**
