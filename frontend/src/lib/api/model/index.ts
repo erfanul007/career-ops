@@ -5,7 +5,13 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './companyDto';
+export * from './companyType';
+export * from './compensationFit';
+export * from './createCompanyRequest';
 export * from './httpValidationProblemDetails';
 export * from './httpValidationProblemDetailsErrors';
+export * from './marketType';
+export * from './updateCompanyRequest';
 export * from './updateUserProfileRequest';
 export * from './userProfileDto';
