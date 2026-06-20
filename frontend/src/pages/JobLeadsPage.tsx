@@ -59,7 +59,7 @@ export default function JobLeadsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-full flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Job Leads</h1>
         <Button onClick={openCreate}>Add lead</Button>
@@ -92,9 +92,11 @@ export default function JobLeadsPage() {
         <span className="text-sm text-muted-foreground">{leads.length} of {all.length}</span>
       </div>
 
-      {view === "board"
-        ? <JobLeadsBoard leads={leads} onEdit={openEdit} showClosed={showClosed} />
-        : <JobLeadsTable leads={leads} onEdit={openEdit} onDelete={onDelete} />}
+      <div className="min-h-0 flex-1">
+        {view === "board"
+          ? <JobLeadsBoard leads={leads} onEdit={openEdit} showClosed={showClosed} />
+          : <div className="h-full overflow-y-auto"><JobLeadsTable leads={leads} onEdit={openEdit} onDelete={onDelete} /></div>}
+      </div>
 
       <JobLeadSheet open={sheetOpen} lead={editing} onOpenChange={setSheetOpen} />
     </div>

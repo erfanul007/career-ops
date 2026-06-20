@@ -38,7 +38,7 @@ export function JobLeadsBoard({ leads, onEdit, showClosed }: Props) {
 
   return (
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-      <div className="flex gap-4 overflow-x-auto pb-2">
+      <div className="flex h-full gap-4 overflow-x-auto pb-2">
         {columns.map((s) => <BoardColumn key={s} status={s} leads={byStatus(s)} onEdit={onEdit} />)}
       </div>
       <DragOverlay>{dragging ? <LeadCard lead={dragging} onEdit={() => {}} /> : null}</DragOverlay>

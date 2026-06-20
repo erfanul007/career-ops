@@ -48,11 +48,11 @@ export function AppLayout() {
           {name || "Set up your profile"}
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>
-        <header className="flex h-14 items-center gap-2 border-b px-4">
+      <SidebarInset className="h-svh overflow-hidden">
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger />
         </header>
-        <div className="mx-auto w-full max-w-6xl p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto p-6">
           <Outlet />
         </div>
       </SidebarInset>
