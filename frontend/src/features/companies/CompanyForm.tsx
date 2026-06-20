@@ -1,7 +1,13 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { companyType, marketType, compensationFit, enumOptions } from "@/lib/enums";
+import { companyType, marketType, compensationFit, type EnumMap } from "@/lib/enums";
 import type { CompanyDto, CreateCompanyRequest } from "@/lib/api/model";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Field } from "@/components/form/Field";
+import { FormErrors } from "@/components/form/FormErrors";
+import { EnumSelect } from "@/components/form/EnumSelect";
 
 type FormValues = {
   name: string; websiteUrl: string; linkedInUrl: string;
@@ -32,10 +38,8 @@ type Props = {
   onCancel?: () => void;
 };
 
-const inputClass = "mt-1 w-full rounded border border-input bg-background p-2";
-
 export function CompanyForm({ initial, pending, errors, onSubmit, onCancel }: Props) {
-  const { register, handleSubmit, reset } = useForm<FormValues>({ defaultValues: EMPTY });
+  const { register, handleSubmit, reset, control } = useForm<FormValues>({ defaultValues: EMPTY });
 
   useEffect(() => {
     reset(initial ? toFormValues(initial) : EMPTY);
@@ -55,7 +59,7 @@ export function CompanyForm({ initial, pending, errors, onSubmit, onCancel }: Pr
     }),
   );
 
-  const selects: { name: keyof FormValues; label: string; map: Record<number, string> }[] = [
+  const selects: { name: keyof FormValues; label: string; map: EnumMap }[] = [
     { name: "companyType", label: "Type", map: companyType },
     { name: "marketType", label: "Market", map: marketType },
     { name: "compensationFit", label: "Compensation fit", map: compensationFit },
@@ -63,59 +67,32 @@ export function CompanyForm({ initial, pending, errors, onSubmit, onCancel }: Pr
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium">Name</label>
-        <input className={inputClass} {...register("name")} />
-      </div>
+      <Field label="Name"><Input {...register("name")} /></Field>
+
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium">Website URL</label>
-          <input type="url" className={inputClass} {...register("websiteUrl")} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">LinkedIn URL</label>
-          <input type="url" className={inputClass} {...register("linkedInUrl")} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Country</label>
-          <input className={inputClass} {...register("country")} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">City</label>
-          <input className={inputClass} {...register("city")} />
-        </div>
+        <Field label="Website URL"><Input type="url" {...register("websiteUrl")} /></Field>
+        <Field label="LinkedIn URL"><Input type="url" {...register("linkedInUrl")} /></Field>
+        <Field label="Country"><Input {...register("country")} /></Field>
+        <Field label="City"><Input {...register("city")} /></Field>
       </div>
-      <div className="grid grid-cols-3 gap-4">
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {selects.map((s) => (
-          <div key={s.name}>
-            <label className="block text-sm font-medium">{s.label}</label>
-            <select className={inputClass} {...register(s.name)}>
-              {enumOptions(s.map).map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </div>
+          <Field key={s.name} label={s.label}>
+            <EnumSelect control={control} name={s.name} map={s.map} />
+          </Field>
         ))}
       </div>
-      <div>
-        <label className="block text-sm font-medium">Notes</label>
-        <textarea rows={3} className={inputClass} {...register("notes")} />
-      </div>
 
-      {errors.length > 0 && (
-        <ul className="rounded border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-          {errors.map((m) => <li key={m}>{m}</li>)}
-        </ul>
-      )}
+      <Field label="Notes"><Textarea rows={3} {...register("notes")} /></Field>
+
+      <FormErrors errors={errors} />
 
       <div className="flex items-center gap-3">
-        <button type="submit" disabled={pending}
-          className="rounded bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50">
+        <Button type="submit" disabled={pending}>
           {pending ? "Saving…" : initial ? "Update" : "Add company"}
-        </button>
-        {onCancel && (
-          <button type="button" onClick={onCancel} className="rounded border px-4 py-2">Cancel</button>
-        )}
+        </Button>
+        {onCancel && <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>}
       </div>
     </form>
   );

@@ -1,3 +1,9 @@
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { useGetCompanies } from "@/lib/api/companies/companies";
 
 type Props = {
@@ -9,8 +15,6 @@ type Props = {
   onNewCompanyNameChange: (name: string) => void;
 };
 
-const inputClass = "mt-1 w-full rounded border border-input bg-background p-2";
-
 export function CompanySelect({
   mode, companyId, newCompanyName, onModeChange, onCompanyIdChange, onNewCompanyNameChange,
 }: Props) {
@@ -19,25 +23,22 @@ export function CompanySelect({
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium">Company</label>
-      <div className="flex gap-4 text-sm">
-        <label className="flex items-center gap-1">
-          <input type="radio" checked={mode === "existing"} onChange={() => onModeChange("existing")} />
-          Existing
-        </label>
-        <label className="flex items-center gap-1">
-          <input type="radio" checked={mode === "new"} onChange={() => onModeChange("new")} />
-          New
-        </label>
-      </div>
+      <Label>Company</Label>
+      <Tabs value={mode} onValueChange={(v) => onModeChange(v as "existing" | "new")}>
+        <TabsList>
+          <TabsTrigger value="existing">Existing</TabsTrigger>
+          <TabsTrigger value="new">New</TabsTrigger>
+        </TabsList>
+      </Tabs>
       {mode === "existing" ? (
-        <select className={inputClass} value={companyId} onChange={(e) => onCompanyIdChange(e.target.value)}>
-          <option value="">Select a company…</option>
-          {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <Select value={companyId || undefined} onValueChange={onCompanyIdChange}>
+          <SelectTrigger className="w-full"><SelectValue placeholder="Select a company…" /></SelectTrigger>
+          <SelectContent>
+            {companies.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
       ) : (
-        <input
-          className={inputClass}
+        <Input
           placeholder="New company name"
           value={newCompanyName}
           onChange={(e) => onNewCompanyNameChange(e.target.value)}

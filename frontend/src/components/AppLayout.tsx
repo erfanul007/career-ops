@@ -51,7 +51,6 @@ export function AppLayout() {
       <SidebarInset>
         <header className="flex h-14 items-center gap-2 border-b px-4">
           <SidebarTrigger />
-          <span className="font-medium">CareerOps</span>
         </header>
         <div className="mx-auto w-full max-w-6xl p-6">
           <Outlet />

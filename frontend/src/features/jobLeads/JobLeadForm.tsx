@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
-  jobSource, remoteMode, employmentType, salaryPeriod, priority, jobLeadStatus, enumOptions,
+  jobSource, remoteMode, employmentType, salaryPeriod, priority, jobLeadStatus, type EnumMap,
 } from "@/lib/enums";
 import type { CreateJobLeadRequest, JobLeadDto } from "@/lib/api/model";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Field } from "@/components/form/Field";
+import { FormErrors } from "@/components/form/FormErrors";
+import { EnumSelect } from "@/components/form/EnumSelect";
 import { CompanySelect } from "./CompanySelect";
 
 type FormValues = {
@@ -46,10 +52,8 @@ type Props = {
   onSubmit: (req: CreateJobLeadRequest) => void;
 };
 
-const inputClass = "mt-1 w-full rounded border border-input bg-background p-2";
-
 export function JobLeadForm({ initial, pending, errors, onSubmit }: Props) {
-  const { register, handleSubmit, reset } = useForm<FormValues>({ defaultValues: EMPTY });
+  const { register, handleSubmit, reset, control } = useForm<FormValues>({ defaultValues: EMPTY });
   const [companyMode, setCompanyMode] = useState<"existing" | "new">("existing");
   const [companyId, setCompanyId] = useState("");
   const [newCompanyName, setNewCompanyName] = useState("");
@@ -83,7 +87,7 @@ export function JobLeadForm({ initial, pending, errors, onSubmit }: Props) {
     }),
   );
 
-  const selects: { name: keyof FormValues; label: string; map: Record<number, string> }[] = [
+  const selects: { name: keyof FormValues; label: string; map: EnumMap }[] = [
     { name: "source", label: "Source", map: jobSource },
     { name: "remoteMode", label: "Remote mode", map: remoteMode },
     { name: "employmentType", label: "Employment", map: employmentType },
@@ -95,9 +99,7 @@ export function JobLeadForm({ initial, pending, errors, onSubmit }: Props) {
   return (
     <form onSubmit={submit} className="space-y-4">
       {initial ? (
-        <p className="text-sm">
-          <span className="font-medium">Company:</span> {initial.companyName}
-        </p>
+        <p className="text-sm"><span className="font-medium">Company:</span> {initial.companyName}</p>
       ) : (
         <CompanySelect
           mode={companyMode} companyId={companyId} newCompanyName={newCompanyName}
@@ -106,79 +108,38 @@ export function JobLeadForm({ initial, pending, errors, onSubmit }: Props) {
         />
       )}
 
-      <div>
-        <label className="block text-sm font-medium">Title</label>
-        <input className={inputClass} {...register("title")} />
-      </div>
+      <Field label="Title"><Input {...register("title")} /></Field>
 
       <div className="grid grid-cols-2 gap-4">
         {selects.map((s) => (
-          <div key={s.name}>
-            <label className="block text-sm font-medium">{s.label}</label>
-            <select className={inputClass} {...register(s.name)}>
-              {enumOptions(s.map).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </div>
+          <Field key={s.name} label={s.label}>
+            <EnumSelect control={control} name={s.name} map={s.map} />
+          </Field>
         ))}
-        <div>
-          <label className="block text-sm font-medium">Location</label>
-          <input className={inputClass} {...register("location")} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Source URL</label>
-          <input type="url" className={inputClass} {...register("sourceUrl")} />
-        </div>
+        <Field label="Location"><Input {...register("location")} /></Field>
+        <Field label="Source URL"><Input type="url" {...register("sourceUrl")} /></Field>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
-        <div>
-          <label className="block text-sm font-medium">Salary min</label>
-          <input type="number" step="any" className={inputClass} {...register("salaryMin")} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Salary max</label>
-          <input type="number" step="any" className={inputClass} {...register("salaryMax")} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Currency</label>
-          <input className={inputClass} {...register("salaryCurrency")} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Fit score</label>
-          <input type="number" min="0" max="100" className={inputClass} {...register("fitScore")} />
-        </div>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <Field label="Salary min"><Input type="number" step="any" {...register("salaryMin")} /></Field>
+        <Field label="Salary max"><Input type="number" step="any" {...register("salaryMax")} /></Field>
+        <Field label="Currency"><Input {...register("salaryCurrency")} /></Field>
+        <Field label="Fit score"><Input type="number" min="0" max="100" {...register("fitScore")} /></Field>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium">Next action</label>
-          <input type="date" className={inputClass} {...register("nextActionAtUtc")} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Deadline</label>
-          <input type="date" className={inputClass} {...register("deadlineAtUtc")} />
-        </div>
+        <Field label="Next action"><Input type="date" {...register("nextActionAtUtc")} /></Field>
+        <Field label="Deadline"><Input type="date" {...register("deadlineAtUtc")} /></Field>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium">Job description</label>
-        <textarea rows={6} className={inputClass} {...register("jobDescription")} />
-      </div>
-      <div>
-        <label className="block text-sm font-medium">Notes</label>
-        <textarea rows={3} className={inputClass} {...register("notes")} />
-      </div>
+      <Field label="Job description"><Textarea rows={6} {...register("jobDescription")} /></Field>
+      <Field label="Notes"><Textarea rows={3} {...register("notes")} /></Field>
 
-      {errors.length > 0 && (
-        <ul className="rounded border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-          {errors.map((m) => <li key={m}>{m}</li>)}
-        </ul>
-      )}
+      <FormErrors errors={errors} />
 
-      <button type="submit" disabled={pending}
-        className="rounded bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50">
+      <Button type="submit" disabled={pending}>
         {pending ? "Saving…" : initial ? "Update lead" : "Add lead"}
-      </button>
+      </Button>
     </form>
   );
 }

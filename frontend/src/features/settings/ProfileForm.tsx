@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { useGetUserProfile, useUpdateUserProfile } from "@/lib/api/settings/settings";
 import type { UpdateUserProfileRequest, UserProfileDto } from "@/lib/api/model";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Field } from "@/components/form/Field";
+import { FormErrors } from "@/components/form/FormErrors";
 
 type FormValues = {
   fullName: string;
@@ -63,7 +70,6 @@ export function ProfileForm() {
   const update = useUpdateUserProfile();
   const { register, handleSubmit, reset } = useForm<FormValues>({ defaultValues: EMPTY });
   const [errors, setErrors] = useState<string[]>([]);
-  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (response?.data) reset(toFormValues(response.data));
@@ -71,7 +77,6 @@ export function ProfileForm() {
 
   const onSubmit = handleSubmit(async (v) => {
     setErrors([]);
-    setSaved(false);
     const req: UpdateUserProfileRequest = {
       fullName: v.fullName.trim(),
       email: trimToNull(v.email),
@@ -90,57 +95,42 @@ export function ProfileForm() {
     try {
       const res = await update.mutateAsync({ data: req });
       if (res.data && "id" in res.data) reset(toFormValues(res.data));
-      setSaved(true);
+      toast.success("Profile saved");
     } catch (e) {
       const problem = (e as { data?: { errors?: Record<string, string[]> } }).data;
       setErrors(problem?.errors ? Object.values(problem.errors).flat() : ["Save failed."]);
     }
   });
 
-  if (isLoading) return <p>Loading…</p>;
-
-  const inputClass = "mt-1 w-full rounded border border-input bg-background p-2";
+  if (isLoading) {
+    return <div className="space-y-4"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-24 w-full" /></div>;
+  }
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       {TEXT_FIELDS.map((f) => (
-        <div key={f.name}>
-          <label className="block text-sm font-medium">{f.label}</label>
-          <input type={f.type ?? "text"} className={inputClass} {...register(f.name)} />
-        </div>
+        <Field key={f.name} label={f.label}>
+          <Input type={f.type ?? "text"} {...register(f.name)} />
+        </Field>
       ))}
 
-      <div>
-        <label className="block text-sm font-medium">Target salary (min)</label>
-        <input type="number" step="any" min="0" className={inputClass} {...register("targetSalaryMin")} />
-      </div>
+      <Field label="Target salary (min)">
+        <Input type="number" step="any" min="0" {...register("targetSalaryMin")} />
+      </Field>
 
-      <div>
-        <label className="block text-sm font-medium">Search deadline</label>
-        <input type="date" className={inputClass} {...register("searchDeadlineUtc")} />
-      </div>
+      <Field label="Search deadline">
+        <Input type="date" {...register("searchDeadlineUtc")} />
+      </Field>
 
-      <div>
-        <label className="block text-sm font-medium">Career summary</label>
-        <textarea rows={4} className={inputClass} {...register("careerSummary")} />
-      </div>
+      <Field label="Career summary">
+        <Textarea rows={4} {...register("careerSummary")} />
+      </Field>
 
-      {errors.length > 0 && (
-        <ul className="rounded border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-          {errors.map((msg) => <li key={msg}>{msg}</li>)}
-        </ul>
-      )}
+      <FormErrors errors={errors} />
 
-      <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={update.isPending}
-          className="rounded bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
-        >
-          {update.isPending ? "Saving…" : "Save"}
-        </button>
-        {saved && <span className="text-sm text-green-600">Saved.</span>}
-      </div>
+      <Button type="submit" disabled={update.isPending}>
+        {update.isPending ? "Saving…" : "Save"}
+      </Button>
     </form>
   );
 }
