@@ -50,6 +50,7 @@ app.MapGroup("/api/job-leads").WithTags("Applications").MapConvertToApplication(
 app.MapGroup("/api/resume-variants").WithTags("ResumeVariants").MapResumeVariants();
 app.MapGroup("/api/applications").WithTags("Applications").MapApplications();
 app.MapGroup("/api/follow-up-tasks").WithTags("FollowUpTasks").MapFollowUpTasks();
+app.MapGroup("/api/interviews").WithTags("Interviews").MapInterviews();
 
 app.Run();
 
