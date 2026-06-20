@@ -5,6 +5,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { CreateJobLeadRequest, JobLeadDto } from "@/lib/api/model";
 import { ConvertLeadDialog } from "@/features/applications/ConvertLeadDialog";
+import { AiPromptDialog } from "@/features/ai/AiPromptDialog";
 import { JobLeadForm } from "./JobLeadForm";
 import { useSaveLead } from "./useLeadMutations";
 
@@ -17,6 +18,7 @@ type Props = {
 export function JobLeadSheet({ open, lead, onOpenChange }: Props) {
   const { save, pending, errors } = useSaveLead();
   const [convertOpen, setConvertOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
 
   const onSubmit = async (req: CreateJobLeadRequest) => {
     try {
@@ -50,6 +52,14 @@ export function JobLeadSheet({ open, lead, onOpenChange }: Props) {
                 open={convertOpen}
                 onOpenChange={setConvertOpen}
               />
+              <Button
+                variant="outline"
+                className="mt-2 w-full"
+                onClick={() => setAiOpen(true)}
+              >
+                AI prompt
+              </Button>
+              <AiPromptDialog lead={lead} open={aiOpen} onOpenChange={setAiOpen} />
             </>
           )}
         </div>
