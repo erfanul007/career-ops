@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,17 @@ export function CompleteInterviewDialog({ open, interview, onOpenChange }: Props
   const [followUp, setFollowUp] = useState(false);
   const [followUpAt, setFollowUpAt] = useState(new Date().toISOString().slice(0, 10));
   const [errors, setErrors] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (open) {
+      setOutcome("1");
+      setFeedback("");
+      setFollowUp(false);
+      setFollowUpAt(new Date().toISOString().slice(0, 10));
+      setErrors([]);
+    }
+  }, [interview?.id, open]);
+
   if (!interview) return null;
 
   const onSubmit = async () => {

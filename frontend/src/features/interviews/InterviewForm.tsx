@@ -75,7 +75,10 @@ export function InterviewForm({ interview, fixedApplicationId, applications = []
         <span className="text-sm font-medium">Interviewer</span>
         <Input {...register("interviewerName")} placeholder="Name" />
       </label>
-      <Input {...register("interviewerRole")} placeholder="Role" />
+      <label className="block space-y-1">
+        <span className="text-sm font-medium">Role</span>
+        <Input {...register("interviewerRole")} placeholder="Role" />
+      </label>
       <label className="block space-y-1">
         <span className="text-sm font-medium">Meeting URL</span>
         <Input {...register("meetingUrl")} placeholder="https://…" />
