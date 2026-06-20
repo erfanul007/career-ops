@@ -1,6 +1,7 @@
 using System.Reflection;
 using CareerOps.Application.Applications;
 using CareerOps.Application.Companies;
+using CareerOps.Application.Dashboard;
 using CareerOps.Application.FollowUpTasks;
 using CareerOps.Application.Interviews;
 using CareerOps.Application.JobLeads;
@@ -26,6 +27,7 @@ public static class DependencyInjection
         services.AddScoped<ApplicationService>();
         services.AddScoped<FollowUpTaskService>();
         services.AddScoped<InterviewService>();
+        services.AddScoped<DashboardService>();
         return services;
     }
 }
