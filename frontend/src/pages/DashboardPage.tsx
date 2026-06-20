@@ -75,7 +75,7 @@ export default function DashboardPage() {
               <div className="flex flex-wrap gap-2">
                 {stageTiles.map((s) => (
                   <span key={s.stage} className="rounded-md bg-muted px-3 py-1 text-sm">
-                    {enumLabel(applicationStage, s.stage)} <span className="font-semibold">{s.count}</span>
+                    {enumLabel(applicationStage, s.stage)} <span className="font-semibold">{Number(s.count)}</span>
                   </span>
                 ))}
               </div>
