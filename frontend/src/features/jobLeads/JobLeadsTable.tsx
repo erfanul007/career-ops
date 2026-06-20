@@ -1,36 +1,37 @@
-import { Link } from "react-router";
-import { priority, jobLeadStatus, remoteMode, enumLabel } from "@/lib/enums";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/StatusBadge";
+import { PriorityBadge } from "@/components/PriorityBadge";
+import { remoteMode, enumLabel } from "@/lib/enums";
 import type { JobLeadDto } from "@/lib/api/model";
 
-type Props = { leads: JobLeadDto[]; onDelete: (l: JobLeadDto) => void };
+type Props = { leads: JobLeadDto[]; onEdit: (l: JobLeadDto) => void; onDelete: (l: JobLeadDto) => void };
 
-export function JobLeadsTable({ leads, onDelete }: Props) {
+export function JobLeadsTable({ leads, onEdit, onDelete }: Props) {
   if (leads.length === 0) return <p className="text-muted-foreground">No job leads match.</p>;
   return (
-    <table className="w-full border-collapse text-sm">
-      <thead>
-        <tr className="border-b text-left">
-          <th className="p-2">Title</th><th className="p-2">Company</th>
-          <th className="p-2">Status</th><th className="p-2">Priority</th>
-          <th className="p-2">Remote</th><th className="p-2"></th>
-        </tr>
-      </thead>
-      <tbody>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Title</TableHead><TableHead>Company</TableHead>
+          <TableHead>Status</TableHead><TableHead>Priority</TableHead>
+          <TableHead>Remote</TableHead><TableHead></TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {leads.map((l) => (
-          <tr key={l.id} className="border-b">
-            <td className="p-2 font-medium">
-              <Link to={`/job-leads/${l.id}`} className="text-primary hover:underline">{l.title}</Link>
-            </td>
-            <td className="p-2">{l.companyName}</td>
-            <td className="p-2">{enumLabel(jobLeadStatus, l.status)}</td>
-            <td className="p-2">{enumLabel(priority, l.priority)}</td>
-            <td className="p-2">{enumLabel(remoteMode, l.remoteMode)}</td>
-            <td className="p-2 text-right">
-              <button onClick={() => onDelete(l)} className="text-destructive">Delete</button>
-            </td>
-          </tr>
+          <TableRow key={l.id} className="cursor-pointer" onClick={() => onEdit(l)}>
+            <TableCell className="font-medium">{l.title}</TableCell>
+            <TableCell>{l.companyName}</TableCell>
+            <TableCell><StatusBadge status={l.status} /></TableCell>
+            <TableCell><PriorityBadge priority={l.priority} /></TableCell>
+            <TableCell>{enumLabel(remoteMode, l.remoteMode)}</TableCell>
+            <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="sm" onClick={() => onDelete(l)}>Delete</Button>
+            </TableCell>
+          </TableRow>
         ))}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   );
 }
