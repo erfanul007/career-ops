@@ -3,6 +3,7 @@ import { AppLayout } from "@/components/AppLayout";
 import DashboardPage from "@/pages/DashboardPage";
 import CompaniesPage from "@/pages/CompaniesPage";
 import JobLeadsPage from "@/pages/JobLeadsPage";
+import ResumeVariantsPage from "@/pages/ResumeVariantsPage";
 import SettingsProfilePage from "@/pages/SettingsProfilePage";
 
 const router = createBrowserRouter([
@@ -14,6 +15,7 @@ const router = createBrowserRouter([
       { path: "dashboard", element: <DashboardPage /> },
       { path: "job-leads", element: <JobLeadsPage /> },
       { path: "companies", element: <CompaniesPage /> },
+      { path: "resume-variants", element: <ResumeVariantsPage /> },
       { path: "settings/profile", element: <SettingsProfilePage /> },
     ],
   },
