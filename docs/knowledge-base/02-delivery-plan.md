@@ -132,6 +132,7 @@ user's own Claude/ChatGPT subscription right away. Matches PRD §16.2's `ManualP
 - Interview page: upcoming + completed lists.
 - Dashboard **upcoming interviews**: `Scheduled and scheduled_at_utc between now and now+7d`
   (PRD §21).
+- **Note (2026-06-20):** S4.1 delivered; cross-entity sync foundation added; decisions D32–D38 logged.
 
 ---
 

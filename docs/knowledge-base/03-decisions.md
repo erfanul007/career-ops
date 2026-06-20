@@ -388,3 +388,112 @@ only by adding a new dated entry here — never silently. All entries below are 
   at this stage, adds surface).
 - **Consequence:** `lib/aiPrompts.ts` becomes the single source of prompt template text; Phase 6
   imports from it directly. No migration needed for S3.4.
+
+---
+
+### D32 — `EnteredInterviewStage` forward-only in `JobLeadStatusTransitions.Advance`
+*(2026-06-20, Phase 4 / S4.1 execution)*
+- **Decision:** The `EnteredInterviewStage` status (entered when an `Interview` is created,
+  D6 transition map trigger) is **forward-only**: `JobLeadStatusTransitions.Advance` accepts
+  it only from `Discovered`, `Interested`, or `Applied` states. No regression from `Offer` or
+  closed states.
+- **Why:** Fixes a latent Phase-3 bug where an out-of-order interview creation on a
+  `Ghosted` or `Rejected` lead would incorrectly advance it back to `Interviewing`. The
+  forward-only guard ensures state transitions are monotonic.
+- **Rejected:** Allowing the transition from any state (weaker guard); blocking interviews
+  on leads that have closed/rejected (would conflict with a real workflow where an interview
+  is scheduled *before* a rejection lands).
+- **Consequence:** The `JobLeadStatusTransitions` test suite grows to cover the forward-only
+  guard.
+
+### D33 — Creating an Interview auto-advances the parent lead (not the application)
+*(2026-06-20, Phase 4 / S4.1 execution)*
+- **Decision:** When an `Interview` is created (POST endpoint or derived object creation),
+  the parent `Application` stays in its current stage/status. The parent `JobLead.Status` is
+  auto-advanced via D6/D32 (triggered by the presence of an Interview). The interview's own
+  status is always initialized to `Scheduled`.
+- **Why:** D6 defines auto-advance as an Application-event concern; an Interview creation is
+  a downstream event. The lead advances (to `EnteredInterviewStage` if applicable), not the
+  application. This cleanly separates concerns.
+- **Rejected:** Also advancing the Application stage (conflates two different lifecycle
+  events); only advancing the Interview itself (ignores D6's lead-centric advancement).
+- **Consequence:** Interview creation does not emit Application-level state changes; D6
+  remains the sole declarative map of Application → lead advancement.
+
+### D34 — `mark-completed` auto-creates a linked `FollowUpTask` when flagged
+*(2026-06-20, Phase 4 / S4.1 execution)*
+- **Decision:** The `mark-completed` action on an Interview accepts an optional
+  `createFollowUpIfNeeded` flag. When `true`, it creates one linked `FollowUpTask` with a
+  suggested due date (defaulting to 3–5 days after completion). **Only once per interview:**
+  if a follow-up already exists for this interview, the action is rejected with a message
+  (not silently skipped).
+- **Why:** The user's real workflow is: interview → thank-you note due in 2 days → reflect on
+  feedback → next interview prep. This captures the common case of "I interviewed, now I need
+  a follow-up" without requiring a separate create call. The once-only guard prevents
+  accidental duplicates.
+- **Rejected:** Auto-creating always (user must opt in); requiring a separate FollowUpTask
+  create call (extra friction).
+- **Consequence:** Interview and FollowUpTask are linked polymorphically; the validation tests
+  the once-per-interview uniqueness.
+
+### D35 — Multi-level delete cascade-clean via `FollowUpCleanup`
+*(2026-06-20, Phase 4 / S4.1 execution)*
+- **Decision:** When a parent entity is deleted (JobLead, Application, Interview), a
+  `FollowUpCleanup` service scans and removes any loose `FollowUpTask` rows that reference
+  the deleted entity or its children (e.g., deleting an Application removes interviews + all
+  interviews' follow-ups). The operation is **atomic within a transaction** — either all
+  orphans are cleaned or none are. FK children (e.g. Interview → Application) cascade-delete
+  in the DB; polymorphic children (`FollowUpTask`) are cleaned in code.
+- **Why:** Closes the pre-existing orphan gap (D12); ensures no dangling follow-up rows after
+  a complex delete (lead → application → interview hierarchy). A single cleanup service is
+  DRY and testable.
+- **Rejected:** Orphaning loose rows (violates D12); a trigger per entity (harder to test);
+  separate cleanup calls per entity type (more surface).
+- **Consequence:** Delete tests verify that orphans are cleaned; the Cleanup service is
+  injected into JobLead, Application, and Interview delete handlers.
+
+### D36 — `Application → Interview` FK OnDelete Cascade
+*(2026-06-20, Phase 4 / S4.1 execution)*
+- **Decision:** The foreign key `Interview.ApplicationId → Application.Id` uses
+  `OnDelete(Cascade)`. Deleting an Application hard-deletes all its Interviews in the DB,
+  and the delete handler then runs `FollowUpCleanup` to remove orphaned follow-ups.
+- **Why:** An interview without an application is nonsensical (inherently child of the
+  application). Cascade is the right semantic for a hard delete workflow (D12). Cascade +
+  cleanup is simpler than Restrict + UI flow (and matches the PRD's delete-allowed stance).
+- **Rejected:** `OnDelete(Restrict)` (would require a separate delete-or-unlink step in the
+  UI); orphaning interviews (violates the cascade-clean principle).
+- **Consequence:** DB-level cascade is enforced by the EF migration; the delete handler still
+  runs cleanup on the remaining loose references.
+
+### D37 — Global `MutationCache.onSettled → invalidateQueries()` is the single cross-entity sync
+*(2026-06-20, Phase 4 / S4.1 execution)*
+- **Decision:** A global TanStack Query mutation cache hook (`MutationCache` with
+  `onSettled` callback in `frontend/src/lib/queryClient.ts`) invalidates all queries when
+  any mutation settles (succeeds or fails). Existing per-mutation invalidation logic in
+  individual hooks is **left as harmless redundancy** (not removed).
+- **Why:** Interviews touch Interview queries, Application queries (via cascade checks), and
+  FollowUpTask queries (if auto-created). A blanket invalidation avoids coupling each mutation
+  to the list of entities it might affect. Trade-off: overfetching on some mutations (e.g.,
+  marking an interview completed re-fetches all interviews + all follow-ups), accepted for
+  the personal single-user baseline. Scaling would revisit (targeted invalidation via
+  optimistic updates or server-side sync hints).
+- **Rejected:** Hyper-granular per-mutation invalidation logic (maintenance burden as the app
+  grows); no syncing (leads to stale caches and confused UI).
+- **Consequence:** Frontend mutation code is simpler; query staleness is prevented at the cost
+  of broader refetches.
+
+### D38 — Strategy pattern assessed for interview/transition logic; rejected (KISS)
+*(2026-06-20, Phase 4 / S4.1 execution)*
+- **Decision:** Interview creation and status transitions do not use the Strategy pattern.
+  Instead, `InterviewService` uses a static `switch` map in `GetTransitionHandler()` (or
+  similar) to route each state/action pair to a small, focused service method. Enum-to-handler
+  map + small methods = sufficient for the baseline.
+- **Why:** Interview transitions are not complex: create (initialize to Scheduled), mark-completed
+  (update status, optional follow-up), mark-outcome (update fields). Each is a small
+  method; a map is clearer than a strategy class hierarchy. KISS: no indirection until a
+  real complexity (e.g., parallel approval workflows) appears (YAGNI, D18 pragmatic DDD).
+- **Rejected:** Full Strategy pattern (adds ceremony and polymorphic types for no current
+  benefit); a series of cascading if-statements (less readable than a map).
+- **Consequence:** `InterviewService.cs` is a modest service, not a mini-framework. Tests
+  cover the transition routes and their side effects (D32/D33/D34/D35/D36).
+
