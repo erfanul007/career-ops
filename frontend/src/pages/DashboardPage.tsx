@@ -6,6 +6,7 @@ import type { JobLeadDto } from "@/lib/api/model";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PipelineBar } from "@/features/dashboard/PipelineBar";
 import { TodaysActions } from "@/features/dashboard/TodaysActions";
+import { UpcomingInterviews } from "@/features/dashboard/UpcomingInterviews";
 
 const HIGH_PRIORITY = [2, 3];
 const ACTIONABLE = [0, 1];
@@ -56,7 +57,7 @@ export default function DashboardPage() {
         <CardContent><PipelineBar counts={counts} total={leads.length} /></CardContent>
       </Card>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader><CardTitle className="text-base">High-priority to action</CardTitle></CardHeader>
           <CardContent className="space-y-2">
@@ -80,6 +81,7 @@ export default function DashboardPage() {
             ))}
           </CardContent>
         </Card>
+        <UpcomingInterviews />
       </div>
     </div>
   );

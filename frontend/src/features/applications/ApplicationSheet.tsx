@@ -5,8 +5,13 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
 import { useUpdateApplication, getGetApplicationsQueryKey } from "@/lib/api/applications/applications";
-import type { ApplicationDto, UpdateApplicationRequest } from "@/lib/api/model";
+import type { ApplicationDto, InterviewDto, UpdateApplicationRequest } from "@/lib/api/model";
+import { useGetInterviews, useDeleteInterview } from "@/lib/api/interviews/interviews";
 import { ApplicationForm } from "./ApplicationForm";
+import { InterviewItem } from "@/features/interviews/InterviewItem";
+import { InterviewSheet } from "@/features/interviews/InterviewSheet";
+import { CompleteInterviewDialog } from "@/features/interviews/CompleteInterviewDialog";
+import { Button } from "@/components/ui/button";
 
 const readErrors = (e: unknown): string[] => {
   const p = (e as { data?: { errors?: Record<string, string[]> } }).data;
@@ -19,7 +24,22 @@ export function ApplicationSheet({ app, open, onOpenChange }: Props) {
   const qc = useQueryClient();
   const update = useUpdateApplication();
   const [errors, setErrors] = useState<string[]>([]);
+  const { data: interviewsResp } = useGetInterviews();
+  const removeInterview = useDeleteInterview();
+  const [addOpen, setAddOpen] = useState(false);
+  const [editing, setEditing] = useState<InterviewDto | undefined>();
+  const [completing, setCompleting] = useState<InterviewDto | null>(null);
+
   if (!app) return null;
+
+  const interviews = (interviewsResp?.data ?? []).filter(
+    (i) => Number(i.applicationId) === Number(app.id),
+  );
+
+  const onDeleteInterview = async (i: InterviewDto) => {
+    await removeInterview.mutateAsync({ id: Number(i.id) });
+    toast.success("Interview deleted");
+  };
 
   const onSubmit = async (data: UpdateApplicationRequest) => {
     setErrors([]);
@@ -48,6 +68,40 @@ export function ApplicationSheet({ app, open, onOpenChange }: Props) {
             pending={update.isPending}
             errors={errors}
             onSubmit={onSubmit}
+          />
+          <div className="mt-6 space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium">Interviews</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { setEditing(undefined); setAddOpen(true); }}
+              >
+                Add
+              </Button>
+            </div>
+            {interviews.length === 0
+              ? <p className="text-sm text-muted-foreground">No interviews yet.</p>
+              : interviews.map((i) => (
+                <InterviewItem
+                  key={i.id}
+                  interview={i}
+                  onEdit={(x) => { setEditing(x); setAddOpen(true); }}
+                  onComplete={setCompleting}
+                  onDelete={onDeleteInterview}
+                />
+              ))}
+          </div>
+          <InterviewSheet
+            open={addOpen}
+            interview={editing}
+            applicationId={Number(app.id)}
+            onOpenChange={setAddOpen}
+          />
+          <CompleteInterviewDialog
+            open={completing !== null}
+            interview={completing}
+            onOpenChange={(o) => !o && setCompleting(null)}
           />
         </div>
       </SheetContent>
