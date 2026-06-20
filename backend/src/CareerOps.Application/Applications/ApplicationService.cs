@@ -1,6 +1,7 @@
 using CareerOps.Application.Common;
 using CareerOps.Domain.Applications;
 using CareerOps.Domain.FollowUpTasks;
+using CareerOps.Domain.Interviews;
 using CareerOps.Domain.JobLeads;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
@@ -87,10 +88,10 @@ public sealed class ApplicationService(IAppDbContext db)
         var app = await db.Applications.FirstOrDefaultAsync(a => a.Id == id, ct);
         if (app is null) return false;
 
-        var tasks = await db.FollowUpTasks
-            .Where(t => t.RelatedEntityType == RelatedEntityType.Application && t.RelatedEntityId == id)
-            .ToListAsync(ct);
-        db.FollowUpTasks.RemoveRange(tasks);
+        // D35: clean this application's loose follow-ups + those of its (cascade-deleted) interviews.
+        var interviewIds = await db.Interviews.Where(i => i.ApplicationId == id).Select(i => i.Id).ToListAsync(ct);
+        await FollowUpCleanup.RemoveForAsync(db, RelatedEntityType.Application, [id], ct);
+        await FollowUpCleanup.RemoveForAsync(db, RelatedEntityType.Interview, interviewIds, ct);
 
         db.Applications.Remove(app);
         await db.SaveChangesAsync(ct);

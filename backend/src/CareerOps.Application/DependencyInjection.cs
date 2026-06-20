@@ -2,6 +2,7 @@ using System.Reflection;
 using CareerOps.Application.Applications;
 using CareerOps.Application.Companies;
 using CareerOps.Application.FollowUpTasks;
+using CareerOps.Application.Interviews;
 using CareerOps.Application.JobLeads;
 using CareerOps.Application.ResumeVariants;
 using CareerOps.Application.Settings;
@@ -24,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<ResumeVariantService>();
         services.AddScoped<ApplicationService>();
         services.AddScoped<FollowUpTaskService>();
+        services.AddScoped<InterviewService>();
         return services;
     }
 }

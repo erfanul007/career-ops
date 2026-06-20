@@ -1,6 +1,8 @@
 using CareerOps.Application.Common;
+using CareerOps.Domain.Applications;
 using CareerOps.Domain.Companies;
 using CareerOps.Domain.FollowUpTasks;
+using CareerOps.Domain.Interviews;
 using CareerOps.Domain.JobLeads;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
@@ -48,11 +50,12 @@ public sealed class JobLeadService(IAppDbContext db)
         var lead = await db.JobLeads.FirstOrDefaultAsync(l => l.Id == id, ct);
         if (lead is null) return false;
 
-        // D12: applications cascade via FK; loose-reference follow-up tasks are cleaned here (no orphans).
-        var tasks = await db.FollowUpTasks
-            .Where(t => t.RelatedEntityType == RelatedEntityType.JobLead && t.RelatedEntityId == id)
-            .ToListAsync(ct);
-        db.FollowUpTasks.RemoveRange(tasks);
+        // D35: lead delete cascades app + interviews via FK; clean ALL loose follow-ups (no orphans).
+        var appIds = await db.Applications.Where(a => a.JobLeadId == id).Select(a => a.Id).ToListAsync(ct);
+        var interviewIds = await db.Interviews.Where(i => appIds.Contains(i.ApplicationId)).Select(i => i.Id).ToListAsync(ct);
+        await FollowUpCleanup.RemoveForAsync(db, RelatedEntityType.JobLead, [id], ct);
+        await FollowUpCleanup.RemoveForAsync(db, RelatedEntityType.Application, appIds, ct);
+        await FollowUpCleanup.RemoveForAsync(db, RelatedEntityType.Interview, interviewIds, ct);
 
         db.JobLeads.Remove(lead);
         await db.SaveChangesAsync(ct);
