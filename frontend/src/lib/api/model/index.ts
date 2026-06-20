@@ -5,9 +5,14 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './applicationDto';
+export * from './applicationStage';
+export * from './applicationStatus';
+export * from './changeStageRequest';
 export * from './companyDto';
 export * from './companyType';
 export * from './compensationFit';
+export * from './convertToApplicationRequest';
 export * from './createCompanyRequest';
 export * from './createJobLeadRequest';
 export * from './createResumeVariantRequest';
@@ -18,10 +23,12 @@ export * from './jobLeadDto';
 export * from './jobLeadStatus';
 export * from './jobSource';
 export * from './marketType';
+export * from './markRejectedRequest';
 export * from './priority';
 export * from './remoteMode';
 export * from './resumeVariantDto';
 export * from './salaryPeriod';
+export * from './updateApplicationRequest';
 export * from './updateCompanyRequest';
 export * from './updateJobLeadRequest';
 export * from './updateResumeVariantRequest';

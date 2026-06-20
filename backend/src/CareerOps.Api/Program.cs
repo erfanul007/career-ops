@@ -46,7 +46,9 @@ app.MapHealthChecks("/health/db", new HealthCheckOptions { Predicate = c => c.Ta
 app.MapGroup("/api/settings").WithTags("Settings").MapSettings();
 app.MapGroup("/api/companies").WithTags("Companies").MapCompanies();
 app.MapGroup("/api/job-leads").WithTags("JobLeads").MapJobLeads();
+app.MapGroup("/api/job-leads").WithTags("Applications").MapConvertToApplication();
 app.MapGroup("/api/resume-variants").WithTags("ResumeVariants").MapResumeVariants();
+app.MapGroup("/api/applications").WithTags("Applications").MapApplications();
 
 app.Run();
 
