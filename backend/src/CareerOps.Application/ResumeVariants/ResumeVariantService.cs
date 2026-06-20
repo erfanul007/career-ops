@@ -36,7 +36,20 @@ public sealed class ResumeVariantService(IAppDbContext db)
     {
         var variant = await db.ResumeVariants.FirstOrDefaultAsync(v => v.Id == id, ct);
         if (variant is null) return false;
+
         db.ResumeVariants.Remove(variant); // referenced-by-Application delete is blocked by FK Restrict (Task 6)
+
+        // Promote the next variant alphabetically when the deleted one was the default;
+        // otherwise the user would have no default and list ordering would be undefined.
+        if (variant.IsDefault)
+        {
+            var next = await db.ResumeVariants
+                .Where(v => v.Id != id)
+                .OrderBy(v => v.Name)
+                .FirstOrDefaultAsync(ct);
+            if (next is not null) next.IsDefault = true;
+        }
+
         await db.SaveChangesAsync(ct);
         return true;
     }

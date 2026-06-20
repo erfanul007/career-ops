@@ -40,4 +40,19 @@ public class ResumeVariantServiceTests
         Assert.True(all.Single(v => v.Id == second.Id).IsDefault);
         Assert.False(all.Single(v => v.Id == first.Id).IsDefault);
     }
+
+    [Fact]
+    public async Task Deleting_default_promotes_another_to_default()
+    {
+        await using var db = NewDb();
+        var svc = new ResumeVariantService(db);
+        var first = await svc.CreateAsync(new("Alpha", null, null, null));   // first → IsDefault = true
+        await svc.CreateAsync(new("Beta", null, null, null));
+
+        await svc.DeleteAsync(first.Id);
+
+        var remaining = await svc.ListAsync();
+        Assert.Single(remaining);
+        Assert.True(remaining[0].IsDefault);
+    }
 }
