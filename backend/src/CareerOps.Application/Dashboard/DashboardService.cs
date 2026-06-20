@@ -20,7 +20,8 @@ public sealed class DashboardService(IAppDbContext db, IClock clock)
     public async Task<DashboardSummaryDto> GetSummaryAsync(CancellationToken ct = default)
     {
         var now = clock.UtcNow;
-        var startOfToday = clock.Today.ToDateTime(TimeOnly.MinValue);
+        // Kind=Utc is required: Npgsql rejects Unspecified-kind DateTimes as timestamptz parameters.
+        var startOfToday = clock.Today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
         var interviewWindowEnd = now.AddDays(7);
         var staleBefore = now.AddDays(-7);
 
