@@ -1,12 +1,10 @@
 import { Link } from "react-router";
 import { formatDistanceToNow } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useGetUpcomingInterviews } from "@/lib/api/interviews/interviews";
+import type { InterviewDto } from "@/lib/api/model";
 import { interviewRoundType, enumLabel } from "@/lib/enums";
 
-export function UpcomingInterviews() {
-  const { data } = useGetUpcomingInterviews();
-  const items = data?.data ?? [];
+export function UpcomingInterviews({ items }: { items: InterviewDto[] }) {
   return (
     <Card>
       <CardHeader><CardTitle className="text-base">Upcoming interviews</CardTitle></CardHeader>

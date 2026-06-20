@@ -1,35 +1,17 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  useGetDueFollowUpTasks, useCompleteFollowUpTask, useSkipFollowUpTask,
-  getGetDueFollowUpTasksQueryKey, getGetFollowUpTasksQueryKey,
-} from "@/lib/api/follow-up-tasks/follow-up-tasks";
+import { useCompleteFollowUpTask, useSkipFollowUpTask } from "@/lib/api/follow-up-tasks/follow-up-tasks";
 import type { FollowUpTaskDto } from "@/lib/api/model";
 
-function startOfTodayMs(): number {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.getTime();
-}
-
-export function TodaysActions() {
-  const qc = useQueryClient();
-  const { data } = useGetDueFollowUpTasks();
+export function TodaysActions({ due, overdue }: { due: FollowUpTaskDto[]; overdue: FollowUpTaskDto[] }) {
   const complete = useCompleteFollowUpTask();
   const skip = useSkipFollowUpTask();
-  const due = data?.data ?? [];
-  const overdue = due.filter((t) => new Date(t.dueAtUtc).getTime() < startOfTodayMs());
 
-  const invalidate = () => {
-    qc.invalidateQueries({ queryKey: getGetDueFollowUpTasksQueryKey() });
-    qc.invalidateQueries({ queryKey: getGetFollowUpTasksQueryKey() });
-  };
+  // No manual invalidation — the global MutationCache.onSettled rule (D37) refetches the summary.
   const act = async (fn: Promise<unknown>, msg: string) => {
     await fn;
-    invalidate();
     toast.success(msg);
   };
 
