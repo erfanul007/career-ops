@@ -3,6 +3,7 @@ import { AppLayout } from "@/components/AppLayout";
 import DashboardPage from "@/pages/DashboardPage";
 import CompaniesPage from "@/pages/CompaniesPage";
 import JobLeadsPage from "@/pages/JobLeadsPage";
+import ApplicationsPage from "@/pages/ApplicationsPage";
 import ResumeVariantsPage from "@/pages/ResumeVariantsPage";
 import SettingsProfilePage from "@/pages/SettingsProfilePage";
 
@@ -14,6 +15,7 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: <DashboardPage /> },
       { path: "job-leads", element: <JobLeadsPage /> },
+      { path: "applications", element: <ApplicationsPage /> },
       { path: "companies", element: <CompaniesPage /> },
       { path: "resume-variants", element: <ResumeVariantsPage /> },
       { path: "settings/profile", element: <SettingsProfilePage /> },

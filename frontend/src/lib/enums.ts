@@ -64,3 +64,29 @@ export const priorityBadgeClass: Record<number, string> = {
   2: "bg-orange-100 text-orange-800",   // High
   3: "bg-red-100 text-red-700",         // Critical
 };
+
+export const applicationStage: EnumMap = {
+  0: "Applied", 1: "Recruiter screen", 2: "Technical screen", 3: "Take-home",
+  4: "System design", 5: "Hiring manager", 6: "Final", 7: "Offer",
+  8: "Rejected", 9: "Ghosted", 10: "Withdrawn",
+};
+
+export const applicationStatus: EnumMap = {
+  0: "Active", 1: "Paused", 2: "Rejected", 3: "Offer", 4: "Withdrawn",
+};
+
+export const applicationStatusBadgeClass: Record<number, string> = {
+  0: "bg-blue-100 text-blue-700",   // Active
+  1: "bg-amber-100 text-amber-800", // Paused
+  2: "bg-red-100 text-red-700",     // Rejected
+  3: "bg-green-100 text-green-700", // Offer
+  4: "bg-zinc-100 text-zinc-600",   // Withdrawn
+};
+
+export const relatedEntityType: EnumMap = {
+  0: "None", 1: "Job lead", 2: "Application", 3: "Interview", 4: "Contact",
+};
+
+export const followUpStatus: EnumMap = {
+  0: "Pending", 1: "Completed", 2: "Skipped",
+};
