@@ -57,6 +57,7 @@ public class InterviewServiceTests
         var dto = await new InterviewService(db, Clock).CreateAsync(CreateReq(appId));
         Assert.NotNull(dto);
         Assert.Equal(JobLeadStatus.Interviewing, (await db.JobLeads.FindAsync(leadId))!.Status);
+        Assert.Equal(ApplicationStage.Applied, (await db.Applications.FindAsync(appId))!.CurrentStage);
     }
 
     [Fact]

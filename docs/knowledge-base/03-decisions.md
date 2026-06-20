@@ -422,19 +422,26 @@ only by adding a new dated entry here — never silently. All entries below are 
 
 ### D34 — `mark-completed` auto-creates a linked `FollowUpTask` when flagged
 *(2026-06-20, Phase 4 / S4.1 execution)*
-- **Decision:** The `mark-completed` action on an Interview accepts an optional
-  `createFollowUpIfNeeded` flag. When `true`, it creates one linked `FollowUpTask` with a
-  suggested due date (defaulting to 3–5 days after completion). **Only once per interview:**
-  if a follow-up already exists for this interview, the action is rejected with a message
-  (not silently skipped).
-- **Why:** The user's real workflow is: interview → thank-you note due in 2 days → reflect on
+- **Decision:** `POST /api/interviews/{id}/mark-completed` accepts
+  `MarkInterviewCompletedRequest(Outcome, Feedback?, FollowUpRequired, FollowUpAtUtc?)`.
+  When the interview transitions into `Completed` for the **first time** AND `FollowUpRequired`
+  is `true` AND `FollowUpAtUtc` is provided, it creates **one** `FollowUpTask`:
+  `RelatedEntityType.Interview`, `RelatedEntityId = interview.Id`,
+  `DueAtUtc = FollowUpAtUtc` (caller-supplied — there is no default offset),
+  `Status = Pending`, `Priority = Medium`,
+  title `"Follow up — {RoundType} interview"`.
+  Re-completing an already-`Completed` interview is **silently skipped** — no duplicate task
+  is created and no user-facing message is returned. The "first completion" check is
+  `Interview.Complete(...)` returning a `bool`.
+- **Why:** The user's real workflow is: interview → thank-you note due in N days → reflect on
   feedback → next interview prep. This captures the common case of "I interviewed, now I need
-  a follow-up" without requiring a separate create call. The once-only guard prevents
-  accidental duplicates.
+  a follow-up" without requiring a separate create call. The silent-skip on re-completion
+  prevents duplicate tasks without surfacing a confusing error.
 - **Rejected:** Auto-creating always (user must opt in); requiring a separate FollowUpTask
-  create call (extra friction).
-- **Consequence:** Interview and FollowUpTask are linked polymorphically; the validation tests
-  the once-per-interview uniqueness.
+  create call (extra friction); returning an error on re-completion (the operation is
+  idempotent from the user's perspective).
+- **Consequence:** Interview and FollowUpTask are linked polymorphically; tests cover
+  first-completion follow-up creation, re-completion silence, and the no-follow-up path.
 
 ### D35 — Multi-level delete cascade-clean via `FollowUpCleanup`
 *(2026-06-20, Phase 4 / S4.1 execution)*
@@ -468,7 +475,7 @@ only by adding a new dated entry here — never silently. All entries below are 
 ### D37 — Global `MutationCache.onSettled → invalidateQueries()` is the single cross-entity sync
 *(2026-06-20, Phase 4 / S4.1 execution)*
 - **Decision:** A global TanStack Query mutation cache hook (`MutationCache` with
-  `onSettled` callback in `frontend/src/lib/queryClient.ts`) invalidates all queries when
+  `onSettled` callback in `frontend/src/app/providers.tsx`) invalidates all queries when
   any mutation settles (succeeds or fails). Existing per-mutation invalidation logic in
   individual hooks is **left as harmless redundancy** (not removed).
 - **Why:** Interviews touch Interview queries, Application queries (via cascade checks), and
@@ -484,16 +491,18 @@ only by adding a new dated entry here — never silently. All entries below are 
 
 ### D38 — Strategy pattern assessed for interview/transition logic; rejected (KISS)
 *(2026-06-20, Phase 4 / S4.1 execution)*
-- **Decision:** Interview creation and status transitions do not use the Strategy pattern.
-  Instead, `InterviewService` uses a static `switch` map in `GetTransitionHandler()` (or
-  similar) to route each state/action pair to a small, focused service method. Enum-to-handler
-  map + small methods = sufficient for the baseline.
-- **Why:** Interview transitions are not complex: create (initialize to Scheduled), mark-completed
-  (update status, optional follow-up), mark-outcome (update fields). Each is a small
-  method; a map is clearer than a strategy class hierarchy. KISS: no indirection until a
-  real complexity (e.g., parallel approval workflows) appears (YAGNI, D18 pragmatic DDD).
+- **Decision:** Interview creation and status transitions do not use the Strategy pattern
+  and do not use a `GetTransitionHandler()` switch or any handler registry. The existing
+  static `JobLeadStatusTransitions.Advance` switch-map plus small `InterviewService`
+  methods suffice for the baseline.
+- **Why:** Interview transitions are not complex: create (initialize to Scheduled),
+  mark-completed (update status, optional follow-up). Each is a small, direct method;
+  no indirection layer is needed. KISS: no abstraction until a real complexity (e.g.,
+  parallel approval workflows) appears (YAGNI, D18 pragmatic DDD).
 - **Rejected:** Full Strategy pattern (adds ceremony and polymorphic types for no current
-  benefit); a series of cascading if-statements (less readable than a map).
+  benefit); a handler registry / `GetTransitionHandler()` switch (assessed and not built —
+  the direct method calls are clearer); cascading if-statements (less readable than the
+  existing switch-map).
 - **Consequence:** `InterviewService.cs` is a modest service, not a mini-framework. Tests
   cover the transition routes and their side effects (D32/D33/D34/D35/D36).
 
