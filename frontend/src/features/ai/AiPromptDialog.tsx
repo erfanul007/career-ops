@@ -31,8 +31,12 @@ export function AiPromptDialog({ lead, open, onOpenChange }: Props) {
   });
 
   const copy = async () => {
-    await navigator.clipboard.writeText(prompt);
-    toast.success("Prompt copied — paste into Claude/ChatGPT");
+    try {
+      await navigator.clipboard.writeText(prompt);
+      toast.success("Prompt copied — paste into Claude/ChatGPT");
+    } catch {
+      toast.error("Couldn't copy — select the text and copy manually.");
+    }
   };
 
   return (

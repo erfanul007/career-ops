@@ -21,7 +21,10 @@ export default function ResumeVariantsPage() {
   const [editing, setEditing] = useState<ResumeVariantDto | undefined>();
   const invalidate = () => qc.invalidateQueries({ queryKey: getGetResumeVariantsQueryKey() });
 
-  const onMakeDefault = async (v: ResumeVariantDto) => { await makeDefault.mutateAsync({ id: Number(v.id) }); invalidate(); toast.success(`"${v.name}" is now default`); };
+  const onMakeDefault = async (v: ResumeVariantDto) => {
+    try { await makeDefault.mutateAsync({ id: Number(v.id) }); invalidate(); toast.success(`"${v.name}" is now default`); }
+    catch { toast.error("Could not set default."); }
+  };
   const onDelete = async (v: ResumeVariantDto) => {
     if (!confirm(`Delete "${v.name}"?`)) return;
     try { await remove.mutateAsync({ id: Number(v.id) }); invalidate(); toast.success("Variant deleted"); }
