@@ -1,6 +1,7 @@
 using System.Reflection;
 using CareerOps.Application.Companies;
 using CareerOps.Application.JobLeads;
+using CareerOps.Application.ResumeVariants;
 using CareerOps.Application.Settings;
 using FluentValidation;
 using Mapster;
@@ -18,6 +19,7 @@ public static class DependencyInjection
         services.AddScoped<UserProfileService>();
         services.AddScoped<CompanyService>();
         services.AddScoped<JobLeadService>();
+        services.AddScoped<ResumeVariantService>();
         return services;
     }
 }
