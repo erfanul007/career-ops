@@ -1,9 +1,15 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, MutationCache } from "@tanstack/react-query";
 import type { PropsWithChildren } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 
-const queryClient = new QueryClient();
+// Single cross-entity sync rule (D37): any write reconciles every mounted view.
+// invalidateQueries() with no filter marks all queries stale and refetches the active ones.
+const queryClient: QueryClient = new QueryClient({
+  mutationCache: new MutationCache({
+    onSettled: () => queryClient.invalidateQueries(),
+  }),
+});
 
 export function Providers({ children }: PropsWithChildren) {
   return (
