@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from "react-router";
-import { LayoutDashboard, KanbanSquare, Send, Building2, FileText, Settings, ListChecks } from "lucide-react";
+import { LayoutDashboard, KanbanSquare, Send, CalendarClock, Building2, FileText, Settings, ListChecks } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
   SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -11,6 +11,7 @@ const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/job-leads", label: "Job Leads", icon: KanbanSquare },
   { to: "/applications", label: "Applications", icon: Send },
+  { to: "/interviews", label: "Interviews", icon: CalendarClock },
   { to: "/tasks", label: "Tasks", icon: ListChecks },
   { to: "/companies", label: "Companies", icon: Building2 },
   { to: "/resume-variants", label: "Resume Variants", icon: FileText },

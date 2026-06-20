@@ -90,3 +90,24 @@ export const relatedEntityType: EnumMap = {
 export const followUpStatus: EnumMap = {
   0: "Pending", 1: "Completed", 2: "Skipped",
 };
+
+export const interviewRoundType: EnumMap = {
+  0: "Recruiter screen", 1: "Technical", 2: "Live coding", 3: "System design",
+  4: "Take-home discussion", 5: "AI engineering", 6: "Behavioral", 7: "Hiring manager",
+  8: "Final", 9: "Other",
+};
+export const interviewStatus: EnumMap = { 0: "Scheduled", 1: "Completed", 2: "Cancelled", 3: "Rescheduled" };
+export const interviewOutcome: EnumMap = { 0: "Unknown", 1: "Passed", 2: "Failed", 3: "Waiting" };
+
+export const interviewStatusBadgeClass: Record<number, string> = {
+  0: "bg-sky-100 text-sky-700",      // Scheduled
+  1: "bg-emerald-100 text-emerald-700", // Completed
+  2: "bg-zinc-100 text-zinc-600",    // Cancelled
+  3: "bg-amber-100 text-amber-800",  // Rescheduled
+};
+export const interviewOutcomeBadgeClass: Record<number, string> = {
+  0: "bg-zinc-100 text-zinc-600",    // Unknown
+  1: "bg-emerald-100 text-emerald-700", // Passed
+  2: "bg-red-100 text-red-700",      // Failed
+  3: "bg-amber-100 text-amber-800",  // Waiting
+};
