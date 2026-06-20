@@ -2,6 +2,7 @@ using CareerOps.Application.Common;
 using CareerOps.Domain.Common;
 using CareerOps.Domain.Companies;
 using CareerOps.Domain.FollowUpTasks;
+using CareerOps.Domain.Interviews;
 using CareerOps.Domain.JobLeads;
 using CareerOps.Domain.ResumeVariants;
 using CareerOps.Domain.UserProfiles;
@@ -19,6 +20,7 @@ public sealed class CareerOpsDbContext(DbContextOptions<CareerOpsDbContext> opti
     public DbSet<ResumeVariant> ResumeVariants => Set<ResumeVariant>();
     public DbSet<DomainApplication> Applications => Set<DomainApplication>();
     public DbSet<FollowUpTask> FollowUpTasks => Set<FollowUpTask>();
+    public DbSet<Interview> Interviews => Set<Interview>();
 
     public Task<bool> CanConnectAsync(CancellationToken cancellationToken = default)
         => Database.CanConnectAsync(cancellationToken);

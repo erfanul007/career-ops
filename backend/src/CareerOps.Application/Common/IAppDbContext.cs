@@ -1,5 +1,6 @@
 using CareerOps.Domain.Companies;
 using CareerOps.Domain.FollowUpTasks;
+using CareerOps.Domain.Interviews;
 using CareerOps.Domain.JobLeads;
 using CareerOps.Domain.ResumeVariants;
 using CareerOps.Domain.UserProfiles;
@@ -16,6 +17,7 @@ public interface IAppDbContext
     DbSet<ResumeVariant> ResumeVariants { get; }
     DbSet<DomainApplication> Applications { get; }
     DbSet<FollowUpTask> FollowUpTasks { get; }
+    DbSet<Interview> Interviews { get; }
     Task<bool> CanConnectAsync(CancellationToken cancellationToken = default);
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
