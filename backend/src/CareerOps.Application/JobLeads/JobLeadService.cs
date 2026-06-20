@@ -1,5 +1,6 @@
 using CareerOps.Application.Common;
 using CareerOps.Domain.Companies;
+using CareerOps.Domain.FollowUpTasks;
 using CareerOps.Domain.JobLeads;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
@@ -46,6 +47,13 @@ public sealed class JobLeadService(IAppDbContext db)
     {
         var lead = await db.JobLeads.FirstOrDefaultAsync(l => l.Id == id, ct);
         if (lead is null) return false;
+
+        // D12: applications cascade via FK; loose-reference follow-up tasks are cleaned here (no orphans).
+        var tasks = await db.FollowUpTasks
+            .Where(t => t.RelatedEntityType == RelatedEntityType.JobLead && t.RelatedEntityId == id)
+            .ToListAsync(ct);
+        db.FollowUpTasks.RemoveRange(tasks);
+
         db.JobLeads.Remove(lead);
         await db.SaveChangesAsync(ct);
         return true;

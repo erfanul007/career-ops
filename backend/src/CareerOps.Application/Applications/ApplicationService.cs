@@ -1,5 +1,6 @@
 using CareerOps.Application.Common;
 using CareerOps.Domain.Applications;
+using CareerOps.Domain.FollowUpTasks;
 using CareerOps.Domain.JobLeads;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
@@ -85,7 +86,13 @@ public sealed class ApplicationService(IAppDbContext db)
     {
         var app = await db.Applications.FirstOrDefaultAsync(a => a.Id == id, ct);
         if (app is null) return false;
-        db.Applications.Remove(app); // FollowUpTask cascade-clean wired in Task 10
+
+        var tasks = await db.FollowUpTasks
+            .Where(t => t.RelatedEntityType == RelatedEntityType.Application && t.RelatedEntityId == id)
+            .ToListAsync(ct);
+        db.FollowUpTasks.RemoveRange(tasks);
+
+        db.Applications.Remove(app);
         await db.SaveChangesAsync(ct);
         return true;
     }
