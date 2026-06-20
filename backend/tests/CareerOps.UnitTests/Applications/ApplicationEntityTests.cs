@@ -29,13 +29,27 @@ public class ApplicationEntityTests
         Assert.Equal(ApplicationTrigger.Offer, app.LastTrigger);
     }
 
-    [Fact]
-    public void ChangeStage_to_interview_round_signals_interview_trigger()
+    [Theory]
+    [InlineData(ApplicationStage.RecruiterScreen)]
+    [InlineData(ApplicationStage.TechnicalScreen)]
+    [InlineData(ApplicationStage.TakeHome)]
+    [InlineData(ApplicationStage.SystemDesign)]
+    [InlineData(ApplicationStage.HiringManager)]
+    [InlineData(ApplicationStage.Final)]
+    public void ChangeStage_to_interview_round_signals_interview_trigger(ApplicationStage round)
     {
         var app = New();
-        app.ChangeStage(ApplicationStage.TechnicalScreen);
-        Assert.Equal(ApplicationStage.TechnicalScreen, app.CurrentStage);
+        app.ChangeStage(round);
+        Assert.Equal(round, app.CurrentStage);
         Assert.Equal(ApplicationTrigger.EnteredInterviewStage, app.LastTrigger);
+    }
+
+    [Fact]
+    public void ChangeStage_to_Applied_does_not_set_interview_trigger()
+    {
+        var app = New();
+        app.ChangeStage(ApplicationStage.Applied);
+        Assert.Null(app.LastTrigger);
     }
 
     [Fact]
