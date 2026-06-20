@@ -6,6 +6,7 @@ import JobLeadsPage from "@/pages/JobLeadsPage";
 import ApplicationsPage from "@/pages/ApplicationsPage";
 import ResumeVariantsPage from "@/pages/ResumeVariantsPage";
 import SettingsProfilePage from "@/pages/SettingsProfilePage";
+import TasksPage from "@/pages/TasksPage";
 
 const router = createBrowserRouter([
   {
@@ -18,6 +19,7 @@ const router = createBrowserRouter([
       { path: "applications", element: <ApplicationsPage /> },
       { path: "companies", element: <CompaniesPage /> },
       { path: "resume-variants", element: <ResumeVariantsPage /> },
+      { path: "tasks", element: <TasksPage /> },
       { path: "settings/profile", element: <SettingsProfilePage /> },
     ],
   },

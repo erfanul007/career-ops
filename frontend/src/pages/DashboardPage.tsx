@@ -5,6 +5,7 @@ import { useGetJobLeads } from "@/lib/api/job-leads/job-leads";
 import type { JobLeadDto } from "@/lib/api/model";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PipelineBar } from "@/features/dashboard/PipelineBar";
+import { TodaysActions } from "@/features/dashboard/TodaysActions";
 
 const HIGH_PRIORITY = [2, 3];
 const ACTIONABLE = [0, 1];
@@ -40,6 +41,8 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-semibold">Dashboard</h1>
+
+      <TodaysActions />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Stat title="Total leads" value={leads.length} />
