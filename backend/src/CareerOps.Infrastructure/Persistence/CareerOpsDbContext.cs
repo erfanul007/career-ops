@@ -5,6 +5,7 @@ using CareerOps.Domain.JobLeads;
 using CareerOps.Domain.ResumeVariants;
 using CareerOps.Domain.UserProfiles;
 using Microsoft.EntityFrameworkCore;
+using DomainApplication = CareerOps.Domain.Applications.Application;
 
 namespace CareerOps.Infrastructure.Persistence;
 
@@ -15,6 +16,7 @@ public sealed class CareerOpsDbContext(DbContextOptions<CareerOpsDbContext> opti
     public DbSet<Company> Companies => Set<Company>();
     public DbSet<JobLead> JobLeads => Set<JobLead>();
     public DbSet<ResumeVariant> ResumeVariants => Set<ResumeVariant>();
+    public DbSet<DomainApplication> Applications => Set<DomainApplication>();
 
     public Task<bool> CanConnectAsync(CancellationToken cancellationToken = default)
         => Database.CanConnectAsync(cancellationToken);

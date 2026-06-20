@@ -1,4 +1,5 @@
 using System.Reflection;
+using CareerOps.Application.Applications;
 using CareerOps.Application.Companies;
 using CareerOps.Application.JobLeads;
 using CareerOps.Application.ResumeVariants;
@@ -20,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<CompanyService>();
         services.AddScoped<JobLeadService>();
         services.AddScoped<ResumeVariantService>();
+        services.AddScoped<ApplicationService>();
         return services;
     }
 }
