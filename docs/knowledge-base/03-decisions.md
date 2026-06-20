@@ -290,3 +290,24 @@ only by adding a new dated entry here — never silently. All entries below are 
   risk + non-atomic; a dedicated find-or-create endpoint — more surface than needed.
 - **Consequence:** `Company` stays required (PRD §20). Company resolution is set by the service,
   so the Mapster request→entity config ignores `CompanyId`.
+
+### D26 — UI/UX overhaul ("Phase 2.5"): shadcn app shell + kanban board
+*(2026-06-20, frontend slice between Phase 2 and Phase 3)*
+- **Decision:** Adopt a shadcn **Sidebar** app shell and the shadcn component set across all current
+  pages. Job Leads gets a **dnd-kit** kanban board (5 active columns + a "Show closed" toggle) plus a
+  list view (URL-synced `?view=board|list`); dragging a card issues an **optimistic**
+  `PUT /api/job-leads/{id}` status change (rollback + error toast on failure) — **no new endpoint**
+  (reuses the Phase-2 PUT). Create/edit moves into **Sheet/Dialog** slide-overs, removing the
+  full-page lead `new`/`:id` routes. Dashboard uses stat cards + a CSS pipeline bar. Frontend-only —
+  no backend, API, or schema change.
+- **Why:** user-directed modern UX; makes the app look finished now and shrinks Phase 8 `S8.1` to a
+  top-up. Builds on the already-installed shadcn (`radix-nova`), whose theme already carries sidebar
+  and chart tokens.
+- **Rejected:** switching component libraries (shadcn already chosen, PRD §10.2); a dedicated
+  status-PATCH endpoint (reuse PUT, D24/YAGNI); board-only with no list (loses dense scan);
+  `@dnd-kit/sortable` (no intra-column order is persisted — `@dnd-kit/core` + `utilities` suffice).
+- **Deferred (unchanged):** Recharts and a dark-mode toggle stay Phase 8 / backlog; the applications
+  board arrives with Phase 3.
+- **Notes:** `TooltipProvider` is mounted in `providers.tsx` (this shadcn sidebar version needs it for
+  `SidebarMenuButton`'s tooltip). Per-task gate was typecheck + build + manual check — there is no
+  frontend test runner (intentional; validation stays server-authoritative, D23).

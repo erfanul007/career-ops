@@ -183,6 +183,10 @@ user's own Claude/ChatGPT subscription right away. Matches PRD §16.2's `ManualP
 ### S8.1 — UX polish
 - Empty / loading / error states across pages; responsive layout; dashboard cards;
   Recharts pipeline chart.
+- **Note (2026-06-20, D26):** the shadcn app shell, component set, kanban board (+ list), slide-over
+  forms, and dashboard pipeline bar landed early in the "Phase 2.5 UI overhaul." S8.1 now reduces to
+  Recharts charts, a responsive / empty / error-state audit, and applying the shell to whatever
+  Phase 3–7 adds.
 
 ### S8.2 — Portfolio + hardening
 - Seed data **(only now, and only if manual entry proved painful — Decision D9)**.
