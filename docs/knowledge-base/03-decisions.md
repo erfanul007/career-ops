@@ -311,3 +311,80 @@ only by adding a new dated entry here — never silently. All entries below are 
 - **Notes:** `TooltipProvider` is mounted in `providers.tsx` (this shadcn sidebar version needs it for
   `SidebarMenuButton`'s tooltip). Per-task gate was typecheck + build + manual check — there is no
   frontend test runner (intentional; validation stays server-authoritative, D23).
+
+---
+
+### D27 — Applications board + list mirrors Job Leads
+*(2026-06-20, Phase 3 / S3.2 execution)*
+- **Decision:** The Applications view is a **board + list toggle** mirroring the Job Leads view
+  (D26). Kanban columns are by `ApplicationStage`; active columns `Applied → Offer`; `Rejected /
+  Ghosted / Withdrawn` behind a "Show closed" toggle. Dragging a card maps the target stage to the
+  right action (`change-stage`, `mark-offer`, `mark-rejected`, `mark-ghosted`) and auto-advances
+  `JobLead.Status` via the D6 transition map. Optimistic update + rollback + error toast, reusing
+  the D26 pattern. **No new status-PATCH endpoint** — reuses existing action endpoints.
+- **Why:** Consistent UX with Job Leads; the D26 board pattern is already established and tested;
+  YAGNI on a dedicated PATCH.
+- **Rejected:** Applications-only list (loses the pipeline scan); a new dedicated status endpoint
+  (extra surface, no benefit over existing actions).
+- **Consequence:** Frontend drag handler must map `ApplicationStage` integers to the correct
+  action endpoint; `lib/enums.ts` owns the stage → label mapping (D5).
+
+### D28 — Dedicated Tasks nav page (deviation from PRD §15.2)
+*(2026-06-20, Phase 3 / S3.3 execution)*
+- **Decision:** A **Tasks** nav item is added, deviating from PRD §15.2's nav list. It shows all
+  `FollowUpTask` rows (pending/done filter, ad-hoc + entity-linked create, complete/skip). The
+  dashboard gains **Today's actions** (due) and **Overdue** cards.
+- **Why:** Follow-up tasks are a first-class workflow object (PRD §12.7, §18.4 "create a next
+  action, see today's actions"); burying them under leads/applications only would hide them.
+  A dedicated page + dashboard cards matches the stated acceptance criteria.
+- **Rejected:** Tasks only visible from parent lead/application sheets (hard to scan across all
+  tasks); embedding a full tasks list in the dashboard (too heavy for a card).
+- **Consequence:** PRD §15.2 nav list is superseded; this entry records the deviation.
+
+### D29 — Application creation is convert-only; ResumeVariant→Application delete is Restrict
+*(2026-06-20, Phase 3 / S3.2 execution)*
+- **Decision:** `POST /api/applications` (a freestanding create endpoint) is **omitted** (YAGNI).
+  Applications are created exclusively via `POST /api/job-leads/{id}/convert-to-application`. The
+  `ResumeVariant → Application` FK uses `OnDelete(Restrict)` — deleting a referenced variant is
+  blocked and surfaced as a UI error. A **unique index on `job_lead_id`** enforces one application
+  per lead in the baseline.
+- **Why:** Every application in the real workflow starts from a lead; a freestanding create adds
+  surface with no clear use case now. Restrict on ResumeVariant protects referential integrity
+  without cascading deletes that would silently destroy application history. One-application-per-lead
+  keeps the model simple for a single-user app.
+- **Rejected:** `POST /api/applications` freestanding endpoint (YAGNI; adds surface); cascade
+  delete on ResumeVariant→Application (would silently wipe application history); allowing multiple
+  applications per lead (complicates queries and UI before any need is demonstrated).
+- **Consequence:** The UI "Convert to application" button is the only creation path; lead must not
+  already have an application (409 on duplicate).
+
+### D30 — Phase 3 dashboard stays client-side; real /api/dashboard/summary deferred to Phase 5
+*(2026-06-20, Phase 3 / S3.3 execution)*
+- **Decision:** Phase 3 dashboard additions (Today's actions, Overdue, Active applications count)
+  are computed **client-side** from already-fetched list endpoints, except `GET
+  /api/follow-up-tasks/due` which is PRD-mandated. The real `GET /api/dashboard/summary`
+  aggregate endpoint remains **Phase 5** (D24 escape hatch).
+- **Why:** The dataset is small; client-side keeps the fewest moving parts (consistent with D24).
+  The `/due` endpoint is the only cross-entity server-side aggregation needed now (it must apply
+  `DueAtUtc <= now` on the server, not after a full fetch). Overdue is split from `/due` results
+  client-side (`DueAtUtc < start-of-today`).
+- **Rejected:** a new `/api/dashboard/summary` now (more surface + tests; PRD already defers it to
+  Phase 5 via D24); pure client-side for `/due` (would require fetching all tasks and filtering
+  client-side, masking overdue vs due distinction).
+- **Consequence:** Phase 5 will add `GET /api/dashboard/summary` with cross-entity aggregates,
+  stale-application rule, and interview countdown (D24 escape hatch).
+
+### D31 — Manual AI prompt export is frontend-only; no AiAnalysis row
+*(2026-06-20, Phase 3 / S3.4 execution)*
+- **Decision:** The AI prompt export (D13) assembles the prompt **entirely on the frontend** from
+  already-fetched data (lead, `UserProfile`, chosen `ResumeVariant`, defaulting to the default
+  variant). Prompt templates live in `frontend/src/lib/aiPrompts.ts`. No backend call, no
+  `AiAnalysis` row is created.
+- **Why:** D13 intent is to deliver AI leverage immediately with zero backend cost; storing a
+  prompt assembles nothing new to the user and adds schema work before it adds value. Templates
+  in one place ensure Phase 6 (`MockAiAssistant`) and Phase 7 (real provider) reuse the same text.
+- **Rejected:** Storing the assembled prompt as an `AiAnalysis` row now (premature; schema work
+  deferred to Phase 6); a backend endpoint to assemble the prompt (no benefit over client-side
+  at this stage, adds surface).
+- **Consequence:** `lib/aiPrompts.ts` becomes the single source of prompt template text; Phase 6
+  imports from it directly. No migration needed for S3.4.

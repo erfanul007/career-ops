@@ -187,6 +187,7 @@ user's own Claude/ChatGPT subscription right away. Matches PRD §16.2's `ManualP
   forms, and dashboard pipeline bar landed early in the "Phase 2.5 UI overhaul." S8.1 now reduces to
   Recharts charts, a responsive / empty / error-state audit, and applying the shell to whatever
   Phase 3–7 adds.
+- **Note (2026-06-20):** S3.1–S3.4 delivered; Phase 3 complete. Decisions D27–D31 logged.
 
 ### S8.2 — Portfolio + hardening
 - Seed data **(only now, and only if manual entry proved painful — Decision D9)**.
