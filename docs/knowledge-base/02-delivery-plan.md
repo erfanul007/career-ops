@@ -144,6 +144,7 @@ user's own Claude/ChatGPT subscription right away. Matches PRD §16.2's `ManualP
   add the pipeline summary (counts by status/stage).
 - Dashboard UI assembles all cards. (Earlier phases added their sections incrementally;
   this slice completes and polishes the picture.)
+- **Note (2026-06-21):** S5.1 delivered — GET /api/dashboard/summary, stale-application + search-deadline rules, dashboard consumes the single summary. Decisions D39–D43 logged.
 
 ---
 

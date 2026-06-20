@@ -506,3 +506,83 @@ only by adding a new dated entry here — never silently. All entries below are 
 - **Consequence:** `InterviewService.cs` is a modest service, not a mini-framework. Tests
   cover the transition routes and their side effects (D32/D33/D34/D35/D36).
 
+---
+
+### D39 — Dashboard reads a single `GET /api/dashboard/summary`; UI components are presentational
+*(2026-06-21, Phase 5 / S5.1 execution)*
+- **Decision:** The dashboard reads a single `GET /api/dashboard/summary` endpoint returning
+  a complete `DashboardSummaryDto`. `TodaysActions` and `UpcomingInterviews` become
+  presentational components (data via props). Standalone `/api/follow-up-tasks/due` and
+  `/api/interviews/upcoming` endpoints are retained — their own pages continue to use them.
+- **Why:** One read-only aggregate endpoint is the single source of truth for the dashboard,
+  eliminating client-side aggregation and simplifying cache invalidation (D37). Standalone
+  endpoints stay separate to serve their own dedicated pages without duplication.
+- **Rejected:** Multiple endpoints fetched client-side (cache-invalidation coupling; D37
+  mitigation gets complex); freestanding presentational components with no props (forces
+  client-side logic back into the component).
+- **Consequence:** The dashboard endpoint has no DB-backed integration test because the
+  Testing environment runs without a database (existing convention); `DashboardServiceTests`
+  covers the logic, and an OpenAPI-presence integration test covers wiring.
+
+### D40 — Follow-ups are a non-overlapping partition: overdue vs due-today via `IClock`
+*(2026-06-21, Phase 5 / S5.1 execution)*
+- **Decision:** Follow-ups are partitioned as non-overlapping sets: `OverdueFollowUps` =
+  `Pending AND DueAtUtc < startOfToday`; `FollowUpsDue` (today) = `Pending AND startOfToday <= DueAtUtc <= now`.
+  `startOfToday` is computed in UTC via `IClock.Today.ToDateTime(TimeOnly.MinValue)`. This
+  refines the prior dashboard behavior that could double-list overdue items in both cards.
+- **Why:** The PRD §21 field names mandate this semantic: "overdue" must be strictly before
+  today, and "due today" must be today-only. The prior client-side split was imprecise and
+  "complete and polish the dashboard" is this phase's explicit mandate (D30).
+- **Counterargument:** Changing the follow-up partition alters the current card behavior,
+  but it is an objective correctness fix matching the field names, and the phase intent is
+  to deliver a polished, rule-correct dashboard.
+- **Implementation note:** The `startOfToday` value passed to the EF query must be UTC-kinded
+  (`clock.Today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc)`) because Npgsql rejects
+  Unspecified-kind `DateTimes` as `timestamptz` parameters; the EF-InMemory unit tests
+  cannot catch this, so the controller smoke test is the guard.
+- **Consequence:** `DashboardServiceTests` covers the partition boundary (overdue vs
+  due-today, exact `startOfToday` semantics).
+
+### D41 — `LeadsByStatus`/`ApplicationsByStage` are typed count lists, not dictionaries
+*(2026-06-21, Phase 5 / S5.1 execution)*
+- **Decision:** Status and stage counts are returned as typed lists (`IReadOnlyList<StatusCount>`
+  and `IReadOnlyList<StageCount>`, where `StatusCount` is `(JobLeadStatus Status, int Count)`)
+  rather than enum-keyed dictionaries.
+- **Why:** Strongly typed (`StatusCount` records compile-time-verified); orval-friendly
+  (generates clean TypeScript `{enum, count}` tuples without custom discriminators). The
+  frontend loop-maps these to build the pipeline bar.
+- **Rejected:** Enum-keyed dictionaries (orval struggles with enum keys; weaker type safety
+  in TypeScript).
+- **Consequence:** Frontend iterates the list to build charts/summaries; no need for custom
+  orval dictionary codegen.
+
+### D42 — Search-deadline `DaysRemaining` is a whole-day diff (UTC dates) via `IClock`
+*(2026-06-21, Phase 5 / S5.1 execution)*
+- **Decision:** `SearchDeadlineUtc` from `UserProfile` is rendered as a `DeadlineCountdown`
+  record with `DaysRemaining = DateOnly.FromDateTime(deadline).DayNumber - clock.Today.DayNumber`.
+  This is displayed as a header chip ("⏳ N days left" / "⏳ due today" / "⚠ N days over");
+  the chip is hidden when `SearchDeadlineUtc` is null.
+- **Why:** Days-remaining is a whole-day, locale-agnostic count; UTC dates avoid timezone
+  confusion. The header chip is a prominent affordance for the user's primary timeline.
+- **Rejected:** Rendering as a countdown timer (adds real-time updates; overkill for a
+  whole-day metric); storing it as a separate counter field (redundant; compute on read).
+- **Consequence:** The dashboard frontend renders the chip conditionally based on the
+  presence of `SearchDeadline` in the response.
+
+### D43 — "Recently updated" card dropped; replaced by Stale-applications card
+*(2026-06-21, Phase 5 / S5.1 execution)*
+- **Decision:** The "Recently updated" dashboard card is removed. It was not a PRD §14.2
+  field and has no summary data (would require a separate "updated" timestamp aggregate).
+  In its place, a new **Stale-applications card** displays applications matching the
+  stale rule (PRD §21).
+- **Stale rule:** `Active AND ((NextActionAtUtc is null AND UpdatedAtUtc < now-7d) OR (NextActionAtUtc < now))`.
+  Two branches: leads with no next action that haven't been touched in 7+ days, or leads
+  whose next action is overdue (now > NextActionAtUtc).
+- **Why:** Stale applications are a key user-workflow signal ("which leads need attention?");
+  "recently updated" offers no actionable insight and costs a new aggregate field. This
+  rebalances the dashboard toward user priorities.
+- **Rejected:** Keeping "recently updated" (no clear use case, no PRD mandate); card-less
+  stale indicator (loses visibility).
+- **Consequence:** The Stale-applications card uses `IReadOnlyList<ApplicationDto>` from
+  the summary; the UI can link each application back to its lead.
+
