@@ -82,4 +82,32 @@ public class ApplicationServiceTests
 
         Assert.Equal(JobLeadStatus.Offer, (await db.JobLeads.FindAsync(leadId))!.Status);
     }
+
+    [Fact]
+    public async Task MarkRejected_advances_lead_to_rejected()
+    {
+        var (db, leadId, variantId) = await SeedAsync();
+        var svc = new ApplicationService(db);
+        var app = (await svc.ConvertAsync(leadId, Convert(variantId))).Application!;
+
+        var result = await svc.MarkRejectedAsync(app.Id, new MarkRejectedRequest("Position filled"));
+
+        Assert.Equal(JobLeadStatus.Rejected, (await db.JobLeads.FindAsync(leadId))!.Status);
+        Assert.Equal(ApplicationStatus.Rejected, result!.Status);
+        Assert.Equal(ApplicationStage.Rejected, result.CurrentStage);
+    }
+
+    [Fact]
+    public async Task MarkGhosted_advances_lead_to_ghosted_and_leaves_app_status_active()
+    {
+        var (db, leadId, variantId) = await SeedAsync();
+        var svc = new ApplicationService(db);
+        var app = (await svc.ConvertAsync(leadId, Convert(variantId))).Application!;
+
+        var result = await svc.MarkGhostedAsync(app.Id);
+
+        Assert.Equal(JobLeadStatus.Ghosted, (await db.JobLeads.FindAsync(leadId))!.Status);
+        Assert.Equal(ApplicationStatus.Active, result!.Status);
+        Assert.Equal(ApplicationStage.Ghosted, result.CurrentStage);
+    }
 }
