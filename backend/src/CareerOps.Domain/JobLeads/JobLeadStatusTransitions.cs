@@ -10,7 +10,10 @@ public static class JobLeadStatusTransitions
         return trigger switch
         {
             ApplicationTrigger.Created => JobLeadStatus.Applied,
-            ApplicationTrigger.EnteredInterviewStage => JobLeadStatus.Interviewing,
+            ApplicationTrigger.EnteredInterviewStage =>
+                current is JobLeadStatus.Discovered or JobLeadStatus.Interested or JobLeadStatus.Applied
+                    ? JobLeadStatus.Interviewing
+                    : current,
             ApplicationTrigger.Offer => JobLeadStatus.Offer,
             ApplicationTrigger.Rejected => JobLeadStatus.Rejected,
             ApplicationTrigger.Ghosted => JobLeadStatus.Ghosted,
