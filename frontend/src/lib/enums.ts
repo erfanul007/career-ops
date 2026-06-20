@@ -44,3 +44,23 @@ export const jobLeadStatus: EnumMap = {
   0: "Discovered", 1: "Interested", 2: "Applied", 3: "Interviewing", 4: "Offer",
   5: "Rejected", 6: "Ghosted", 7: "Withdrawn", 8: "Archived",
 };
+
+// Tailwind tint classes per enum value (badge coloring). Kept here per 04-conventions.
+export const statusBadgeClass: Record<number, string> = {
+  0: "bg-slate-100 text-slate-700",     // Discovered
+  1: "bg-blue-100 text-blue-700",       // Interested
+  2: "bg-amber-100 text-amber-800",     // Applied
+  3: "bg-violet-100 text-violet-700",   // Interviewing
+  4: "bg-green-100 text-green-700",     // Offer
+  5: "bg-red-100 text-red-700",         // Rejected
+  6: "bg-zinc-100 text-zinc-600",       // Ghosted
+  7: "bg-zinc-100 text-zinc-600",       // Withdrawn
+  8: "bg-zinc-200 text-zinc-700",       // Archived
+};
+
+export const priorityBadgeClass: Record<number, string> = {
+  0: "bg-zinc-100 text-zinc-600",       // Low
+  1: "bg-sky-100 text-sky-700",         // Medium
+  2: "bg-orange-100 text-orange-800",   // High
+  3: "bg-red-100 text-red-700",         // Critical
+};
