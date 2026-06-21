@@ -17,7 +17,22 @@ Host the MCP server inside the existing `CareerOps.Api` over HTTP, alongside the
 
 ## 3. Architecture
 
-Use **`ModelContextProtocol.AspNetCore`** (matches the installed `ModelContextProtocol` 1.4.0) for HTTP transport in the API's Kestrel host:
+### 3.0 Rename `CareerOps.Api` → `CareerOps.Presentation` (first)
+
+"Api" implies REST-only; the host now serves REST **and** MCP, so the layer is renamed to the conventional Clean Architecture name **`CareerOps.Presentation`**. Done first so the MCP tools land in `CareerOps.Presentation/Mcp/`.
+
+Scope (mechanical, build+test-gated):
+- `git mv backend/src/CareerOps.Api backend/src/CareerOps.Presentation`; rename the csproj to `CareerOps.Presentation.csproj`.
+- Replace `namespace CareerOps.Api` → `namespace CareerOps.Presentation` across all ~13 files (Program.cs, the 8 Endpoints, `Filters/`, `HealthChecks/`); update any `using CareerOps.Api…` in tests.
+- `.slnx`: update the project path/name. `CareerOps.IntegrationTests.csproj`: update the ProjectReference.
+- **Full deploy rename:** `deploy/docker/api.Dockerfile` → `deploy/docker/app.Dockerfile` (and inside: publish `CareerOps.Presentation.csproj`, entrypoint `CareerOps.Presentation.dll`); `docker-compose.yml` service `careerops-api` → `careerops-app` (+ its `dockerfile:` path); `justfile` lines 27 & 49 (`--project`/`--startup-project` → `CareerOps.Presentation`).
+- Living docs updated: `docs/knowledge-base/01-architecture.md`, PRD §8 project list. **Historical** `docs/superpowers/plans|specs/*` keep the old name (point-in-time records) — not rewritten.
+- **REST routes stay `/api/*`** (they are the REST API; not renamed). `WebApplicationFactory<Program>` is unaffected (`Program` is in the global namespace).
+- Verify: `dotnet build backend/CareerOps.slnx` 0 errors + `dotnet test` 104 pass before moving on.
+
+### 3.1 Host MCP in the renamed Presentation project
+
+Use **`ModelContextProtocol.AspNetCore`** (matches the installed `ModelContextProtocol` 1.4.0) for HTTP transport in the Presentation host's Kestrel:
 
 ```csharp
 // Program.cs (additions)
@@ -28,7 +43,7 @@ builder.Services.AddMcpServer()
 app.MapMcp("/mcp");             // alongside /api/*, /scalar, /health
 ```
 
-- **Tool placement:** move the 8 `Tools/*.cs` from `CareerOps.Mcp` into `CareerOps.Api/Mcp/` (namespace `CareerOps.Api.Mcp`). The 23 tools + `ping` carry over unchanged (only namespace/project changes). They keep injecting the existing Application services (now resolved from the request scope) + `CancellationToken`.
+- **Tool placement:** move the 8 `Tools/*.cs` from `CareerOps.Mcp` into `CareerOps.Presentation/Mcp/` (namespace `CareerOps.Presentation.Mcp`). The 23 tools + `ping` carry over unchanged (only namespace/project changes). They keep injecting the existing Application services (now resolved from the request scope) + `CancellationToken`.
 - **Enum serialization:** keep string-enum names. Configure the `JsonStringEnumConverter` (+ `TypeInfoResolver = new DefaultJsonTypeInfoResolver()` as on .NET 10) on the MCP server's serializer options via whatever `ModelContextProtocol.AspNetCore` exposes (e.g. the `WithToolsFromAssembly(serializerOptions:)` overload or the `AddMcpServer`/`McpServerOptions` hook) — verified by the HTTP smoke; fallback documented in the plan.
 - **Delete `CareerOps.Mcp`** entirely: project, `Program.cs`, `appsettings.json`, `Tools/`, and its `.slnx` entry (via `dotnet sln remove`). Its README content folds into the API/MCP doc.
 - **`.mcp.json`** switches to an HTTP entry: `{ "mcpServers": { "careerops": { "type": "http", "url": "http://localhost:8080/mcp" } } }` (confirm the exact `type`/transport key Claude Code expects for the SDK's streamable-HTTP endpoint during the smoke).
@@ -46,7 +61,8 @@ MCP-over-HTTP is a network listener with unauthenticated write tools — but thi
 
 ## 6. Decisions (to append to 03-decisions.md)
 
-- **D47** — The MCP server is hosted inside `CareerOps.Api` over HTTP (`ModelContextProtocol.AspNetCore`, `WithHttpTransport()` + `app.MapMcp("/mcp")`); the separate `CareerOps.Mcp` stdio console is deleted. One deployable; tools live in `CareerOps.Api/Mcp/`. **Supersedes** D45's stdio-only/separate-host transport choice. D44 (agent-native AI via MCP, no in-app provider) and the rest of D45 (curated writes, no deletes, audit stamping, string enums) are unchanged. HTTP exposure is at parity with the already-unauthenticated REST API; public deployment of either requires auth (future).
+- **D47** — The MCP server is hosted inside the Presentation host over HTTP (`ModelContextProtocol.AspNetCore`, `WithHttpTransport()` + `app.MapMcp("/mcp")`); the separate `CareerOps.Mcp` stdio console is deleted. One deployable; tools live in `CareerOps.Presentation/Mcp/`. **Supersedes** D45's stdio-only/separate-host transport choice. D44 (agent-native AI via MCP, no in-app provider) and the rest of D45 (curated writes, no deletes, audit stamping, string enums) are unchanged. HTTP exposure is at parity with the already-unauthenticated REST API; public deployment of either requires auth (future).
+- **D48** — The host project `CareerOps.Api` is renamed to **`CareerOps.Presentation`** (Clean Architecture presentation layer) because it now serves REST **and** MCP uniformly. REST routes remain `/api/*`. The deploy artifacts rename too: compose service `careerops-api` → `careerops-app`, `deploy/docker/api.Dockerfile` → `app.Dockerfile`. Historical plan/spec docs keep the old name; living docs are updated.
 
 ## 7. Sequencing & scope
 
