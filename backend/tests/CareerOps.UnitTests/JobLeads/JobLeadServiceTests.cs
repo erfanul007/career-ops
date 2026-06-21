@@ -26,7 +26,8 @@ public class JobLeadServiceTests
         SalaryMin: 800000m, SalaryMax: 950000m, SalaryCurrency: "NOK",
         SalaryPeriod: Domain.JobLeads.SalaryPeriod.Yearly,
         Priority: Domain.JobLeads.Priority.High, Status: Domain.JobLeads.JobLeadStatus.Discovered,
-        FitScore: null, NextActionAtUtc: null, DeadlineAtUtc: null, Notes: null);
+        FitScore: null, AiSummary: null, MissingKeywords: null, SuggestedResumeAngle: null,
+        NextActionAtUtc: null, DeadlineAtUtc: null, Notes: null);
 
     [Fact]
     public async Task CreateAsync_with_existing_companyId_links_lead()
@@ -82,7 +83,8 @@ public class JobLeadServiceTests
             RemoteMode: Domain.JobLeads.RemoteMode.Remote, EmploymentType: Domain.JobLeads.EmploymentType.FullTime,
             SalaryMin: null, SalaryMax: null, SalaryCurrency: null, SalaryPeriod: Domain.JobLeads.SalaryPeriod.Yearly,
             Priority: Domain.JobLeads.Priority.Critical, Status: Domain.JobLeads.JobLeadStatus.Applied,
-            FitScore: 80, NextActionAtUtc: null, DeadlineAtUtc: null, Notes: null));
+            FitScore: 80, AiSummary: null, MissingKeywords: null, SuggestedResumeAngle: null,
+            NextActionAtUtc: null, DeadlineAtUtc: null, Notes: null));
 
         Assert.NotNull(updated);
         Assert.Equal(Domain.JobLeads.JobLeadStatus.Applied, updated!.Status);
@@ -98,5 +100,28 @@ public class JobLeadServiceTests
 
         Assert.True(await svc.DeleteAsync(created.Id));
         Assert.Empty(await svc.ListAsync());
+    }
+
+    [Fact]
+    public async Task UpdateAsync_persists_ai_fields()
+    {
+        await using var db = NewDb();
+        var svc = new JobLeadService(db);
+        var created = await svc.CreateAsync(NewLead(newCompanyName: "Cognite"));
+
+        await svc.UpdateAsync(created.Id, new UpdateJobLeadRequest(
+            CompanyId: created.CompanyId, Title: created.Title,
+            Source: Domain.JobLeads.JobSource.LinkedIn, SourceUrl: null, JobDescription: "build APIs", Location: "Oslo",
+            RemoteMode: Domain.JobLeads.RemoteMode.Hybrid, EmploymentType: Domain.JobLeads.EmploymentType.FullTime,
+            SalaryMin: 800000m, SalaryMax: 950000m, SalaryCurrency: "NOK", SalaryPeriod: Domain.JobLeads.SalaryPeriod.Yearly,
+            Priority: Domain.JobLeads.Priority.High, Status: Domain.JobLeads.JobLeadStatus.Discovered,
+            FitScore: null, AiSummary: "Strong fit", MissingKeywords: "Kafka, gRPC", SuggestedResumeAngle: "Lead with platform work",
+            NextActionAtUtc: null, DeadlineAtUtc: null, Notes: null));
+
+        var result = await svc.GetAsync(created.Id);
+        Assert.NotNull(result);
+        Assert.Equal("Strong fit", result!.AiSummary);
+        Assert.Equal("Kafka, gRPC", result.MissingKeywords);
+        Assert.Equal("Lead with platform work", result.SuggestedResumeAngle);
     }
 }

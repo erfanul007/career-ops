@@ -14,7 +14,8 @@ public class JobLeadRequestValidatorTests
         RemoteMode: RemoteMode.Hybrid, EmploymentType: EmploymentType.FullTime,
         SalaryMin: 800000m, SalaryMax: 950000m, SalaryCurrency: "NOK", SalaryPeriod: SalaryPeriod.Yearly,
         Priority: Priority.High, Status: JobLeadStatus.Discovered,
-        FitScore: 75, NextActionAtUtc: null, DeadlineAtUtc: null, Notes: null);
+        FitScore: 75, AiSummary: null, MissingKeywords: null, SuggestedResumeAngle: null,
+        NextActionAtUtc: null, DeadlineAtUtc: null, Notes: null);
 
     [Fact]
     public void Valid_request_passes()

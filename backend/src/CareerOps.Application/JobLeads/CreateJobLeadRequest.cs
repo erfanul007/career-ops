@@ -8,4 +8,5 @@ public sealed record CreateJobLeadRequest(
     RemoteMode RemoteMode, EmploymentType EmploymentType,
     decimal? SalaryMin, decimal? SalaryMax, string? SalaryCurrency, SalaryPeriod SalaryPeriod,
     Priority Priority, JobLeadStatus Status,
-    int? FitScore, DateTime? NextActionAtUtc, DateTime? DeadlineAtUtc, string? Notes);
+    int? FitScore, string? AiSummary, string? MissingKeywords, string? SuggestedResumeAngle,
+    DateTime? NextActionAtUtc, DateTime? DeadlineAtUtc, string? Notes);
