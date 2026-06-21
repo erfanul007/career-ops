@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  useGetFollowUpTasks, useCompleteFollowUpTask, useSkipFollowUpTask,
+  useGetFollowUpTasks, useCompleteFollowUpTask, useSkipFollowUpTask, useDeleteFollowUpTask,
   getGetFollowUpTasksQueryKey, getGetDueFollowUpTasksQueryKey,
 } from "@/lib/api/follow-up-tasks/follow-up-tasks";
 import type { FollowUpTaskDto } from "@/lib/api/model";
@@ -17,6 +17,7 @@ export default function TasksPage() {
   const { data, isLoading } = useGetFollowUpTasks();
   const complete = useCompleteFollowUpTask();
   const skip = useSkipFollowUpTask();
+  const remove = useDeleteFollowUpTask();
   const all = useMemo(() => data?.data ?? [], [data]);
 
   const [filter, setFilter] = useState("pending");
@@ -39,6 +40,12 @@ export default function TasksPage() {
     await skip.mutateAsync({ id: Number(t.id) });
     invalidate();
     toast.success("Skipped");
+  };
+  const onDelete = async (t: FollowUpTaskDto) => {
+    if (!confirm("Delete this task?")) return;
+    await remove.mutateAsync({ id: Number(t.id) });
+    invalidate();
+    toast.success("Task deleted");
   };
 
   if (isLoading) return (
@@ -67,6 +74,7 @@ export default function TasksPage() {
         onEdit={(t) => { setEditing(t); setOpen(true); }}
         onComplete={onComplete}
         onSkip={onSkip}
+        onDelete={onDelete}
       />
       <FollowUpTaskDialog open={open} task={editing} onOpenChange={setOpen} />
     </div>

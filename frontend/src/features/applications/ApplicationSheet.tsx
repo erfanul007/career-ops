@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
-import { useUpdateApplication, getGetApplicationsQueryKey } from "@/lib/api/applications/applications";
+import { useUpdateApplication, useDeleteApplication, getGetApplicationsQueryKey } from "@/lib/api/applications/applications";
 import type { ApplicationDto, InterviewDto, UpdateApplicationRequest } from "@/lib/api/model";
 import { useGetInterviews, useDeleteInterview } from "@/lib/api/interviews/interviews";
 import { ApplicationForm } from "./ApplicationForm";
@@ -23,6 +23,7 @@ type Props = { app?: ApplicationDto; open: boolean; onOpenChange: (o: boolean) =
 export function ApplicationSheet({ app, open, onOpenChange }: Props) {
   const qc = useQueryClient();
   const update = useUpdateApplication();
+  const remove = useDeleteApplication();
   const [errors, setErrors] = useState<string[]>([]);
   const { data: interviewsResp } = useGetInterviews();
   const removeInterview = useDeleteInterview();
@@ -103,6 +104,19 @@ export function ApplicationSheet({ app, open, onOpenChange }: Props) {
             interview={completing}
             onOpenChange={(o) => !o && setCompleting(null)}
           />
+          <Button
+            variant="destructive"
+            className="mt-6 w-full"
+            onClick={async () => {
+              if (!confirm(`Delete the application for ${app.companyName} · ${app.jobTitle}?`)) return;
+              await remove.mutateAsync({ id: Number(app.id) });
+              qc.invalidateQueries({ queryKey: getGetApplicationsQueryKey() });
+              toast.success("Application deleted");
+              onOpenChange(false);
+            }}
+          >
+            Delete application
+          </Button>
         </div>
       </SheetContent>
     </Sheet>

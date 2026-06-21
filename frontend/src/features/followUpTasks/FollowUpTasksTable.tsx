@@ -10,9 +10,10 @@ type Props = {
   onEdit: (t: FollowUpTaskDto) => void;
   onComplete: (t: FollowUpTaskDto) => void;
   onSkip: (t: FollowUpTaskDto) => void;
+  onDelete: (t: FollowUpTaskDto) => void;
 };
 
-export function FollowUpTasksTable({ tasks, onEdit, onComplete, onSkip }: Props) {
+export function FollowUpTasksTable({ tasks, onEdit, onComplete, onSkip, onDelete }: Props) {
   return (
     <Table>
       <TableHeader>
@@ -38,6 +39,7 @@ export function FollowUpTasksTable({ tasks, onEdit, onComplete, onSkip }: Props)
                   <Button variant="ghost" size="sm" onClick={() => onSkip(t)}>Skip</Button>
                 </>
               )}
+              <Button variant="ghost" size="sm" onClick={() => onDelete(t)}>Delete</Button>
             </TableCell>
           </TableRow>
         ))}

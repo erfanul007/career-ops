@@ -11,9 +11,9 @@ import { LeadCard } from "./LeadCard";
 const ACTIVE_STATUSES = [0, 1, 2, 3, 4];          // Discovered..Offer
 const CLOSED_STATUSES = [5, 6, 7, 8];             // Rejected, Ghosted, Withdrawn, Archived
 
-type Props = { leads: JobLeadDto[]; onEdit: (l: JobLeadDto) => void; showClosed: boolean };
+type Props = { leads: JobLeadDto[]; onEdit: (l: JobLeadDto) => void; onDelete: (l: JobLeadDto) => void; showClosed: boolean };
 
-export function JobLeadsBoard({ leads, onEdit, showClosed }: Props) {
+export function JobLeadsBoard({ leads, onEdit, onDelete, showClosed }: Props) {
   const { changeStatus } = useUpdateLeadStatus();
   const [dragging, setDragging] = useState<JobLeadDto | null>(null);
   const sensors = useSensors(
@@ -39,7 +39,7 @@ export function JobLeadsBoard({ leads, onEdit, showClosed }: Props) {
   return (
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
       <div className="flex h-full gap-4 overflow-x-auto pb-2">
-        {columns.map((s) => <BoardColumn key={s} status={s} leads={byStatus(s)} onEdit={onEdit} />)}
+        {columns.map((s) => <BoardColumn key={s} status={s} leads={byStatus(s)} onEdit={onEdit} onDelete={onDelete} />)}
       </div>
       <DragOverlay>{dragging ? <LeadCard lead={dragging} onEdit={() => {}} /> : null}</DragOverlay>
     </DndContext>
