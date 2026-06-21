@@ -22,4 +22,8 @@ public static class JobLeadTools
     [McpServerTool, Description("Update an existing job lead (full update, including status and priority). Returns null if not found.")]
     public static Task<JobLeadDto?> UpdateJobLead(int id, UpdateJobLeadRequest request, JobLeadService service, CancellationToken ct = default)
         => service.UpdateAsync(id, request, ct);
+
+    [McpServerTool, Description("Delete a job lead by id (cascades to its application + interviews and cleans loose follow-ups). Returns true if deleted, false if not found.")]
+    public static Task<bool> DeleteJobLead(int id, JobLeadService service, CancellationToken ct = default)
+        => service.DeleteAsync(id, ct);
 }

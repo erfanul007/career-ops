@@ -22,4 +22,20 @@ public static class FollowUpTools
     [McpServerTool, Description("Skip a follow-up task. Returns null if not found.")]
     public static Task<FollowUpTaskDto?> SkipFollowUp(int id, FollowUpTaskService service, CancellationToken ct = default)
         => service.SkipAsync(id, ct);
+
+    [McpServerTool, Description("List ALL follow-up tasks (not only those due/overdue).")]
+    public static Task<IReadOnlyList<FollowUpTaskDto>> ListFollowUps(FollowUpTaskService service, CancellationToken ct = default)
+        => service.ListAsync(ct);
+
+    [McpServerTool, Description("Get one follow-up task by id. Returns null if not found.")]
+    public static Task<FollowUpTaskDto?> GetFollowUp(int id, FollowUpTaskService service, CancellationToken ct = default)
+        => service.GetAsync(id, ct);
+
+    [McpServerTool, Description("Update a follow-up task (title, description, related entity, due date, status, priority). Returns null if not found.")]
+    public static Task<FollowUpTaskDto?> UpdateFollowUp(int id, UpdateFollowUpTaskRequest request, FollowUpTaskService service, CancellationToken ct = default)
+        => service.UpdateAsync(id, request, ct);
+
+    [McpServerTool, Description("Delete a follow-up task by id. Returns true if deleted, false if not found.")]
+    public static Task<bool> DeleteFollowUp(int id, FollowUpTaskService service, CancellationToken ct = default)
+        => service.DeleteAsync(id, ct);
 }

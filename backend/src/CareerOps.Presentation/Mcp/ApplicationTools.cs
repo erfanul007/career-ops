@@ -34,4 +34,12 @@ public static class ApplicationTools
     [McpServerTool, Description("Mark an application as ghosted. Returns null if not found.")]
     public static Task<ApplicationDto?> MarkApplicationGhosted(int id, ApplicationService service, CancellationToken ct = default)
         => service.MarkGhostedAsync(id, ct);
+
+    [McpServerTool, Description("Update an application (resume variant, applied date, salary, notice period, next step/action, notes). Returns null if not found.")]
+    public static Task<ApplicationDto?> UpdateApplication(int id, UpdateApplicationRequest request, ApplicationService service, CancellationToken ct = default)
+        => service.UpdateAsync(id, request, ct);
+
+    [McpServerTool, Description("Delete an application by id (also cleans up its interviews' loose follow-ups). Returns true if deleted, false if not found.")]
+    public static Task<bool> DeleteApplication(int id, ApplicationService service, CancellationToken ct = default)
+        => service.DeleteAsync(id, ct);
 }

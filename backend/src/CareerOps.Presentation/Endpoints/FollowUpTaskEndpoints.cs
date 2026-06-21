@@ -16,6 +16,11 @@ public static class FollowUpTaskEndpoints
                 TypedResults.Ok(await svc.GetDueAsync(ct)))
              .WithName("GetDueFollowUpTasks");
 
+        group.MapGet("/{id:int}", async Task<Results<Ok<FollowUpTaskDto>, NotFound>> (
+                int id, FollowUpTaskService svc, CancellationToken ct) =>
+                await svc.GetAsync(id, ct) is { } dto ? TypedResults.Ok(dto) : TypedResults.NotFound())
+             .WithName("GetFollowUpTask");
+
         group.MapPost("/", async (CreateFollowUpTaskRequest req, FollowUpTaskService svc, CancellationToken ct) =>
             {
                 var dto = await svc.CreateAsync(req, ct);
