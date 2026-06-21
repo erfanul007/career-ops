@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using CareerOps.Presentation.Endpoints;
 using CareerOps.Presentation.HealthChecks;
 using CareerOps.Application;
@@ -19,6 +22,13 @@ builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("db", tags: ["db"]);
+
+// MCP server over HTTP, sharing the same services. Enum names (not ints);
+// TypeInfoResolver is required on .NET 10 when passing JsonSerializerOptions to the SDK.
+// WithToolsFromAssembly requires explicit Assembly arg (single overload in 1.4.0).
+var mcpJson = new JsonSerializerOptions(JsonSerializerDefaults.Web) { TypeInfoResolver = new DefaultJsonTypeInfoResolver() };
+mcpJson.Converters.Add(new JsonStringEnumConverter());
+builder.Services.AddMcpServer().WithHttpTransport().WithToolsFromAssembly(typeof(Program).Assembly, mcpJson);
 
 var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options => options.AddPolicy("frontend", policy =>
@@ -52,6 +62,8 @@ app.MapGroup("/api/applications").WithTags("Applications").MapApplications();
 app.MapGroup("/api/follow-up-tasks").WithTags("FollowUpTasks").MapFollowUpTasks();
 app.MapGroup("/api/interviews").WithTags("Interviews").MapInterviews();
 app.MapGroup("/api/dashboard").WithTags("Dashboard").MapDashboard();
+
+app.MapMcp("/mcp");
 
 app.Run();
 

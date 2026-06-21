@@ -2,7 +2,7 @@ using System.ComponentModel;
 using CareerOps.Application.ResumeVariants;
 using ModelContextProtocol.Server;
 
-namespace CareerOps.Mcp.Tools;
+namespace CareerOps.Presentation.Mcp;
 
 [McpServerToolType]
 public static class ResumeVariantTools

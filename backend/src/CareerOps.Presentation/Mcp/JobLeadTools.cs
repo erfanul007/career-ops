@@ -2,7 +2,7 @@ using System.ComponentModel;
 using CareerOps.Application.JobLeads;
 using ModelContextProtocol.Server;
 
-namespace CareerOps.Mcp.Tools;
+namespace CareerOps.Presentation.Mcp;
 
 [McpServerToolType]
 public static class JobLeadTools
