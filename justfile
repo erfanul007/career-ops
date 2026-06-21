@@ -10,7 +10,7 @@ default:
 # --- full stack / parity ---
 
 up:
-    docker compose -f {{compose}} up --build -d
+    docker compose -f {{compose}} up --build --remove-orphans -d
 
 down:
     docker compose -f {{compose}} down

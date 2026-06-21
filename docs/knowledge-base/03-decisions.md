@@ -635,3 +635,17 @@ only by adding a new dated entry here — never silently. All entries below are 
 - **Consequence:** S6.2 will add `AiAnalysis` table, two write-back tools, and UI panels (no work
   in S6.1).
 
+### D47 — MCP server hosted over HTTP in Presentation; `CareerOps.Mcp` console deleted
+*(2026-06-21, Phase 6 / S6.1 delivery)*
+- **Decision:** The MCP server is hosted inside the Presentation host over HTTP (`ModelContextProtocol.AspNetCore`, `WithHttpTransport()` + `app.MapMcp("/mcp")`); the separate `CareerOps.Mcp` stdio console is deleted. One deployable; tools live in `CareerOps.Presentation/Mcp/`. **Supersedes** D45's stdio-only/separate-host transport choice. D44 (agent-native AI via MCP, no in-app provider) and the rest of D45 (curated writes, no deletes, audit stamping, string enums) are unchanged. HTTP exposure is at parity with the already-unauthenticated REST API; public deployment of either requires auth (future).
+- **Why:** One deployable — the `just up` API container already running *is* the MCP server; no separate console build/launch. Removes stdio workarounds (stdout reservation, stderr-only logging, `ContentRootPath` fix, duplicated `appsettings.json`). Per-request DI scope is native to ASP.NET Core.
+- **Rejected:** Separate stdio console (D45's choice; still valid for isolated testing, but adds deployment complexity and duplicated secrets).
+- **Consequence:** `.mcp.json` switches to HTTP; `just up` brings both REST and MCP online. MCP Inspector connects to `http://localhost:8080/mcp` by URL.
+
+### D48 — Project rename: `CareerOps.Api` → `CareerOps.Presentation`
+*(2026-06-21, Phase 6 / S6.1 delivery)*
+- **Decision:** The host project `CareerOps.Api` is renamed to **`CareerOps.Presentation`** (Clean Architecture presentation layer) because it now serves REST **and** MCP uniformly. REST routes remain `/api/*`. The deploy artifacts rename too: compose service `careerops-api` → `careerops-app`, `deploy/docker/api.Dockerfile` → `app.Dockerfile`. Historical plan/spec docs keep the old name; living docs are updated.
+- **Why:** "Api" implies REST-only; the host now serves both REST and MCP. `Presentation` is the conventional Clean Architecture layer name. Clearer intent for future contributors.
+- **Rejected:** Keep "Api" (misleading; MCP is not REST); "Host" or "Server" (less specific).
+- **Consequence:** Namespace changes to `CareerOps.Presentation`; csproj name updates; WebApplicationFactory still works (`Program` is in global namespace). Orval-generated client headers retain "CareerOps.Api" until the next `just gen-client` (no functional impact).
+

@@ -168,6 +168,7 @@ user's own Claude/ChatGPT subscription right away. Matches PRD §16.2's `ManualP
 - Smoke test: JSON-RPC stdio (`initialize` → `tools/list` → one `tools/call`); proves the
   transport and tool surface.
 - **Note (2026-06-21):** S6.1 delivered — CareerOps.Mcp stdio MCP server (official ModelContextProtocol SDK) exposing 11 read + 12 curated-write tools over the existing services; no in-app AI provider, no API key. D44–D46 logged.
+- **Note (2026-06-21):** MCP host consolidated into the renamed `CareerOps.Presentation` project over HTTP (`/mcp`); separate `CareerOps.Mcp` stdio console removed; `CareerOps.Api` → `CareerOps.Presentation`. D47–D48 logged.
 
 ### S6.2 — AI analysis store + write-back + UI (planned)
 - `AiAnalysis` entity + migration (polymorphic `EntityType`/`EntityId`, like FollowUpTask; `Kind`,
