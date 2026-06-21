@@ -586,3 +586,52 @@ only by adding a new dated entry here — never silently. All entries below are 
 - **Consequence:** The Stale-applications card uses `IReadOnlyList<ApplicationDto>` from
   the summary; the UI can link each application back to its lead.
 
+### D44 — AI via an in-process MCP server (`CareerOps.Mcp`), stdio, official SDK
+*(2026-06-21, Phase 6 / S6.1 delivery)*
+- **Decision:** AI is delivered via an in-process MCP server (`CareerOps.Mcp`, stdio, official
+  `ModelContextProtocol` SDK + `Microsoft.Extensions.Hosting`), tools wrapping existing Application
+  services. **Supersedes** delivery-plan Phase 6 (`IAiAssistant`/`MockAiAssistant`) and Phase 7 (real
+  provider + AI-provider settings), which are dropped. Satisfies the AI-features org policy as an
+  agent-native capability; PRD §16 "AI optional, no keys" upheld. The `IAiAssistant` seam can be added
+  later if an in-app provider is ever wanted.
+- **MCP tool names are exposed in snake_case** (e.g. `get_dashboard_summary`, `create_follow_up`).
+- **Why:** Agent-native AI is the preferred model for tool-use integration; MCP over stdio is
+  standard and requires no network/auth (fits MVP). Avoids in-app provider complexity; the user
+  drives AI workflows from Claude Code / Codex against their own data.
+- **Rejected:** In-app `IAiAssistant`/`MockAiAssistant` (scope creep, provider-specific logic);
+  HTTP transport (adds network/auth burden); in-process LLM (resource cost, latency).
+- **Consequence:** No `IAiAssistant` interface or in-app provider. AI outcomes are persisted via
+  agent **write-back** tools (D46).
+
+### D45 — MCP tools = reads + curated writes; no hard deletes; string-enum I/O
+*(2026-06-21, Phase 6 / S6.1 delivery)*
+- **Decision:** MCP tools = **reads** (11 tools: dashboards, lists, details) + **curated writes**
+  (12 tools: create/update/action endpoints). **No hard deletes** — archive/status only; `IClock`
+  audit stamping retained through the services; **stdio-only** (no network, no auth). Enum I/O uses
+  **string names** via `JsonStringEnumConverter` **PLUS** `TypeInfoResolver = new DefaultJsonTypeInfoResolver()`
+  on the `JsonSerializerOptions` (a .NET 10 requirement); domain enum integer values stay pinned (D5).
+- **Why:** Thin tools delegate to existing, tested services — zero new business logic. String enums
+  are human-readable in MCP tool I/O; the converter + resolver ensures correct serialization.
+  Curated writes match PRD §16 outcomes (fit analysis, interview prep, next actions); no cascading
+  deletes in user workflows.
+- **Rejected:** Hard deletes (breaks user workflow trust and audit trail, PRD §23); integers in
+  enum I/O (opaque to the agent); write-all surface (invites API misuse; prune to declared use cases).
+- **Consequence:** Tools reuse existing request records (`CreateJobLeadRequest`, `ChangeStageRequest`
+  …) as typed input; the SDK builds each tool's schema from method signatures.
+
+### D46 — AI output persisted via agent write-back tools; AiAnalysis store (S6.2)
+*(2026-06-21, Phase 6 / S6.1 delivery)*
+- **Decision:** AI output is persisted via agent **write-back** tools into an `AiAnalysis` store
+  (no in-app provider inference), surfaced read-only in the UI (S6.2). S6.1 (this slice) delivers
+  the MCP server + read + curated-write tools; S6.2 adds the `AiAnalysis` entity, `save_fit_analysis`
+  and `save_ai_analysis` write-back tools, and UI read-only panels.
+- **Why:** Decouples AI reasoning (in Claude Code) from persistence (in CareerOps). The agent is
+  responsible for producing and storing output; the app is responsible for displaying it.
+  Audit-friendly (every analysis is traceable to its origin timestamp and model). Supports ISO 42001
+  compliance (AI management system traceability).
+- **Rejected:** In-app inference (D44 supersedes this); no write-back (agent output is ephemeral,
+  user must re-run to see results); storing prompts instead of results (shifts work to S6.2+ with
+  no immediate value).
+- **Consequence:** S6.2 will add `AiAnalysis` table, two write-back tools, and UI panels (no work
+  in S6.1).
+

@@ -148,35 +148,43 @@ user's own Claude/ChatGPT subscription right away. Matches PRD §16.2's `ManualP
 
 ---
 
-## Phase 6 — AI baseline / Mock (PRD D5)
+## Phase 6 — Agent-native AI via MCP (PRD D5/D6, see D44)
 
-### S6.1 — AI abstraction + Mock + storage
-- `IAiAssistant` (PRD §16.1), `MockAiAssistant` returning realistic static-looking output,
-  `AiAnalysis` entity + migration (polymorphic `EntityType`/`EntityId`).
+**Superseded by D44 — AI is delivered via the MCP server (`CareerOps.Mcp`), not an in-app provider. See `docs/superpowers/specs/2026-06-21-careerops-mcp-server-design.md`.**
 
-### S6.2 — Job fit analysis
-- `POST /api/job-leads/{id}/analyze-fit`. Input per PRD §16.3; output: fit score, summary,
-  strong matches, missing keywords, risk factors, suggested resume angle, likely topics.
-- Writes an `AiAnalysis` row **and** updates the JobLead AI fields (`FitScore`, `AiSummary`,
-  `MissingKeywords`, `SuggestedResumeAngle`) — latest analysis wins; history kept in `AiAnalysis`.
-- JobLead details: AI fit panel.
+### S6.1 — MCP server + read + curated-write tools
+- Scaffold a thin console project **`backend/src/CareerOps.Mcp`** (references `Application` +
+  `Infrastructure`). Register the official C# **`ModelContextProtocol` SDK** with
+  `Microsoft.Extensions.Hosting` over **stdio**.
+- Wrap the existing Application services as **11 read tools** (`get_dashboard_summary`,
+  `list_job_leads`, `get_job_lead`, `list_applications`, `list_interviews`, `list_upcoming_interviews`,
+  `list_due_follow_ups`, `get_user_profile`, `list_resume_variants`, and two others) and
+  **12 curated-write tools** (`create_job_lead`, `update_job_lead`, `convert_to_application`,
+  `change_application_stage`, `mark_application_rejected`/`offer`/`ghosted`, `create_follow_up`,
+  `complete_follow_up`, `skip_follow_up`, `create_interview`, `mark_interview_completed`).
+- Tools delegate to existing services; **no new business logic, no DB changes**.
+- Configuration: `.mcp.json` at repo root; `dotnet build backend/src/CareerOps.Mcp` once, then
+  Claude Code launches via `dotnet ... CareerOps.Mcp.dll` (requires `just up` for Postgres).
+- Smoke test: JSON-RPC stdio (`initialize` → `tools/list` → one `tools/call`); proves the
+  transport and tool surface.
+- **Note (2026-06-21):** S6.1 delivered — CareerOps.Mcp stdio MCP server (official ModelContextProtocol SDK) exposing 11 read + 12 curated-write tools over the existing services; no in-app AI provider, no API key. D44–D46 logged.
 
-### S6.3 — Interview prep
-- `POST /api/interviews/{id}/generate-prep`. Output per PRD §16.4. Writes `AiAnalysis`.
-- Interview page: AI prep panel.
-- **Acceptance:** app works with no API key; mock fit + prep run; output saved; UI ready for
-  a real provider.
+### S6.2 — AI analysis store + write-back + UI (planned)
+- `AiAnalysis` entity + migration (polymorphic `EntityType`/`EntityId`, like FollowUpTask; `Kind`,
+  `Content`, `Model`, timestamp). Write-back tools: `save_fit_analysis` (updates JobLead AI fields
+  + history row) and `save_ai_analysis` (generic, e.g. interview prep). Read tool: `get_ai_analysis`.
+- UI: read-only AI panels on JobLead + Interview detail.
+- **Acceptance:** agent-produced analysis is stored and surfaced; no in-app provider.
 
 ---
 
 ## Phase 7 — Real AI provider (PRD D6)
 
-### S7.1 — One real provider
-- Add exactly one real provider (**Anthropic vs OpenAI decided here** — Decision D7).
-- API key via environment variable; provider setting; prompt templates; error handling;
-  manual retry. Settings endpoints (`/api/settings/ai`, `.../ai/test`).
-- **Acceptance:** configure key; real fit + prep work; secrets never logged; mock mode
-  still works.
+**Superseded by D44 — AI is delivered via the MCP server (`CareerOps.Mcp`), not an in-app provider. See `docs/superpowers/specs/2026-06-21-careerops-mcp-server-design.md`.**
+
+The old Phase 7 plan to add in-app provider integration (`IAiAssistant`, API key config, settings
+endpoints) is dropped. The agent-native MCP approach (D44) replaces it, with write-back tools (S6.2)
+for persistence.
 
 ---
 

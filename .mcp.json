@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "careerops": {
+      "command": "dotnet",
+      "args": ["backend/src/CareerOps.Mcp/bin/Debug/net10.0/CareerOps.Mcp.dll"]
+    }
+  }
+}
