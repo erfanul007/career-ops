@@ -14,4 +14,12 @@ public static class JobLeadTools
     [McpServerTool, Description("Get one job lead by id, including its full pasted job description. Returns null if not found.")]
     public static Task<JobLeadDto?> GetJobLead(int id, JobLeadService service, CancellationToken ct = default)
         => service.GetAsync(id, ct);
+
+    [McpServerTool, Description("Create a job lead. Either CompanyId or NewCompanyName must be set (a new company is created by name if needed).")]
+    public static Task<JobLeadDto> CreateJobLead(CreateJobLeadRequest request, JobLeadService service, CancellationToken ct = default)
+        => service.CreateAsync(request, ct);
+
+    [McpServerTool, Description("Update an existing job lead (full update, including status and priority). Returns null if not found.")]
+    public static Task<JobLeadDto?> UpdateJobLead(int id, UpdateJobLeadRequest request, JobLeadService service, CancellationToken ct = default)
+        => service.UpdateAsync(id, request, ct);
 }

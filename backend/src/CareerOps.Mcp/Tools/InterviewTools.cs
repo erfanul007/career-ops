@@ -18,4 +18,12 @@ public static class InterviewTools
     [McpServerTool, Description("Get one interview by id. Returns null if not found.")]
     public static Task<InterviewDto?> GetInterview(int id, InterviewService service, CancellationToken ct = default)
         => service.GetAsync(id, ct);
+
+    [McpServerTool, Description("Schedule an interview for an application. Returns null if the application does not exist.")]
+    public static Task<InterviewDto?> CreateInterview(CreateInterviewRequest request, InterviewService service, CancellationToken ct = default)
+        => service.CreateAsync(request, ct);
+
+    [McpServerTool, Description("Mark an interview completed with an outcome and optional feedback; optionally creates a follow-up task. Returns null if not found.")]
+    public static Task<InterviewDto?> MarkInterviewCompleted(int id, MarkInterviewCompletedRequest request, InterviewService service, CancellationToken ct = default)
+        => service.MarkCompletedAsync(id, request, ct);
 }
