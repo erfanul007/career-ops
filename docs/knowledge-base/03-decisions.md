@@ -649,3 +649,11 @@ only by adding a new dated entry here — never silently. All entries below are 
 - **Rejected:** Keep "Api" (misleading; MCP is not REST); "Host" or "Server" (less specific).
 - **Consequence:** Namespace changes to `CareerOps.Presentation`; csproj name updates; WebApplicationFactory still works (`Program` is in global namespace). Orval-generated client headers retain "CareerOps.Api" until the next `just gen-client` (no functional impact).
 
+### D49 — MCP reaches **full REST parity, including hard deletes** (Slice 1 / S6.1 parity)
+*(2026-06-21, Phase 6 / parity-slice1-mcp delivery)*
+- **Decision:** MCP exposes **full REST parity** — ~20 new tools (44 total, including reads and writes) across all 7 resources: **Company** (list, get, create, update, delete), **ResumeVariant** (get, create, update, delete, make-default), **Application** (update, delete), **Interview** (update, delete), **FollowUpTask** (list, get, update, delete), **JobLead** (delete), **UserProfile** (update), plus **read tools** (dashboard, list/get leads, applications, interviews, follow-ups, variants, profile) and the `ping` diagnostic. **Supersedes D45's no-delete stance.** Each tool is a thin delegation to an existing Application service method. Hard deletes are safe: the service cascade-clean (FK children delete automatically; loose-reference rows like `FollowUpTask` and `AiAnalysis` are cleaned in the same operation, D35).
+- **Why:** Achieving true agent parity: every operation the UI and REST API surface is available to the external agent. The agent can fully autonomously manage job search workflows (create/update leads, track applications, schedule follow-ups, etc.) without manual UI intervention. Thin tools delegate to tested services — zero new business logic.
+- **Rejected:** Keeping D45's no-delete stance (blocks agent workflows; asymmetric parity); adding new delete logic (services already handle cleanup via D35).
+- **REST completeness:** added `GET /api/follow-up-tasks/{id}` so MCP `get_follow_up` and REST agree (the service `GetAsync` exists; only the endpoint was missing).
+- **Consequence:** MCP == REST == UI for all 7 resources. Tools use string enums (D45), audit-stamped writes (D44), HTTP hosting (D47). Full tool list: 11 reads + 1 diagnostic + 32 writes = **44 total**.
+
