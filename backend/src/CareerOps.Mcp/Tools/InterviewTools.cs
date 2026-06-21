@@ -1,0 +1,21 @@
+using System.ComponentModel;
+using CareerOps.Application.Interviews;
+using ModelContextProtocol.Server;
+
+namespace CareerOps.Mcp.Tools;
+
+[McpServerToolType]
+public static class InterviewTools
+{
+    [McpServerTool, Description("List all interviews (most recent first).")]
+    public static Task<IReadOnlyList<InterviewDto>> ListInterviews(InterviewService service, CancellationToken ct = default)
+        => service.ListAsync(ct);
+
+    [McpServerTool, Description("List interviews scheduled within the next 7 days.")]
+    public static Task<IReadOnlyList<InterviewDto>> ListUpcomingInterviews(InterviewService service, CancellationToken ct = default)
+        => service.GetUpcomingAsync(ct);
+
+    [McpServerTool, Description("Get one interview by id. Returns null if not found.")]
+    public static Task<InterviewDto?> GetInterview(int id, InterviewService service, CancellationToken ct = default)
+        => service.GetAsync(id, ct);
+}
