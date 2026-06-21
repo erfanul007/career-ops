@@ -655,5 +655,5 @@ only by adding a new dated entry here — never silently. All entries below are 
 - **Why:** Achieving true agent parity: every operation the UI and REST API surface is available to the external agent. The agent can fully autonomously manage job search workflows (create/update leads, track applications, schedule follow-ups, etc.) without manual UI intervention. Thin tools delegate to tested services — zero new business logic.
 - **Rejected:** Keeping D45's no-delete stance (blocks agent workflows; asymmetric parity); adding new delete logic (services already handle cleanup via D35).
 - **REST completeness:** added `GET /api/follow-up-tasks/{id}` so MCP `get_follow_up` and REST agree (the service `GetAsync` exists; only the endpoint was missing).
-- **Consequence:** MCP == REST == UI for all 7 resources. Tools use string enums (D45), audit-stamped writes (D44), HTTP hosting (D47). Full tool list: 11 reads + 1 diagnostic + 32 writes = **44 total**.
+- **Consequence:** MCP == REST for all 7 resources (UI parity follows in the next slice, D50). Tools use string enums (D45), audit-stamped writes (D44), HTTP hosting (D47). Full tool surface: **44 total** (16 reads + 1 diagnostic + 27 writes); the MCP README enumerates them by resource.
 
