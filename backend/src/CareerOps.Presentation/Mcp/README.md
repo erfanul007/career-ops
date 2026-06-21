@@ -35,85 +35,34 @@ Register the MCP server in Claude Code by adding the entry in `.mcp.json` at the
 
 ## Tools
 
-**Total: 44 tools** — 11 reads, 1 diagnostic, 32 writes. MCP now mirrors the REST API for all 7 resources, including hard deletes. The service layer handles cascade/cleanup (D35); the MCP tools are thin delegations.
+**Total: 44 tools** — full REST parity across all 7 resources + dashboard + a diagnostic, **including hard deletes** (D49). The service layer handles cascade/cleanup on delete (D35); the MCP tools are thin delegations. Tool names are snake_case; enum fields use string names.
+
+### Dashboard (1)
+- `get_dashboard_summary` — active app count, leads by status, applications by stage, due/overdue follow-ups, upcoming interviews, high-priority leads, stale apps, search-deadline countdown.
+
+### Company (5)
+- `list_companies`, `get_company`, `create_company`, `update_company`, `delete_company`.
+
+### JobLead (5)
+- `list_job_leads`, `get_job_lead`, `create_job_lead` (find-or-create company by name), `update_job_lead`, `delete_job_lead` (cascades to its application + interviews, cleans loose follow-ups).
+
+### ResumeVariant (6)
+- `list_resume_variants`, `get_resume_variant`, `create_resume_variant`, `update_resume_variant`, `delete_resume_variant` (blocked if referenced by an application), `make_resume_variant_default`.
+
+### Application (9)
+- `list_applications`, `get_application`, `convert_to_application`, `change_application_stage`, `mark_application_rejected`, `mark_application_offer`, `mark_application_ghosted`, `update_application`, `delete_application`.
+
+### Interview (7)
+- `list_interviews`, `list_upcoming_interviews`, `get_interview`, `create_interview`, `update_interview`, `mark_interview_completed`, `delete_interview`.
+
+### FollowUpTask (8)
+- `list_follow_ups`, `list_due_follow_ups`, `get_follow_up`, `create_follow_up`, `update_follow_up`, `complete_follow_up`, `skip_follow_up`, `delete_follow_up`.
+
+### UserProfile (2)
+- `get_user_profile`, `update_user_profile`.
 
 ### Diagnostics (1)
-
-- `ping` — Health check; returns `pong`.
-
-### Read Tools (11)
-
-#### Dashboard & JobLead
-1. `get_dashboard_summary` — Dashboard metrics: active app count, leads by status, applications by stage, due/overdue follow-ups, upcoming interviews, high-priority leads, stale apps, search-deadline countdown.
-2. `list_job_leads` — All job leads with summaries.
-3. `get_job_lead` — Single job lead details (incl. the full job description).
-
-#### Company
-4. `list_companies` — All companies (name, type, market, compensation fit, location).
-5. `get_company` — Single company by id.
-
-#### ResumeVariant
-6. `list_resume_variants` — Resume variants.
-7. `get_resume_variant` — Single resume variant by id.
-
-#### Application
-8. `list_applications` — All applications with stage/status.
-9. `get_application` — Single application details.
-
-#### Interview
-10. `list_interviews` — All interviews (most recent first).
-11. `list_upcoming_interviews` — Interviews in the next 7 days.
-12. `get_interview` — Single interview details.
-
-#### FollowUpTask
-13. `list_follow_ups` — All follow-up tasks (pending and completed).
-14. `get_follow_up` — Single follow-up task by id.
-
-#### UserProfile
-15. `get_user_profile` — User settings and profile.
-
-### Write Tools (32)
-
-#### Company (5)
-1. `create_company` — Create a company (name required; type/market/compensation-fit default to Unknown).
-2. `update_company` — Update company details.
-3. `delete_company` — Delete a company (returns true if deleted, false if not found).
-
-#### ResumeVariant (5)
-4. `create_resume_variant` — Create a resume variant.
-5. `update_resume_variant` — Update resume variant details.
-6. `delete_resume_variant` — Delete a resume variant.
-7. `make_resume_variant_default` — Set a resume variant as default.
-
-#### JobLead (2)
-8. `create_job_lead` — Create a new job lead (find-or-create company by name).
-9. `update_job_lead` — Update lead title, company, seniority, priority, or fit score.
-10. `delete_job_lead` — Delete a job lead.
-
-#### Application (6)
-11. `convert_to_application` — Convert a lead to an application (creates first application).
-12. `change_application_stage` — Advance application stage (RecruiterScreen → TechnicalScreen → TakeHome → SystemDesign → HiringManager → Final).
-13. `mark_application_rejected` — Mark application rejected (auto-advances lead status).
-14. `mark_application_offer` — Mark application offer received (auto-advances lead status).
-15. `mark_application_ghosted` — Mark application ghosted (auto-advances lead status).
-16. `update_application` — Update application details.
-17. `delete_application` — Delete an application.
-
-#### Interview (4)
-18. `create_interview` — Schedule an interview.
-19. `mark_interview_completed` — Mark interview completed.
-20. `update_interview` — Update interview details.
-21. `delete_interview` — Delete an interview.
-
-#### FollowUpTask (4)
-22. `create_follow_up` — Schedule a follow-up task.
-23. `complete_follow_up` — Mark follow-up complete.
-24. `skip_follow_up` — Skip a follow-up.
-25. `update_follow_up` — Update follow-up details.
-26. `delete_follow_up` — Delete a follow-up task.
-
-#### UserProfile (1)
-27. `update_user_profile` — Update user profile (name, email, links, target salary, deadline).
+- `ping` — health check; returns `pong`.
 
 ## Testing & Visualization
 
