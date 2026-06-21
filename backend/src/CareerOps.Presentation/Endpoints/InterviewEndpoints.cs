@@ -1,8 +1,8 @@
-using CareerOps.Api.Filters;
+using CareerOps.Presentation.Filters;
 using CareerOps.Application.Interviews;
 using Microsoft.AspNetCore.Http.HttpResults;
 
-namespace CareerOps.Api.Endpoints;
+namespace CareerOps.Presentation.Endpoints;
 
 public static class InterviewEndpoints
 {

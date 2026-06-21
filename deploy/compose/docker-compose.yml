@@ -16,10 +16,10 @@ services:
       retries: 10
     networks: [careerops]
 
-  careerops-api:
+  careerops-app:
     build:
       context: ../..
-      dockerfile: deploy/docker/api.Dockerfile
+      dockerfile: deploy/docker/app.Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       # The API container reaches Postgres by its service name, not localhost.

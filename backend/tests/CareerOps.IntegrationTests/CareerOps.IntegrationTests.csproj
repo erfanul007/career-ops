@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\CareerOps.Api\CareerOps.Api.csproj" />
+    <ProjectReference Include="..\..\src\CareerOps.Presentation\CareerOps.Presentation.csproj" />
   </ItemGroup>
 
 </Project>

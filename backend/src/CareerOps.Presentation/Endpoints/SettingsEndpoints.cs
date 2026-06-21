@@ -1,7 +1,7 @@
-using CareerOps.Api.Filters;
+using CareerOps.Presentation.Filters;
 using CareerOps.Application.Settings;
 
-namespace CareerOps.Api.Endpoints;
+namespace CareerOps.Presentation.Endpoints;
 
 public static class SettingsEndpoints
 {

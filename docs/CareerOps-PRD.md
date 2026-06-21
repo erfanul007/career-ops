@@ -181,7 +181,7 @@ careerops/
   backend/
     CareerOps.sln
     src/
-      CareerOps.Api/
+      CareerOps.Presentation/
       CareerOps.Application/
       CareerOps.Domain/
       CareerOps.Infrastructure/
@@ -363,7 +363,7 @@ Backend layers:
 CareerOps.Domain
 CareerOps.Application
 CareerOps.Infrastructure
-CareerOps.Api
+CareerOps.Presentation
 CareerOps.Contracts
 ```
 
@@ -1632,10 +1632,10 @@ backend/src/CareerOps.Infrastructure/
     AnthropicAssistant.cs
   Time/
 
-backend/src/CareerOps.Api/
-  Controllers/
-  Middleware/
-  Extensions/
+backend/src/CareerOps.Presentation/
+  Endpoints/
+  Filters/
+  HealthChecks/
   Program.cs
 ```
 

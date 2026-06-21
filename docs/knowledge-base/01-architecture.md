@@ -12,9 +12,9 @@ Dependencies point **inward only**. An outer layer may reference an inner layer;
 reverse.
 
 ```
-        ┌─────────────────────────────────────────────┐
-        │  CareerOps.Api  (Minimal APIs, DI, middleware)│  composition root
-        └───────────────┬───────────────┬──────────────┘
+        ┌──────────────────────────────────────────────────────────────┐
+        │  CareerOps.Presentation  (Minimal APIs, MCP, DI, middleware)│  composition root
+        └───────────────────────┬───────────────┬──────────────────────┘
                         │               │
                         ▼               ▼
         ┌────────────────────┐   ┌──────────────────────────┐
@@ -56,11 +56,12 @@ reverse.
 - `SystemClock : IClock`.
 - References Application + Domain.
 
-### Api (`CareerOps.Api`)
+### Presentation (`CareerOps.Presentation`)
 - Composition root: DI registration, configuration, Serilog.
 - Minimal-API endpoint modules (one `MapGroup` per resource), middleware, exception
   handling → `ProblemDetails`, OpenAPI (built-in `Microsoft.AspNetCore.OpenApi`) + Scalar UI,
   health checks.
+- MCP HTTP transport hosted here alongside REST (see `mcp-host-consolidation` branch).
 - References Application + Infrastructure.
 
 ### Contracts (`CareerOps.Contracts`) — minimal / deferred
@@ -72,7 +73,7 @@ reverse.
 ## The standard request flow
 
 ```
-HTTP → Minimal-API endpoint (Api)
+HTTP → Minimal-API endpoint (Presentation)
      → endpoint filter runs FluentValidation  → 400 ValidationProblemDetails on failure
      → application service (Application)
             → IAppDbContext (EF Core) read/write

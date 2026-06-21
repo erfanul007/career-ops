@@ -1,5 +1,5 @@
-using CareerOps.Api.Endpoints;
-using CareerOps.Api.HealthChecks;
+using CareerOps.Presentation.Endpoints;
+using CareerOps.Presentation.HealthChecks;
 using CareerOps.Application;
 using CareerOps.Infrastructure;
 using CareerOps.Infrastructure.Persistence;

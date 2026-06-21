@@ -1,6 +1,6 @@
 using CareerOps.Application.Dashboard;
 
-namespace CareerOps.Api.Endpoints;
+namespace CareerOps.Presentation.Endpoints;
 
 public static class DashboardEndpoints
 {

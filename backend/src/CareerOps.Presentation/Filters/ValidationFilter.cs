@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace CareerOps.Api.Filters;
+namespace CareerOps.Presentation.Filters;
 
 public sealed class ValidationFilter<T> : IEndpointFilter
 {

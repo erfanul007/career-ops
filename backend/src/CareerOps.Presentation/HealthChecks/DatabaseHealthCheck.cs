@@ -1,7 +1,7 @@
 using CareerOps.Application.Common;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace CareerOps.Api.HealthChecks;
+namespace CareerOps.Presentation.HealthChecks;
 
 public sealed class DatabaseHealthCheck(IAppDbContext db) : IHealthCheck
 {

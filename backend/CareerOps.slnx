@@ -1,11 +1,11 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/CareerOps.Api/CareerOps.Api.csproj" />
     <Project Path="src/CareerOps.Application/CareerOps.Application.csproj" />
     <Project Path="src/CareerOps.Contracts/CareerOps.Contracts.csproj" />
     <Project Path="src/CareerOps.Domain/CareerOps.Domain.csproj" />
     <Project Path="src/CareerOps.Infrastructure/CareerOps.Infrastructure.csproj" />
     <Project Path="src/CareerOps.Mcp/CareerOps.Mcp.csproj" />
+    <Project Path="src/CareerOps.Presentation/CareerOps.Presentation.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/CareerOps.IntegrationTests/CareerOps.IntegrationTests.csproj" />
