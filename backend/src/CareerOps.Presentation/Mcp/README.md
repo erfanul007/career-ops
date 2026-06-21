@@ -39,15 +39,19 @@ Register the MCP server in Claude Code by adding the entry in `.mcp.json` at the
 
 1. `get_dashboard_summary` — Dashboard metrics: active app count, leads by status, applications by stage, due/overdue follow-ups, upcoming interviews, high-priority leads, stale apps, search-deadline countdown.
 2. `list_job_leads` — All job leads with summaries.
-3. `get_job_lead` — Single job lead details.
+3. `get_job_lead` — Single job lead details (incl. the full job description).
 4. `list_applications` — All applications with stage/status.
-5. `list_interviews` — All interviews scheduled.
-6. `list_upcoming_interviews` — Interviews in the next 7 days.
-7. `list_due_follow_ups` — Follow-ups due today or overdue.
-8. `get_user_profile` — User settings and profile.
-9. `list_resume_variants` — Resume versions and variants.
-10. `get_fit_analysis` — Fit analysis for a job lead (if available).
-11. `ping` — Health check; no-op, always succeeds.
+5. `get_application` — Single application details.
+6. `list_interviews` — All interviews (most recent first).
+7. `list_upcoming_interviews` — Interviews in the next 7 days.
+8. `get_interview` — Single interview details.
+9. `list_due_follow_ups` — Follow-ups due today or overdue.
+10. `get_user_profile` — User settings and profile.
+11. `list_resume_variants` — Resume variants.
+
+### Diagnostics (1)
+
+- `ping` — Health check; returns `pong`.
 
 ### Write Tools (12)
 
@@ -64,7 +68,7 @@ Register the MCP server in Claude Code by adding the entry in `.mcp.json` at the
 11. `create_interview` — Schedule an interview.
 12. `mark_interview_completed` — Mark interview completed.
 
-All write tools **never cascade-delete**; orphaned rows (e.g., loose `AiAnalysis` or `FollowUpTask` entries) are cleaned on entity archive/delete.
+**No delete tools are exposed** — writes are create / update / status changes only.
 
 ## Testing & Visualization
 
@@ -79,7 +83,7 @@ All write tools **never cascade-delete**; orphaned rows (e.g., loose `AiAnalysis
 
 The MCP server is implemented using **`ModelContextProtocol.AspNetCore`** (matches SDK 1.4.0):
 
-- `Program.cs` registers the MCP server with `builder.Services.AddMcpServer().WithHttpTransport().WithToolsFromAssembly()` and maps the `/mcp` endpoint.
+- `Program.cs` registers the MCP server with `builder.Services.AddMcpServer().WithHttpTransport().WithToolsFromAssembly(typeof(Program).Assembly, serializerOptions)` and maps it via `app.MapMcp("/mcp")`.
 - Tools are stateless, attribute-decorated (`[McpServerTool]`) methods in files under this folder.
 - Each tool injects the Application services (e.g., `DashboardService`, `JobLeadService`) and `CancellationToken` via ASP.NET Core DI (resolved per HTTP request).
 - Enum fields in request/response DTOs are serialized as string names, configured via `JsonStringEnumConverter` on the MCP server's `JsonSerializerOptions`.
