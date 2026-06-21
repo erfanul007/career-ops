@@ -22,7 +22,7 @@ export function InterviewItem({ interview, onEdit, onComplete, onDelete, onView 
           {when.toLocaleString()} · {formatDistanceToNow(when, { addSuffix: true })}
           {interview.interviewerName ? ` · ${interview.interviewerName}` : ""}
         </div>
-        {interview.meetingUrl && <a href={interview.meetingUrl} target="_blank" rel="noreferrer" className="text-xs text-sky-600 hover:underline">Meeting link</a>}
+        {interview.meetingUrl && <a href={interview.meetingUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-xs text-sky-600 hover:underline">Meeting link</a>}
       </div>
       <div className="flex shrink-0 gap-1">
         {!completed && <Button variant="ghost" size="sm" onClick={() => onComplete(interview)}>Complete</Button>}
