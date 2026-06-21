@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button";
 import { interviewRoundType, interviewStatus, interviewOutcome, interviewStatusBadgeClass, interviewOutcomeBadgeClass, enumLabel } from "@/lib/enums";
 import type { InterviewDto } from "@/lib/api/model";
 
-type Props = { interview: InterviewDto; onEdit: (i: InterviewDto) => void; onComplete: (i: InterviewDto) => void; onDelete: (i: InterviewDto) => void };
+type Props = { interview: InterviewDto; onEdit: (i: InterviewDto) => void; onComplete: (i: InterviewDto) => void; onDelete: (i: InterviewDto) => void; onView?: (i: InterviewDto) => void };
 
-export function InterviewItem({ interview, onEdit, onComplete, onDelete }: Props) {
+export function InterviewItem({ interview, onEdit, onComplete, onDelete, onView }: Props) {
   const when = new Date(interview.scheduledAtUtc);
   const completed = interview.status === 1;
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
-      <div className="min-w-0 space-y-1">
+      <div className="min-w-0 cursor-pointer space-y-1" onClick={() => onView?.(interview)}>
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-medium">{enumLabel(interviewRoundType, interview.roundType)}</span>
           <Badge className={interviewStatusBadgeClass[interview.status]}>{enumLabel(interviewStatus, interview.status)}</Badge>

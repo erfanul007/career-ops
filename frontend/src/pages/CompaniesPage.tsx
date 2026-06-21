@@ -9,6 +9,7 @@ import {
 import type { CompanyDto, CreateCompanyRequest } from "@/lib/api/model";
 import { CompaniesTable } from "@/features/companies/CompaniesTable";
 import { CompanyDialog } from "@/features/companies/CompanyDialog";
+import { CompanyDetailSheet } from "@/features/companies/CompanyDetailSheet";
 
 export default function CompaniesPage() {
   const qc = useQueryClient();
@@ -19,6 +20,8 @@ export default function CompaniesPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CompanyDto | undefined>();
   const [errors, setErrors] = useState<string[]>([]);
+  const [detail, setDetail] = useState<CompanyDto | undefined>();
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const companies = response?.data ?? [];
   const invalidate = () => qc.invalidateQueries({ queryKey: getGetCompaniesQueryKey() });
@@ -52,8 +55,14 @@ export default function CompaniesPage() {
       </div>
       <CompaniesTable
         companies={companies}
-        onEdit={(c) => { setEditing(c); setErrors([]); setOpen(true); }}
+        onEdit={(c) => { setDetail(c); setDetailOpen(true); }}
         onDelete={onDelete}
+      />
+      <CompanyDetailSheet
+        company={detail}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onEdit={(c) => { setDetailOpen(false); setEditing(c); setErrors([]); setOpen(true); }}
       />
       <CompanyDialog
         open={open} initial={editing} pending={create.isPending || update.isPending}

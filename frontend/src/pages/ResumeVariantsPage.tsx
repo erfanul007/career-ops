@@ -9,6 +9,7 @@ import {
 import type { ResumeVariantDto } from "@/lib/api/model";
 import { ResumeVariantsTable } from "@/features/resumeVariants/ResumeVariantsTable";
 import { ResumeVariantDialog } from "@/features/resumeVariants/ResumeVariantDialog";
+import { ResumeVariantDetailSheet } from "@/features/resumeVariants/ResumeVariantDetailSheet";
 
 export default function ResumeVariantsPage() {
   const qc = useQueryClient();
@@ -19,6 +20,8 @@ export default function ResumeVariantsPage() {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ResumeVariantDto | undefined>();
+  const [detail, setDetail] = useState<ResumeVariantDto | undefined>();
+  const [detailOpen, setDetailOpen] = useState(false);
   const invalidate = () => qc.invalidateQueries({ queryKey: getGetResumeVariantsQueryKey() });
 
   const onMakeDefault = async (v: ResumeVariantDto) => {
@@ -39,7 +42,13 @@ export default function ResumeVariantsPage() {
         <h1 className="text-2xl font-semibold">Resume Variants</h1>
         <Button onClick={() => { setEditing(undefined); setOpen(true); }}>Add variant</Button>
       </div>
-      <ResumeVariantsTable variants={variants} onEdit={(v) => { setEditing(v); setOpen(true); }} onMakeDefault={onMakeDefault} onDelete={onDelete} />
+      <ResumeVariantsTable variants={variants} onEdit={(v) => { setDetail(v); setDetailOpen(true); }} onMakeDefault={onMakeDefault} onDelete={onDelete} />
+      <ResumeVariantDetailSheet
+        variant={detail}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onEdit={(v) => { setDetailOpen(false); setEditing(v); setOpen(true); }}
+      />
       <ResumeVariantDialog open={open} variant={editing} onOpenChange={setOpen} />
     </div>
   );

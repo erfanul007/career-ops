@@ -7,6 +7,7 @@ import type { InterviewDto } from "@/lib/api/model";
 import { InterviewItem } from "@/features/interviews/InterviewItem";
 import { InterviewSheet } from "@/features/interviews/InterviewSheet";
 import { CompleteInterviewDialog } from "@/features/interviews/CompleteInterviewDialog";
+import { InterviewDetailSheet } from "@/features/interviews/InterviewDetailSheet";
 
 export default function InterviewsPage() {
   const { data, isLoading } = useGetInterviews();
@@ -16,6 +17,8 @@ export default function InterviewsPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<InterviewDto | undefined>();
   const [completing, setCompleting] = useState<InterviewDto | null>(null);
+  const [detail, setDetail] = useState<InterviewDto | undefined>();
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const { upcoming, past } = useMemo(() => {
     const now = Date.now();
@@ -27,6 +30,7 @@ export default function InterviewsPage() {
 
   const openCreate = () => { setEditing(undefined); setSheetOpen(true); };
   const openEdit = (i: InterviewDto) => { setEditing(i); setSheetOpen(true); };
+  const openDetail = (i: InterviewDto) => { setDetail(i); setDetailOpen(true); };
   const onDelete = async (i: InterviewDto) => {
     if (!confirm("Delete this interview?")) return;
     await remove.mutateAsync({ id: Number(i.id) });
@@ -46,16 +50,22 @@ export default function InterviewsPage() {
         <h2 className="text-sm font-medium text-muted-foreground">Upcoming</h2>
         {upcoming.length === 0
           ? <p className="text-sm text-muted-foreground">No upcoming interviews.</p>
-          : upcoming.map((i) => <InterviewItem key={i.id} interview={i} onEdit={openEdit} onComplete={setCompleting} onDelete={onDelete} />)}
+          : upcoming.map((i) => <InterviewItem key={i.id} interview={i} onEdit={openEdit} onComplete={setCompleting} onDelete={onDelete} onView={openDetail} />)}
       </section>
 
       <section className="space-y-2">
         <h2 className="text-sm font-medium text-muted-foreground">Completed &amp; past</h2>
         {past.length === 0
           ? <p className="text-sm text-muted-foreground">Nothing yet.</p>
-          : past.map((i) => <InterviewItem key={i.id} interview={i} onEdit={openEdit} onComplete={setCompleting} onDelete={onDelete} />)}
+          : past.map((i) => <InterviewItem key={i.id} interview={i} onEdit={openEdit} onComplete={setCompleting} onDelete={onDelete} onView={openDetail} />)}
       </section>
 
+      <InterviewDetailSheet
+        interview={detail}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onEdit={(i) => { setDetailOpen(false); openEdit(i); }}
+      />
       <InterviewSheet open={sheetOpen} interview={editing} onOpenChange={setSheetOpen} />
       <CompleteInterviewDialog open={completing !== null} interview={completing} onOpenChange={(o) => !o && setCompleting(null)} />
     </div>
