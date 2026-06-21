@@ -50,6 +50,12 @@ export interface CreateJobLeadRequest {
      */
   fitScore: number | string | null;
   /** @nullable */
+  aiSummary: string | null;
+  /** @nullable */
+  missingKeywords: string | null;
+  /** @nullable */
+  suggestedResumeAngle: string | null;
+  /** @nullable */
   nextActionAtUtc: string | null;
   /** @nullable */
   deadlineAtUtc: string | null;

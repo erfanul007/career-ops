@@ -66,6 +66,9 @@ export const CreateJobLeadBody = zod.object({
   "priority": zod.number(),
   "status": zod.number(),
   "fitScore": zod.union([zod.number(),zod.stringFormat('int32', createJobLeadBodyFitScoreRegExpTwo)]).nullable(),
+  "aiSummary": zod.string().nullable(),
+  "missingKeywords": zod.string().nullable(),
+  "suggestedResumeAngle": zod.string().nullable(),
   "nextActionAtUtc": zod.iso.datetime({"offset":true}).nullable(),
   "deadlineAtUtc": zod.iso.datetime({"offset":true}).nullable(),
   "notes": zod.string().nullable()
@@ -171,6 +174,9 @@ export const UpdateJobLeadBody = zod.object({
   "priority": zod.number(),
   "status": zod.number(),
   "fitScore": zod.union([zod.number(),zod.stringFormat('int32', updateJobLeadBodyFitScoreRegExpTwo)]).nullable(),
+  "aiSummary": zod.string().nullable(),
+  "missingKeywords": zod.string().nullable(),
+  "suggestedResumeAngle": zod.string().nullable(),
   "nextActionAtUtc": zod.iso.datetime({"offset":true}).nullable(),
   "deadlineAtUtc": zod.iso.datetime({"offset":true}).nullable(),
   "notes": zod.string().nullable()
