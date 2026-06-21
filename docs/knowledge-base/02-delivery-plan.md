@@ -177,7 +177,7 @@ user's own Claude/ChatGPT subscription right away. Matches PRD §16.2's `ManualP
   `Content`, `Model`, timestamp). Write-back tools: `save_fit_analysis` (updates JobLead AI fields
   + history row) and `save_ai_analysis` (generic, e.g. interview prep). Read tool: `get_ai_analysis`.
 - UI: read-only AI panels on JobLead + Interview detail.~~ **Cancelled (D50): the agent writes to plain JobLead fields; no persisted analysis entity or write-back tools.**
-- **Acceptance:** agent-produced analysis is stored and surfaced; no in-app provider.
+- ~~**Acceptance:** agent-produced analysis is stored and surfaced; no in-app provider.~~ **Cancelled (D50).**
 
 ---
 
