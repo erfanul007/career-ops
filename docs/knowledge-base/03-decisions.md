@@ -657,3 +657,10 @@ only by adding a new dated entry here — never silently. All entries below are 
 - **REST completeness:** added `GET /api/follow-up-tasks/{id}` so MCP `get_follow_up` and REST agree (the service `GetAsync` exists; only the endpoint was missing).
 - **Consequence:** MCP == REST for all 7 resources (UI parity follows in the next slice, D50). Tools use string enums (D45), audit-stamped writes (D44), HTTP hosting (D47). Full tool surface: **44 total** (16 reads + 1 diagnostic + 27 writes); the MCP README enumerates them by resource.
 
+### D50 — JobLead AI fields become plain writable data slots; AiAnalysis write-back plan cancelled (Slice 2 / UI+data parity)
+*(2026-06-21, Phase 6 / parity-slice2-ui delivery)*
+- **Decision:** The JobLead AI-named fields (`FitScore`, `AiSummary`, `MissingKeywords`, `SuggestedResumeAngle`) are exposed as **plain writable data slots** in `UpdateJobLeadRequest` and `CreateJobLeadRequest` (shared UI form), editable in the lead form and via MCP `update_job_lead`. There is **no** in-platform AI analysis feature; the external agent writes findings into these slots and `Notes` / interview `PrepNotes`. **The earlier `AiAnalysis` entity / `save_fit_analysis` / AI-panel plan (D46) is cancelled.**
+- **Why:** Simpler model: job-lead AI fields are ordinary form data, just like any other input. The agent (external) owns analysis; the app owns display. No new storage, no write-back tools, no persisted analysis history. The UI reflects agent writes live via global-invalidate (D37).
+- **Rejected:** In-platform analysis storage (`AiAnalysis` entity, D46); read-only AI panels (adds UI complexity before the agent flow is proven); storing prompts instead of results (the agent must own its reasoning).
+- **Consequence:** UI + REST + MCP achieve full parity for all 7 resources. Delete controls wired for Application, FollowUpTask, and JobLead (from board view). Read-only detail sheets added for Company, ResumeVariant, and Interview. Full UI = REST = MCP parity achieved.
+

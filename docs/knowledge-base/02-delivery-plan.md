@@ -171,11 +171,12 @@ user's own Claude/ChatGPT subscription right away. Matches PRD §16.2's `ManualP
 - **Note (2026-06-21):** MCP host consolidated into the renamed `CareerOps.Presentation` project over HTTP (`/mcp`); separate `CareerOps.Mcp` stdio console removed; `CareerOps.Api` → `CareerOps.Presentation`. D47–D48 logged.
 - **Note (2026-06-21):** MCP brought to full REST parity (Company/ResumeVariant/Profile CRUD + update/delete across all resources, incl. hard deletes — D49); added `GET /api/follow-up-tasks/{id}`. UI + data parity follows next (D50).
 
-### S6.2 — AI analysis store + write-back + UI (planned)
-- `AiAnalysis` entity + migration (polymorphic `EntityType`/`EntityId`, like FollowUpTask; `Kind`,
+### S6.2 — AI analysis store + write-back + UI (cancelled per D50)
+- **Note (2026-06-21):** UI + data parity done — JobLead AI fields writable (form + MCP), deletes wired (board / application / follow-up), read-only detail sheets for company/resume-variant/interview. D50 logged. Full UI=REST=MCP parity for the 7 resources (Contacts still deferred).
+- `AiAnalysis` entity + migration ~~(polymorphic `EntityType`/`EntityId`, like FollowUpTask; `Kind`,
   `Content`, `Model`, timestamp). Write-back tools: `save_fit_analysis` (updates JobLead AI fields
   + history row) and `save_ai_analysis` (generic, e.g. interview prep). Read tool: `get_ai_analysis`.
-- UI: read-only AI panels on JobLead + Interview detail.
+- UI: read-only AI panels on JobLead + Interview detail.~~ **Cancelled (D50): the agent writes to plain JobLead fields; no persisted analysis entity or write-back tools.**
 - **Acceptance:** agent-produced analysis is stored and surfaced; no in-app provider.
 
 ---
