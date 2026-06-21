@@ -18,12 +18,14 @@ type FormValues = {
   salaryMin: string; salaryMax: string; salaryCurrency: string; salaryPeriod: number;
   priority: number; status: number; fitScore: string;
   nextActionAtUtc: string; deadlineAtUtc: string; notes: string;
+  aiSummary: string; missingKeywords: string; suggestedResumeAngle: string;
 };
 
 const EMPTY: FormValues = {
   title: "", source: 0, sourceUrl: "", jobDescription: "", location: "",
   remoteMode: 0, employmentType: 0, salaryMin: "", salaryMax: "", salaryCurrency: "", salaryPeriod: 0,
   priority: 1, status: 0, fitScore: "", nextActionAtUtc: "", deadlineAtUtc: "", notes: "",
+  aiSummary: "", missingKeywords: "", suggestedResumeAngle: "",
 };
 
 const toFormValues = (l: JobLeadDto): FormValues => ({
@@ -38,6 +40,7 @@ const toFormValues = (l: JobLeadDto): FormValues => ({
   nextActionAtUtc: l.nextActionAtUtc ? l.nextActionAtUtc.slice(0, 10) : "",
   deadlineAtUtc: l.deadlineAtUtc ? l.deadlineAtUtc.slice(0, 10) : "",
   notes: l.notes ?? "",
+  aiSummary: l.aiSummary ?? "", missingKeywords: l.missingKeywords ?? "", suggestedResumeAngle: l.suggestedResumeAngle ?? "",
 });
 
 const trimToNull = (s: string): string | null => (s.trim() === "" ? null : s.trim());
@@ -81,6 +84,9 @@ export function JobLeadForm({ initial, pending, errors, onSubmit }: Props) {
       priority: Number(v.priority),
       status: Number(v.status),
       fitScore: numOrNull(v.fitScore),
+      aiSummary: trimToNull(v.aiSummary),
+      missingKeywords: trimToNull(v.missingKeywords),
+      suggestedResumeAngle: trimToNull(v.suggestedResumeAngle),
       nextActionAtUtc: dateToUtc(v.nextActionAtUtc),
       deadlineAtUtc: dateToUtc(v.deadlineAtUtc),
       notes: trimToNull(v.notes),
@@ -134,6 +140,9 @@ export function JobLeadForm({ initial, pending, errors, onSubmit }: Props) {
 
       <Field label="Job description"><Textarea rows={6} {...register("jobDescription")} /></Field>
       <Field label="Notes"><Textarea rows={3} {...register("notes")} /></Field>
+      <Field label="AI summary"><Textarea rows={3} {...register("aiSummary")} /></Field>
+      <Field label="Missing keywords"><Textarea rows={2} {...register("missingKeywords")} /></Field>
+      <Field label="Suggested resume angle"><Textarea rows={2} {...register("suggestedResumeAngle")} /></Field>
 
       <FormErrors errors={errors} />
 
