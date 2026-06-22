@@ -72,7 +72,8 @@ only by adding a new dated entry here — never silently. All entries below are 
   provider (Anthropic vs OpenAI) is chosen at Phase 7.
 - **Why:** App must work with no keys (PRD §16); no need to commit early. Org default leans
   toward the latest Claude models, which biases — but does not yet fix — the Phase 7 choice.
-- **Status:** **Open** until Phase 7.
+- **Status:** **Resolved by D51 (2026-06-22)** — no AI provider will ever be added to the
+  solution; AI lives entirely in external agents that consume the MCP. Phase 7 dropped.
 
 ### D8 — CI deferred to Phase 8
 - **Decision:** GitHub Actions added at S8.2 (build + test + Docker build + `gen-client` check).
@@ -663,4 +664,30 @@ only by adding a new dated entry here — never silently. All entries below are 
 - **Why:** Simpler model: job-lead AI fields are ordinary form data, just like any other input. The agent (external) owns analysis; the app owns display. No new storage, no write-back tools, no persisted analysis history. The UI reflects agent writes live via global-invalidate (D37).
 - **Rejected:** In-platform analysis storage (`AiAnalysis` entity, D46); read-only AI panels (adds UI complexity before the agent flow is proven); storing prompts instead of results (the agent must own its reasoning).
 - **Consequence:** UI + REST + MCP achieve full parity for all 7 resources. Delete controls wired for Application, FollowUpTask, and JobLead (from board view). Read-only detail sheets added for Company, ResumeVariant, and Interview. Full UI = REST = MCP parity achieved.
+
+### D51 — No AI provider in the solution, ever; MCP = REST parity; all AI in external agents
+*(2026-06-22, scope lock)*
+- **Decision:** CareerOps ships **zero** AI/LLM provider integration — the product has no
+  in-solution AI capability. The **MCP server does exactly what the REST API does** (resource
+  parity, no AI logic of its own); all AI/agentic capability is provided by **external
+  agents/hosts** (Claude Code, ChatGPT, etc.) that consume the MCP. JobLead AI-named fields
+  stay plain agent-writable data slots (D50). **Closes D7** (no provider will be chosen) and
+  removes **Phase 7** (AI-provider integration) from the roadmap. **Supersedes PRD §16**'s
+  provider / `MockAiAssistant` / Phase-7 plan. D44 (agent-native AI via MCP) and D50 (writable
+  slots) stand. The frontend `AiPromptDialog` (clipboard prompt-export, no provider call —
+  D13/D31) is unaffected: it is a convenience, not an AI capability.
+- **Why:** User directive. Keeps the app provider-agnostic and key-free (no runtime AI deps,
+  no key management, no provider lock-in) and cleanly separates concerns — the app owns data +
+  workflow; external agents own reasoning. Matches the already-realized architecture
+  (D44 → D46 → D50 evolution).
+- **Rejected:** Choosing a provider at Phase 7 (D7's deferred plan — dropped); in-app inference
+  (D44 already rejected it); a built-in "Analyze fit" button calling an LLM (re-introduces
+  keys/cost/provider coupling).
+- **Counterargument / risk:** Users without an MCP-capable agent get no in-app AI assist beyond
+  the copy-paste prompt export; there is no one-click "analyze fit" inside the product.
+  **Accepted** — CareerOps is positioned as an agent-consumable system of record, and the
+  prompt-export (D13/D31) covers the keyless manual path.
+- **Consequence:** No `Microsoft.Extensions.AI` / OpenAI / Anthropic SDK in the backend (none
+  exists today — grep-confirmed). Phase 7 deleted from the roadmap. D7 marked resolved (pointer
+  to D51). No code change required; this is a documented scope lock.
 
