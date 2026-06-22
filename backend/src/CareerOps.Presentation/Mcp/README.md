@@ -30,7 +30,7 @@ Register the MCP server in Claude Code by adding the entry in `.mcp.json` at the
 - **Transport:** HTTP (localhost, no authentication).
 - **Parity:** The MCP server exposes the same mutations as the REST API, both unauthenticated. If the API is ever deployed publicly, both REST and MCP require authentication (future concern, not introduced here). See D44 (agent-native AI; no in-app provider) and D47 (HTTP hosting over `ModelContextProtocol.AspNetCore`).
 - **Logging:** stdout is normal application logging (not a JSON-RPC channel anymore).
-- **Audit stamping:** All writes are `IClock`-stamped and audit-traceable. Hard deletes are safe: the service layer cascade-cleans (FK children delete automatically; loose-reference rows like `FollowUpTask` and `AiAnalysis` are cleaned in the same operation, D35). Archive/status changes are still the UI preference (D12).
+- **Audit stamping:** All writes are `IClock`-stamped and audit-traceable. Hard deletes are safe: the service layer cascade-cleans (FK children delete automatically; loose-reference rows like `FollowUpTask` are cleaned in the same operation, D35). Archive/status changes are still the UI preference (D12).
 - **Enum I/O:** Tool I/O uses string names for enums (e.g., `"Applied"`, `"Interviewing"`) via `JsonStringEnumConverter`.
 
 ## Tools

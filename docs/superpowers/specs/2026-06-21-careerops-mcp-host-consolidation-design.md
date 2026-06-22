@@ -66,6 +66,6 @@ MCP-over-HTTP is a network listener with unauthenticated write tools — but thi
 
 ## 7. Sequencing & scope
 
-This consolidation ships as its own slice, merged before the refined S6.2. S6.2's new tools (`update_application`/`interview`/`follow_up`, `AiAnalysis` write-back) then land in the consolidated API host.
+This consolidation ships as its own slice, merged before the refined S6.2. S6.2's new tools (`update_application`/`interview`/`follow_up`) then land in the consolidated API host. (The `AiAnalysis` write-back tool was later cancelled per D50.)
 
 Out of scope: auth (MVP guardrail), public deployment, HTTPS, the S6.2 features.

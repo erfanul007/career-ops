@@ -20,7 +20,7 @@ reverse.
         ┌────────────────────┐   ┌──────────────────────────┐
         │ CareerOps.Infra-   │   │ CareerOps.Application      │
         │ structure          │──▶│ (use cases, DTOs, IAppDb-  │
-        │ (DbContext, AI,    │   │  Context, IClock, IAi...)  │
+        │ (DbContext,        │   │  Context, IClock)          │
         │  migrations, clock)│   └─────────────┬──────────────┘
         └────────────────────┘                 │
                                                 ▼
@@ -37,7 +37,7 @@ reverse.
   regardless of infrastructure.
 - **No package dependencies** — no EF Core, ASP.NET, Npgsql. Pure C#.
 - Folders by aggregate: `Companies/`, `JobLeads/`, `Applications/`, `Interviews/`,
-  `Contacts/`, `ResumeVariants/`, `FollowUps/`, `Ai/`, `UserProfiles/`, `Common/`.
+  `Contacts/`, `ResumeVariants/`, `FollowUps/`, `UserProfiles/`, `Common/`.
 
 ### Application (`CareerOps.Application`)
 - Use-case / application services (e.g. `JobLeadService`), DTOs, FluentValidation
@@ -45,14 +45,12 @@ reverse.
 - Declares the interfaces it needs from the outside world:
   - `IAppDbContext` — exposes `DbSet<T>` properties + `SaveChangesAsync`.
   - `IClock` — `UtcNow`, `Today` (for deterministic dashboard-rule tests).
-  - `IAiAssistant` — the AI contract (PRD §16.1).
 - **May reference EF Core** (`Microsoft.EntityFrameworkCore`) to use `DbSet`, `IQueryable`,
   and async LINQ through `IAppDbContext`. It must **not** reference `CareerOps.Infrastructure`.
 - **No generic repositories** (PRD §11.3, §19.1). Services query `IAppDbContext` directly.
 
 ### Infrastructure (`CareerOps.Infrastructure`)
 - `CareerOpsDbContext : DbContext, IAppDbContext`, EF entity configurations, migrations, seed.
-- AI provider implementations: `MockAiAssistant`, later one real provider.
 - `SystemClock : IClock`.
 - References Application + Domain.
 

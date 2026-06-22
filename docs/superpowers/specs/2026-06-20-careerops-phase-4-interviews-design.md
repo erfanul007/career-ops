@@ -187,7 +187,7 @@ POST   /api/interviews/{id}/mark-completed   §4.2
 DELETE /api/interviews/{id}            §4.3
 ```
 
-`generate-prep` (PRD §14.6) is Phase 6 — out of scope here.
+Interview prep is produced by an external agent via the MCP server (no in-app endpoint) — out of scope here.
 `upcoming` mirrors the established `follow-up-tasks/due` pattern (server computes the window
 via `IClock`). Validation per §3 with FluentValidation + `ValidationFilter<T>`. Mapster
 `IRegister` for DTOs (`InterviewDto` carries `applicationId`, `companyName`, `jobTitle`,
@@ -281,7 +281,7 @@ Frontend: `just verify` (typecheck + build). No new test runner introduced.
 
 ## 9. Out of Scope
 
-- AI interview prep (`generate-prep`) — Phase 6.
+- AI interview prep — external agent via the MCP server (no in-app endpoint).
 - Calendar / email / reminders integration (PRD §19.1 — barred until baseline).
 - Interview ↔ Contact linking (Contacts not yet built).
 - Rescheduled creating a new row — `Rescheduled` is a status; the user edits `ScheduledAtUtc`.

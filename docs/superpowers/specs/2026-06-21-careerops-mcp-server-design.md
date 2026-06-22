@@ -61,13 +61,12 @@ secret introduced. No AI keys anywhere.
 - **S6.1 — MCP server + core tools** (planned/built now). Scaffold + host + DI + string-enum config,
   then **read** tools and **curated write** tools. **No DB changes.** A JSON-RPC stdio smoke proves
   Claude Code/Codex can `initialize` → `tools/list` → `tools/call`.
-- **S6.2 — AI analysis store + write-back + UI** (next). `AiAnalysis` entity + migration (polymorphic
-  `EntityType`/`EntityId`, like FollowUpTask; `Kind`, `Content`, `Model`, timestamp). Tools
-  `save_fit_analysis` (updates the existing JobLead AI fields `FitScore`/`AiSummary`/`MissingKeywords`/
-  `SuggestedResumeAngle`, latest-wins, + a history row) and `save_ai_analysis` (generic, e.g. interview
-  prep). Read tool `get_ai_analysis`. UI: read-only AI panel on JobLead + Interview detail. This is
-  where the four PRD `IAiAssistant` outcomes land — produced by the agent, persisted for ISO 42001
-  traceability.
+- **S6.2 — agent write-back into plain data slots** (next). No new entity. The external agent writes
+  analysis results directly into the existing plain JobLead data slots (`FitScore`/`AiSummary`/
+  `MissingKeywords`/`SuggestedResumeAngle`) and Interview `PrepNotes` via the standard MCP/REST update
+  tools (`update_job_lead`, `update_interview`). There is **no `AiAnalysis` entity and no separate
+  write-back tools** (cancelled per D50). This is where the four PRD AI outcomes land — produced by the
+  agent, persisted as ordinary fields.
 
 ### S6.1 tool surface
 Reads (no enum inputs): `get_dashboard_summary`, `list_job_leads` (optional status/priority filters),
@@ -85,13 +84,15 @@ through the services.
   `ModelContextProtocol` SDK + `Microsoft.Extensions.Hosting`), tools wrapping existing Application
   services. **Supersedes** delivery-plan Phase 6 (`IAiAssistant`/`MockAiAssistant`) and Phase 7 (real
   provider + AI-provider settings), which are dropped. Satisfies the AI-features org policy as an
-  agent-native capability; PRD §16 "AI optional, no keys" upheld. The `IAiAssistant` seam can be added
-  later if an in-app provider is ever wanted.
+  agent-native capability; PRD §16 "AI optional, no keys" upheld. (D51 later locked this out: no
+  in-app provider, ever — all AI stays in external agents that consume the MCP.)
 - **D45** — MCP tools = reads + curated writes; **no hard deletes** (archive/status only); `IClock`
   audit stamping retained; **stdio-only** (no network, no auth). Enum I/O uses string names
   (`JsonStringEnumConverter`); domain enum integer values stay pinned (D5).
-- **D46** — AI output is persisted via agent **write-back** tools into an `AiAnalysis` store (no in-app
-  provider), surfaced read-only in the UI (S6.2).
+- **D46** — AI output was to be persisted via agent write-back tools into an `AiAnalysis` store
+  (no in-app provider). **Cancelled by D50:** the external agent now writes results into plain JobLead
+  fields (`FitScore`/`AiSummary`/`MissingKeywords`/`SuggestedResumeAngle`) and interview `PrepNotes`
+  via the standard update tools — no `AiAnalysis` entity, no separate write-back tools.
 
 ## 5. Docs reconciliation (the "make previous docs consistent" ask)
 

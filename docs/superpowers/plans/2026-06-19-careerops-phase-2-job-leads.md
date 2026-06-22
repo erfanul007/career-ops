@@ -17,7 +17,7 @@
 - **Validators** live in `Application/<Aggregate>`, named `<Dto>Validator`, run via `ValidationFilter<T>` endpoint filter → 400 `ValidationProblemDetails`. Rules follow PRD §20.
 - **DTOs** in `Application/<Aggregate>`, suffixes `...Request`/`...Dto`. Mapster `IRegister` configs per aggregate; no mapping logic in endpoints.
 - **`lib/api/` is orval-generated — never hand-edit.** Regenerate with `just gen-client` (requires the API running: `just up` or `just api`). Data access only through generated TanStack Query hooks. Server-authoritative validation (D23): generated Zod is committed but **not** wired as the RHF resolver; forms display the API's 400.
-- **Delete is hard + cascade-clean** (D12): deleting a Company cascade-deletes its JobLeads (EF FK cascade). JobLead has **no** loose-reference children in Phase 2 (FollowUpTask/AiAnalysis arrive Phase 3/6). UX prefers **Archive** (`Status = Archived`) over Delete for leads.
+- **Delete is hard + cascade-clean** (D12): deleting a Company cascade-deletes its JobLeads (EF FK cascade). JobLead has **no** loose-reference children in Phase 2 (FollowUpTask arrives Phase 3). UX prefers **Archive** (`Status = Archived`) over Delete for leads.
 - **Money:** `decimal` amount + 3-letter currency string + period enum; no conversion; format by locale on the frontend.
 - **CLI-first (D19):** use `dotnet`/`dotnet ef`/`just` for backend + migrations and `npm`/`npx` for frontend — never hand-author `.csproj`/`package.json` versions or migration files.
 - **Clean code:** KISS, YAGNI, DRY; small focused files; comment the non-obvious *why*, never the *what*; no dead/commented-out code.
@@ -1344,7 +1344,7 @@ public sealed record UpdateJobLeadRequest(
     Priority Priority, JobLeadStatus Status,
     int? FitScore, DateTime? NextActionAtUtc, DateTime? DeadlineAtUtc, string? Notes);
 ```
-> AI fields (`AiSummary`, `MissingKeywords`, `SuggestedResumeAngle`) are **not** in the requests — they are written by Phase 6 analyze-fit, not user edits.
+> AI fields (`AiSummary`, `MissingKeywords`, `SuggestedResumeAngle`) are written by an external agent via the MCP/REST update (D50), not by Phase-2 user edits.
 
 - [ ] **Step 3: Create the validators** `JobLeadRequestValidators.cs`
 
@@ -1765,7 +1765,7 @@ public static class JobLeadEndpoints
     }
 }
 ```
-> The Phase-2 endpoints are CRUD only. `analyze-fit` (Phase 6) and `convert-to-application` (Phase 3) from PRD §14.4 are out of scope here.
+> The Phase-2 endpoints are CRUD only. `convert-to-application` (Phase 3) from PRD §14.4 is out of scope here.
 
 - [ ] **Step 2: Wire it in `Program.cs`**
 
@@ -2556,7 +2556,7 @@ git commit -m "feat(web): Phase 2 dashboard placeholder with lead counts and hig
 - JobLead entity + 6 enums + FK + CRUD + list/form/details, inline find-or-create company → Tasks 6–11. ✓ (PRD §12.2, §14.4 CRUD, §15.3, §20 JobLead, fast-entry requirement)
 - Filters (status, priority) + search → Task 12. ✓ (PRD §15.3 Job Leads)
 - Dashboard placeholder lead counts + high-priority rule → Task 13. ✓ (PRD §21 High-Priority Lead)
-- Out of scope here (correctly deferred): `analyze-fit` (Phase 6), `convert-to-application` (Phase 3), full dashboard summary (Phase 5). ✓
+- Out of scope here (correctly deferred): `convert-to-application` (Phase 3), full dashboard summary (Phase 5). ✓
 - Testing cadence (PRD §25 phase 1–2: validation tests, service tests, endpoint tests) → validator + service unit tests + endpoint integration tests per slice. ✓
 
 **2. Placeholder scan:** No "TBD/TODO/handle edge cases" — every code step has complete code; commands have expected output. The only intentional stub is the one-line `JobLeadDetailsPage` placeholder in Task 10 Step 4, explicitly replaced in Task 11 Step 3 (keeps the app compiling between tasks). ✓

@@ -45,7 +45,7 @@ agent," this design makes the choice explicitly rather than silently.
 | D4 | Frontend API client | **orval**, codegen from OpenAPI from day one (typed client + TanStack Query hooks + Zod) | Tightest backend↔frontend loop. **Time-boxed:** if not clean by end of S1.2 (½ day max), fall back to openapi-typescript. |
 | D5 | Enum persistence | **Ints**, explicit pinned values, never reorder/renumber | EF default mapping; no `HasConversion` needed. Convention enforced in `04-conventions.md`. |
 | D6 | Lead ↔ Application | Application events **auto-advance** `JobLead.Status` via one explicit mapping function (transition table in `03-decisions.md`; `Archived` terminal) | Dashboard/pipeline always reflects reality; single source of truth. |
-| D7 | AI | Mock first; provider-agnostic `IAiAssistant`; real provider (Anthropic vs OpenAI) chosen at Phase 7 | App must work with no keys. Defer the provider commitment. |
+| D7 | AI | No in-solution AI provider; all AI runs in external agents that consume the MCP server (resolved — see D51) | App must work with no keys. Defer the provider commitment. |
 | D8 | CI | GitHub Actions deferred to Phase 8 | Solo MVP; rely on local `just test` until polish. |
 | D9 | Seed data | Manual data entry first; add seed only if manual proves painful (Phase 8) | Avoid building automation before the manual path is validated. |
 | D10 | **Frontend deployment** | Frontend is **host-only**, fully self-contained under `frontend/`, never in Docker; separable to its own repo later | User requirement. Cleaner separation; also removes Windows bind-mount HMR risk. |
@@ -79,8 +79,7 @@ Full per-slice scope, acceptance, and Definition of Done live in
 | 3 Applications + Follow-ups | D3 | S3.1 ResumeVariant; S3.2 Application + convert + status actions; **S3.3 FollowUpTask + today's actions**; **S3.4 Manual AI prompt export** | track applications + next actions; instant manual AI |
 | 4 Interviews | D4 | S4.1 Interview e2e + dashboard upcoming | track interviews |
 | 5 Dashboard completion | (D2–D4 tail) | S5.1 full summary (stale rule, deadline countdown, pipeline) | full daily dashboard |
-| 6 AI baseline (Mock) | D5 | S6.1 abstraction + Mock + AiAnalysis; S6.2 analyze-fit; S6.3 generate-prep | AI without keys |
-| 7 Real AI provider | D6 | S7.1 provider settings + key + templates + errors | real AI |
+| 6 Agent-native AI via MCP | D44 | CareerOps MCP HTTP server at full REST parity; no in-app provider; external agents write results back | AI without keys |
 | 8 Polish + portfolio | D7 | S8.1 states/responsive/charts; S8.2 seed + README + diagram + tests + **CI** | recruiter-ready |
 
 **Should-have / later bucket** (post-MVP): AI referral & follow-up messages, JSON
@@ -93,9 +92,9 @@ Clean Architecture, pragmatic. Full detail in `01-architecture.md`.
 ```
 CareerOps.Domain          (no deps) entities, enums, value objects, domain rules
 CareerOps.Application     (→Domain, +EF Core) use-case services, DTOs, FluentValidation,
-                          IAppDbContext, IClock, IAiAssistant, dashboard queries, Mapster config
+                          IAppDbContext, IClock, dashboard queries, Mapster config
 CareerOps.Infrastructure  (→Application) DbContext (impl IAppDbContext), EF configs,
-                          migrations, AI providers, SystemClock
+                          migrations, SystemClock
 CareerOps.Api             (→Application, Infrastructure) Minimal-API modules, DI, middleware,
                           ProblemDetails exception handling, OpenAPI/Scalar, health checks
 CareerOps.Contracts       minimal / deferred — orval reads the runtime OpenAPI doc, so a
@@ -173,7 +172,7 @@ A slice is done when:
 
 Per PRD §27, unchanged: Docker runs the backend; Postgres persists; leads, companies,
 applications, interviews, contacts, follow-ups all trackable; dashboard shows today's
-actions; mock AI fit + prep work; Clean Architecture at a practical level; README explains
+actions; agent-native AI fit + prep via the MCP server (no in-app provider); Clean Architecture at a practical level; README explains
 setup; the tool is usable for a real, active job search.
 
 ## 12. Out of scope (MVP)
@@ -183,8 +182,8 @@ Calendar, RabbitMQ, Redis, Kubernetes, vector DB/RAG, resume builder, file uploa
 
 ## 13. Open questions
 
-None blocking. The only deferred decision is **D7** (Anthropic vs OpenAI as the real AI
-provider), to be resolved at Phase 7.
+None blocking. **D7** is resolved: no in-solution AI provider — all AI runs in external
+agents consuming the MCP server (D51).
 
 ---
 

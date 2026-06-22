@@ -493,7 +493,7 @@ Read the end of `docs/knowledge-base/03-decisions.md` to match the existing date
 - [ ] **Step 3: Rewrite the delivery plan's AI phases**
 
 In `docs/knowledge-base/02-delivery-plan.md`, replace the bodies of `## Phase 6 — AI baseline / Mock (PRD D5)` and `## Phase 7 — Real AI provider (PRD D6)` so that:
-- Phase 6 becomes **"Phase 6 — Agent-native AI via MCP (PRD D5/D6, see D44)"** with two slices: **S6.1** (MCP server + read + curated-write tools — delivered note) and **S6.2** (AiAnalysis write-back store + UI surfacing — planned).
+- Phase 6 becomes **"Phase 6 — Agent-native AI via MCP (PRD D5/D6, see D44)"** with two slices: **S6.1** (MCP server + read + curated-write tools — delivered) and **S6.2** (cancelled per D50 — the external agent writes plain JobLead fields via the standard update tools; no AiAnalysis store).
 - Add a one-line **superseded** note under the old Phase 6/7 headers: *"The in-app `IAiAssistant`/`MockAiAssistant` (old Phase 6) and real-provider (old Phase 7) approach is superseded by D44 — AI is delivered via the MCP server. See `docs/superpowers/specs/2026-06-21-careerops-mcp-server-design.md`."*
 - Add a dated delivered note: `- **Note (2026-06-21):** S6.1 delivered — CareerOps.Mcp stdio MCP server with read + curated-write tools over the existing services. D44–D46 logged.`
 

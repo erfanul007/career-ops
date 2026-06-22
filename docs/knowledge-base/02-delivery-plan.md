@@ -109,14 +109,14 @@ any real domain work.
 
 ### S3.4 — Manual AI Prompt Export ⭐ *immediate AI leverage, no provider* (Decision D13)
 A bridge to AI that needs no API key, no provider integration, and no storage — uses the
-user's own Claude/ChatGPT subscription right away. Matches PRD §16.2's `ManualPromptAssistant`.
+user's own Claude/ChatGPT subscription right away. It is the only in-app AI surface; all other
+AI runs in external agents via the MCP server (PRD §16, D51).
 - From a JobLead details page (and Application where useful), one-click **copy a prepared
   prompt** assembled from: job title, company, pasted job description, `UserProfile` summary,
   and the selected/default `ResumeVariant`.
 - Prompt presets: **Analyze fit**, **Tailor resume bullets**, **Prepare interview topics**.
 - Simplest implementation: assemble the prompt on the frontend from already-fetched data and
-  copy to clipboard — no `AiAnalysis` row yet. Keep the prompt-template text in one place so
-  Phase 6 (`MockAiAssistant`) and Phase 7 (real provider) reuse the **same templates**.
+  copy to clipboard — no stored analysis. Keep the prompt-template text in one place.
 - **Acceptance:** copy a working prompt, paste into Claude, get useful output. No key, no
   provider call, no stored analysis. App remains fully usable without it.
 
@@ -217,7 +217,7 @@ for persistence.
 |-------|-------|
 | 1–2 | Health endpoint test; DbContext migration smoke test; domain validation tests |
 | 3–5 | Dashboard summary tests; follow-up due/overdue + stale calculations (via `IClock`); application status-transition + lead auto-advance tests |
-| 6 | Mock AI provider tests |
+| 6 | MCP server tool tests (read/write parity with REST) |
 | 8 | Fill gaps; CI runs the suite |
 
 Keep tests light until the product is usable; do not build large suites early (PRD §25, §19.2).

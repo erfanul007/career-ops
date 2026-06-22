@@ -691,3 +691,34 @@ only by adding a new dated entry here — never silently. All entries below are 
   exists today — grep-confirmed). Phase 7 deleted from the roadmap. D7 marked resolved (pointer
   to D51). No code change required; this is a documented scope lock.
 
+### D52 — Repo-wide doc/config cleanup to the no-in-solution-AI scope; historical specs rewritten fresh
+*(2026-06-22, alignment pass following D51)*
+- **Decision:** Aligned the whole doc/config corpus to D51 (no in-solution AI; MCP = REST parity;
+  all AI in external agents). Changes: (1) removed the stale, unbound `AI__Provider` /
+  `AI__OpenAI__ApiKey` / `AI__Anthropic__ApiKey` keys from `.env` (local); (2) rewrote PRD **§16**
+  to "AI Integration (External Agents via MCP)" and deleted the `AiAnalysis` entity + `AiProvider`
+  enum (§12), the AI REST endpoints (`analyze-fit`, `generate-prep`, `generate-referral-message`,
+  `/settings/ai`), the `.env` AI example, the `Ai/` layer folders, and the AI-provider deliveries
+  (Delivery 5–6, Epic 6–7) — replaced by the agent-native MCP delivery; (3) reconciled
+  `01-architecture.md` (dropped `IAiAssistant`/`MockAiAssistant`, the `Ai/` folder, the diagram
+  "AI"), `04-conventions.md` (dropped `ai_analyses`, the `AiAnalysis` loose-ref, the `Ai/`
+  folders, reworded the guardrail), `02-delivery-plan.md` ("Mock AI provider tests" → MCP tool
+  tests), and the verbatim guardrail block in both `04-conventions.md` and `CLAUDE.md`; (4)
+  rewrote the three early historical specs (2026-06-19 delivery-plan-design, 2026-06-20 phase-3,
+  2026-06-21 mcp-server-design) in place to the current scope.
+- **Why:** User directive — the corpus should read "fresh" so no future reader or external agent
+  infers the solution builds AI. **KEEP:** the JobLead data slots
+  (`FitScore`/`AiSummary`/`MissingKeywords`/`SuggestedResumeAngle`), the frontend clipboard prompt
+  export (`aiPrompts.ts` / `AiPromptDialog`, D13/D31), and every dated decision entry.
+- **Overrides D48** ("leave historical superpowers plans/specs as-is") **for the three
+  contradicting specs only**, on explicit user instruction. The 10 historical plans were already
+  aligned (0 contradictions) and were left untouched.
+- **Counterargument / risk:** Rewriting dated point-in-time specs erases the record of what was
+  originally planned (the in-app AI path) — a document-control downside; the superseded-banner
+  alternative was offered and the user chose in-place rewrite. The immutable decision log
+  (D7 → D44 → D46 → D50 → D51) still preserves the full evolution, mitigating the loss.
+- **Consequence:** No code change (backend already had zero provider — grep-confirmed); build and
+  tests unaffected. A repo grep for `IAiAssistant|MockAiAssistant|AiProvider|analyze-fit|
+  /settings/ai|AI__Provider` now returns only dated decision-log entries and explicitly
+  superseded/negating context (e.g. the "Phase 7 … is dropped" banner).
+

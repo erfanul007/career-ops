@@ -194,10 +194,6 @@ POSTGRES_PASSWORD=careerops
 ASPNETCORE_ENVIRONMENT=Development
 ConnectionStrings__DefaultConnection=Host=careerops-postgres;Port=5432;Database=careerops;Username=careerops;Password=careerops
 
-AI__Provider=Mock
-AI__OpenAI__ApiKey=
-AI__Anthropic__ApiKey=
-
 VITE_API_BASE_URL=http://localhost:8080
 ```
 
@@ -286,9 +282,9 @@ Do not optimize for theoretical SaaS users.
 Do not add infrastructure unless a current slice requires it.
 Every slice must be usable from the UI and pass `just verify`.
 Prefer archive/status changes over destructive delete in UX.
-On delete, clean up loose-reference rows (FollowUpTask, AiAnalysis) — no orphans.
+On delete, clean up loose-reference rows (FollowUpTask) — no orphans.
 If orval blocks progress for more than half a day, use the documented fallback.
-Add the manual AI prompt export (S3.4) before any real AI provider integration.
+No in-solution AI provider (D51): all AI runs in external agents via the MCP server; the manual AI prompt export (S3.4) is the only in-app AI-adjacent surface.
 Never reorder or renumber an existing enum member's integer value.
 Inject IClock; never call DateTime.UtcNow directly in app/domain code.
 Use the dotnet CLI for project/solution/package/migration ops and npm/vite/shadcn/orval for

@@ -33,8 +33,8 @@ logged as new decisions D27–D31.
 | S3.3 | `FollowUpTask` entity + enums; `/due`; complete/skip; Tasks page; dashboard today's-actions + overdue; D12 cascade-clean on delete |
 | S3.4 | Manual AI prompt export (frontend-only): 3 presets, copy to clipboard |
 
-**Out of scope (later phases, do not build):** Interviews (Phase 4), Contacts (later), `AiAnalysis`
-storage / `IAiAssistant` / Mock or real provider (Phase 6–7), `GET /api/dashboard/summary` aggregate
+**Out of scope (later phases, do not build):** Interviews (Phase 4), Contacts (later), in-solution AI
+provider/analysis (never built — all AI is external via the MCP server, D51), `GET /api/dashboard/summary` aggregate
 endpoint (Phase 5), file upload (PRD §12.3 baseline exclusion), seed data (Phase 8, D9), Recharts /
 dark mode (Phase 8, D26).
 
@@ -175,7 +175,7 @@ validators (PRD §20: Title, DueAtUtc, Status, Priority required), `FollowUpTask
 
 **D12 cascade-clean:** extend `JobLeadService.DeleteAsync` **and** `ApplicationService.DeleteAsync` to
 also delete `FollowUpTask` rows where `RelatedEntityType`/`RelatedEntityId` match the deleted parent —
-same application-service operation, no orphans. (`AiAnalysis` cleanup arrives with Phase 6.)
+same application-service operation, no orphans.
 
 **Infrastructure** `FollowUpTaskConfiguration` (no FK; index on `Status, DueAtUtc`) + migration
 `FollowUpTask`.
@@ -192,8 +192,8 @@ launchable from lead/application sheets, prefilling the entity link. Nav item "T
 ## 8. S3.4 — Manual AI Prompt Export (frontend-only, D13)
 
 No backend, no `AiAnalysis`, no provider call. Prompt **templates live in one place**
-(`frontend/src/lib/aiPrompts.ts`) so Phase 6 (`MockAiAssistant`) and Phase 7 (real provider) reuse the
-same text. A dialog launched from the Job Lead sheet (and Application sheet) presents 3 preset tabs:
+(`frontend/src/lib/aiPrompts.ts`) and assemble clipboard prompts for external agents (no in-app
+provider). A dialog launched from the Job Lead sheet (and Application sheet) presents 3 preset tabs:
 
 - **Analyze fit** — title, company, pasted JD, profile summary, selected resume variant → fit prompt.
 - **Tailor resume bullets** — resume variant + JD → rewrite-bullets prompt.
@@ -251,8 +251,9 @@ Optimistic board moves roll back + toast on failure (D26 pattern).
   `ResumeVariant → Application` delete is `Restrict`; one application per lead in baseline.
 - **D30** — Phase 3 dashboard stays client-side except `/api/follow-up-tasks/due`; real
   `/api/dashboard/summary` deferred to Phase 5 (D24 escape hatch).
-- **D31** — Manual AI prompt export is frontend-only; templates in `lib/aiPrompts.ts`; assembles from
-  cached lead/profile/resume-variant (defaults to the default variant); no `AiAnalysis` row.
+- **D31** — Manual AI prompt export is frontend-only; templates in `lib/aiPrompts.ts` assemble clipboard
+  prompts for external agents (no in-app provider); assembles from cached lead/profile/resume-variant
+  (defaults to the default variant); no `AiAnalysis` row.
 
 ## 14. Traceability
 

@@ -67,8 +67,6 @@ Copy `.env.example` to `.env` and adjust as needed. Never commit `.env`.
 |----------|---------|
 | `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | PostgreSQL container credentials |
 | `ASPNETCORE_ENVIRONMENT` | `Development` for the local workflow |
-| `AI__Provider` | `Mock` until a real provider is configured (Phase 7) |
-| `AI__OpenAI__ApiKey` / `AI__Anthropic__ApiKey` | AI keys — env only, never logged or committed |
 | `VITE_API_BASE_URL` | Frontend → API base URL (`http://localhost:8080`) |
 
 The **DB connection string is not in `.env`** — it is set per run context: the host loop
@@ -99,12 +97,11 @@ architecture, conventions, decisions, and the delivery plan.
 | 3 | Applications & follow-ups — resume variants, applications, today's actions, manual AI prompt export |
 | 4 | Interviews — scheduling, prep, outcomes, upcoming view |
 | 5 | Dashboard — full summary and pipeline view |
-| 6 | AI baseline — `IAiAssistant` abstraction + mock fit/prep analysis |
-| 7 | Real AI provider — one provider, key via env, mock still works |
+| 6 | Agent-native AI via MCP — MCP server at full REST parity; external agents do all analysis (no in-app provider) |
 | 8 | Polish & portfolio — UX states, seed data (if needed), README, CI |
 
 ## Known limitations
 
 - **Single-user, no authentication** — personal-use tool by design.
-- **AI is mocked until Phase 7** — no API key required to run everything else.
+- **No in-app AI** — analysis runs in external AI agents via the MCP server; no API key required.
 - No multi-user, scraping, calendar/email integration, or file upload (see PRD §7.3, §19.1).

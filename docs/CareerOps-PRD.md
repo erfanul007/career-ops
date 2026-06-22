@@ -25,9 +25,12 @@
 >   painful (sequencing per §10.3 / §7.2, not scope change).
 > - **Delete is cascade-clean + archive-first UI** — deleting a parent also removes its
 >   loose-reference rows; the UI prefers archiving (specifies §13 / §19.2).
-> - **Manual AI prompt export** is added early as slice S3.4 (after follow-ups) — copyable
->   prompts, no API key or provider — realizing §16.2's `ManualPromptAssistant` ahead of the
->   Mock (Phase 6) and real (Phase 7) providers.
+> - **Manual AI prompt export** is added early as slice S3.4 (after follow-ups) — the frontend
+>   assembles a prompt string and copies it to the clipboard for the user to paste into an
+>   external AI agent; no API key, no provider call, no stored analysis. This is the only
+>   in-app AI-adjacent surface. Per D51, CareerOps has no in-solution AI capability: the MCP
+>   server (Phase 6) is the only AI-adjacent integration surface, and all analysis runs in
+>   external agents that consume it.
 >
 > See [`knowledge-base/00-index.md`](knowledge-base/00-index.md) for the full build knowledge base.
 
@@ -37,7 +40,7 @@
 
 ## 2. One-Line Summary
 
-CareerOps is a Docker-first personal job-search command center for software engineers, built with .NET, PostgreSQL, React, and AI-assisted workflows.
+CareerOps is a Docker-first personal job-search command center for software engineers, built with .NET, PostgreSQL, React, and AI integration via external agents over an MCP server.
 
 ## 3. Product Goal
 
@@ -49,7 +52,7 @@ Help a software engineer under time pressure manage the full job-search process 
 * Manage referrals and contacts
 * Track follow-ups
 * Prepare for interviews
-* Use AI to analyze job descriptions and generate preparation material
+* Use external AI agents (via the MCP server) to analyze job descriptions and generate preparation material
 * Keep a clear daily action plan
 
 The MVP must become usable quickly. The user should not need to wait for the full product to start benefiting from it.
@@ -121,8 +124,8 @@ CareerOps MVP must include:
 5. Interview tracking
 6. Follow-up task tracking
 7. Dashboard with today’s actions
-8. AI-assisted job description analysis
-9. AI-assisted interview preparation
+8. Job description analysis via external AI agents (MCP)
+9. Interview preparation via external AI agents (MCP)
 10. Resume variant tracking
 11. Docker Compose setup
 12. PostgreSQL database
@@ -134,8 +137,8 @@ CareerOps MVP must include:
 
 These are useful but can come after the core baseline:
 
-1. AI-generated referral messages
-2. AI-generated follow-up messages
+1. Clipboard prompt export for referral messages (prompt assembled in-app, completed by an external agent)
+2. Clipboard prompt export for follow-up messages (prompt assembled in-app, completed by an external agent)
 3. Opportunity scoring
 4. Pipeline summary charts
 5. Seed data
@@ -293,10 +296,6 @@ POSTGRES_PASSWORD=careerops
 ASPNETCORE_ENVIRONMENT=Development
 ConnectionStrings__DefaultConnection=Host=careerops-postgres;Port=5432;Database=careerops;Username=careerops;Password=careerops
 
-AI__Provider=Mock
-AI__OpenAI__ApiKey=
-AI__Anthropic__ApiKey=
-
 VITE_API_BASE_URL=http://localhost:8080
 ```
 
@@ -387,7 +386,7 @@ Contains:
 * DTOs
 * Validation
 * Interfaces
-* AI orchestration contracts
+* MCP tool/contract surface (thin delegations to Application services)
 * Dashboard query logic
 
 Keep it simple. Do not create excessive command/query abstractions in the baseline.
@@ -399,7 +398,6 @@ Contains:
 * EF Core DbContext
 * Entity configurations
 * Repository implementations only if useful
-* AI provider implementations
 * System clock/date provider
 * Database migrations
 
@@ -742,39 +740,6 @@ FollowUpStatus:
 - Skipped
 ```
 
-## 12.8 AiAnalysis
-
-Stores AI-generated outputs.
-
-Fields:
-
-* Id
-* EntityType
-* EntityId
-* AnalysisType
-* Provider
-* Model
-* Prompt
-* Response
-* CreatedAtUtc
-
-Enums:
-
-```text
-AiAnalysisType:
-- JobFit
-- InterviewPrep
-- ResumeTailoring
-- ReferralMessage
-- FollowUpMessage
-
-AiProvider:
-- Mock
-- OpenAI
-- Anthropic
-- Manual
-```
-
 ## 12.9 UserProfile
 
 Single local user profile.
@@ -822,7 +787,6 @@ contacts
 applications
 interviews
 follow_up_tasks
-ai_analyses
 user_profiles
 ```
 
@@ -872,7 +836,6 @@ POST   /api/job-leads
 PUT    /api/job-leads/{id}
 DELETE /api/job-leads/{id}
 
-POST   /api/job-leads/{id}/analyze-fit
 POST   /api/job-leads/{id}/convert-to-application
 ```
 
@@ -900,7 +863,6 @@ POST   /api/interviews
 PUT    /api/interviews/{id}
 DELETE /api/interviews/{id}
 
-POST   /api/interviews/{id}/generate-prep
 POST   /api/interviews/{id}/mark-completed
 ```
 
@@ -912,8 +874,6 @@ GET    /api/contacts/{id}
 POST   /api/contacts
 PUT    /api/contacts/{id}
 DELETE /api/contacts/{id}
-
-POST   /api/contacts/{id}/generate-referral-message
 ```
 
 ## 14.8 Resume Variants
@@ -946,9 +906,6 @@ POST   /api/follow-up-tasks/{id}/skip
 ```text
 GET /api/settings/profile
 PUT /api/settings/profile
-GET /api/settings/ai
-PUT /api/settings/ai
-POST /api/settings/ai/test
 ```
 
 Settings API can be delayed if profile is seeded manually in baseline.
@@ -998,7 +955,7 @@ Must support:
 * Filter by priority
 * Add/edit job lead
 * View job details
-* Run AI fit analysis
+* Copy AI prompt (clipboard export for an external agent)
 * Convert lead to application
 
 ### Applications
@@ -1022,7 +979,7 @@ Must support:
 * Upcoming interviews
 * Completed interviews
 * Add/edit interview
-* Generate prep
+* Copy AI prompt (clipboard export for an external agent)
 * Mark outcome
 * Add feedback
 
@@ -1034,7 +991,7 @@ Must support:
 * Link to company
 * Track last contacted date
 * Track next follow-up
-* Generate referral message later
+* Copy AI prompt (clipboard export for an external agent)
 
 ### Resume Variants
 
@@ -1051,77 +1008,30 @@ Must support:
 * User profile
 * Target roles
 * Search deadline
-* AI provider configuration
 
 Settings can be minimal in early deliveries.
 
-## 16. AI Requirements
+## 16. AI Integration (External Agents via MCP)
 
-AI must be useful but optional.
+CareerOps has no in-solution AI capability. It runs no analysis, scoring, research, or prompt
+completion itself, and holds no AI provider keys.
 
-The app must work without AI keys.
+The MCP server — hosted in the Presentation layer — is the only AI-adjacent surface. It exposes
+exactly the same operations as the REST API and frontend: pure CRUD/workflow delegations with no
+AI logic of its own. All analysis, scoring, research, and prompt completion run in external AI
+agents/hosts (Claude Code, ChatGPT, etc.) that consume the MCP server and write results back
+through it.
 
-## 16.1 AI Assistant Interface
+The `FitScore`, `AiSummary`, `MissingKeywords`, and `SuggestedResumeAngle` fields on JobLead, and
+`PrepNotes` on Interview, are plain writable data slots. An external agent populates them via the
+MCP/REST update operations; CareerOps never computes them.
 
-```csharp
-public interface IAiAssistant
-{
-    Task<AiResult> AnalyzeJobFitAsync(JobFitAnalysisRequest request, CancellationToken cancellationToken);
-    Task<AiResult> GenerateInterviewPrepAsync(InterviewPrepRequest request, CancellationToken cancellationToken);
-    Task<AiResult> GenerateReferralMessageAsync(ReferralMessageRequest request, CancellationToken cancellationToken);
-    Task<AiResult> GenerateFollowUpMessageAsync(FollowUpMessageRequest request, CancellationToken cancellationToken);
-}
-```
+The only in-app AI-adjacent feature is the manual clipboard prompt export (S3.4): the frontend
+assembles a prompt string and copies it to the clipboard for the user to paste into an external
+agent. There is no provider call, no API key, and no stored analysis.
 
-## 16.2 MVP Providers
-
-Implement:
-
-* MockAiAssistant first
-* ManualPromptAssistant second, optional
-* Real provider later
-
-Mock provider should return realistic static/generated-looking responses so the UI can be tested immediately.
-
-## 16.3 Job Fit Analysis Output
-
-Input:
-
-* Job title
-* Company
-* Job description
-* User profile
-* Resume variant
-
-Output:
-
-* Fit score, 0–100
-* Match summary
-* Strong matches
-* Missing keywords
-* Risk factors
-* Suggested resume angle
-* Likely interview topics
-
-## 16.4 Interview Prep Output
-
-Input:
-
-* Job description
-* Application stage
-* Interview round type
-* User profile
-* Resume highlights
-
-Output:
-
-* Topics to revise
-* Likely technical questions
-* System design questions
-* Behavioral questions
-* Candidate stories to use
-* Questions to ask interviewer
-* Red flags to avoid
+This is locked by decision D51, which closed D7, cancelled the AiAnalysis store (D50), and dropped
+the planned Phase 6 "AI baseline" and Phase 7 "real provider".
 
 ## 17. Docker Requirements
 
@@ -1298,53 +1208,32 @@ Acceptance criteria:
 * User can store prep notes and feedback
 * User can update interview outcome
 
-## 18.6 Delivery 5: AI Baseline
+## 18.6 Delivery 5: Agent-Native AI via MCP (Phase 6)
 
 Goal:
 
-> Add AI assistance without blocking normal usage.
+> Expose CareerOps to external AI agents through an MCP server at full REST parity, with no
+> in-app AI provider.
 
 Scope:
 
-* IAiAssistant abstraction
-* Mock AI provider
-* Job fit analysis endpoint
-* Interview prep endpoint
-* Store AI output in AiAnalysis
-* Show AI output in frontend
+* CareerOps MCP HTTP server, hosted in the Presentation layer
+* MCP tools mirror the REST API exactly — pure CRUD/workflow delegations, no AI logic
+* External agents read context and write results into the plain JobLead data slots
+  (`FitScore`, `AiSummary`, `MissingKeywords`, `SuggestedResumeAngle`) and Interview `PrepNotes`
+  via the MCP/REST update operations
+* Manual clipboard prompt export (S3.4) in the frontend — assembles a prompt string and copies
+  it to the clipboard; no provider call, no API key, no stored analysis
 
 Acceptance criteria:
 
-* App works without API key
-* User can run mock job fit analysis
-* User can generate mock interview prep
-* AI output is saved
-* UI is ready for real provider later
+* App works without any AI key or provider
+* MCP server exposes the same operations as the REST API and frontend
+* An external agent can populate `FitScore`/`AiSummary`/`MissingKeywords`/`SuggestedResumeAngle`
+  and Interview `PrepNotes` through MCP/REST update operations
+* The frontend can copy an assembled AI prompt to the clipboard
 
-## 18.7 Delivery 6: Real AI Provider
-
-Goal:
-
-> Make AI features genuinely useful.
-
-Scope:
-
-* Add one real provider only
-* Use environment variable for API key
-* Add provider setting
-* Add error handling
-* Add prompt templates
-* Add manual retry
-
-Acceptance criteria:
-
-* User can configure API key
-* Job fit analysis works with real AI
-* Interview prep works with real AI
-* Secrets are not logged
-* App still works in mock mode
-
-## 18.8 Delivery 7: UX Polish and Portfolio Readiness
+## 18.7 Delivery 6: UX Polish and Portfolio Readiness
 
 Goal:
 
@@ -1397,7 +1286,6 @@ For speed, these are acceptable:
 * Hard delete
 * Basic dashboard queries
 * Simple application services
-* Mock AI first
 * Manual forms
 * Simple filters
 * Basic table views
@@ -1604,7 +1492,6 @@ backend/src/CareerOps.Domain/
   Contacts/
   ResumeVariants/
   FollowUps/
-  Ai/
   UserProfiles/
 
 backend/src/CareerOps.Application/
@@ -1617,7 +1504,6 @@ backend/src/CareerOps.Application/
   ResumeVariants/
   FollowUps/
   Dashboard/
-  Ai/
   Settings/
 
 backend/src/CareerOps.Infrastructure/
@@ -1626,14 +1512,11 @@ backend/src/CareerOps.Infrastructure/
     Configurations/
     Migrations/
     Seed/
-  Ai/
-    MockAiAssistant.cs
-    OpenAiAssistant.cs
-    AnthropicAssistant.cs
   Time/
 
 backend/src/CareerOps.Presentation/
   Endpoints/
+  Mcp/
   Filters/
   HealthChecks/
   Program.cs
@@ -1654,7 +1537,7 @@ Delivery 3–5:
 * Dashboard summary tests
 * Follow-up due calculation tests
 * Application status transition tests
-* AI mock provider tests
+* MCP/REST parity tests
 
 Avoid large test suites before the product is usable.
 
@@ -1711,24 +1594,14 @@ Avoid large test suites before the product is usable.
 * Add dashboard upcoming interviews
 * Add prep notes and feedback
 
-## Epic 6: AI Baseline
+## Epic 6: Agent-Native AI via MCP
 
-* Add AiAnalysis entity
-* Add IAiAssistant
-* Add MockAiAssistant
-* Add job fit analysis endpoint
-* Add interview prep endpoint
-* Add AI result panel
+* Add CareerOps MCP HTTP server (Presentation layer) at full REST parity
+* Map MCP tools to existing CRUD/workflow operations — no AI logic
+* Ensure external agents can write JobLead `FitScore`/`AiSummary`/`MissingKeywords`/`SuggestedResumeAngle` and Interview `PrepNotes`
+* Add the clipboard prompt export (S3.4) in the frontend
 
-## Epic 7: Real AI Provider
-
-* Add one real provider
-* Add prompt templates
-* Add settings
-* Add error handling
-* Add provider test endpoint
-
-## Epic 8: Polish
+## Epic 7: Polish
 
 * Add seed data
 * Add empty/loading/error states
@@ -1749,8 +1622,8 @@ CareerOps MVP is done when:
 * User can track contacts
 * User can track follow-ups
 * Dashboard shows today’s actions
-* Mock AI job fit analysis works
-* Mock AI interview prep works
+* MCP server exposes the same operations as the REST API for external agents
+* The frontend can copy an assembled AI prompt to the clipboard
 * Code follows Clean Architecture at a practical level
 * README explains setup and purpose
 * Project is usable for the user’s active job search

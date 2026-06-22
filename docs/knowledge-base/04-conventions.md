@@ -12,14 +12,14 @@ decisions that bite if ignored (notably enums-as-int).
 - **Naming:** `snake_case` tables and columns via `EFCore.NamingConventions`
   (`optionsBuilder.UseSnakeCaseNamingConvention()`). Tables plural: `companies`, `job_leads`,
   `resume_variants`, `contacts`, `applications`, `interviews`, `follow_up_tasks`,
-  `ai_analyses`, `user_profiles`.
+  `user_profiles`.
 - **Timestamps:** UTC only, `timestamptz`. Column + property names end in `AtUtc`
   (`CreatedAtUtc`, `UpdatedAtUtc`, `DueAtUtc`, …). Never store local time.
 - **Migrations:** EF Core code-first, committed to git, one per slice. Never edit an applied
   migration — add a new one.
 - **Modeling:** simple relational. No JSON columns in the baseline (PRD §13). No soft delete.
   Delete is **cascade-clean** (Decision D12): deleting a parent removes its FK children
-  (cascade) and its loose-reference children (`FollowUpTask`, `AiAnalysis`) in the same
+  (cascade) and its loose-reference children (`FollowUpTask`) in the same
   application-service operation — never leave orphan rows. The UI prefers **Archive over
   Delete** for `JobLead`/`Application`.
 - **Seed:** none until Phase 8, and only if enabled by env (Decision D9).
@@ -101,8 +101,8 @@ API keys are **never** logged (PRD §19.3).
 
 ## Backend folders (PRD §24)
 Per aggregate inside each layer: `Companies/`, `JobLeads/`, `Applications/`, `Interviews/`,
-`Contacts/`, `ResumeVariants/`, `FollowUps/`, `Ai/`, `UserProfiles/`, `Common/`
-(+ `Dashboard/`, `Settings/` in Application; `Persistence/`, `Ai/`, `Time/` in Infrastructure).
+`Contacts/`, `ResumeVariants/`, `FollowUps/`, `UserProfiles/`, `Common/`
+(+ `Dashboard/`, `Settings/` in Application; `Persistence/`, `Time/` in Infrastructure).
 
 ## Frontend conventions
 - `lib/api/` is **orval-generated — never hand-edit**. Regenerate with `just gen-client`.
@@ -117,9 +117,9 @@ Per aggregate inside each layer: `Companies/`, `JobLeads/`, `Applications/`, `In
   `components/`. Structure stays self-contained so `frontend/` can become its own repo.
 
 ## Polymorphic references (no FK)
-`FollowUpTask.RelatedEntityType`/`RelatedEntityId` and `AiAnalysis.EntityType`/`EntityId` are
-loose references (enum discriminator + id), **not** EF foreign keys. Resolve them in the
-application service when needed. Keep them nullable/`None` where unrelated.
+`FollowUpTask.RelatedEntityType`/`RelatedEntityId` are loose references (enum discriminator +
+id), **not** EF foreign keys. Resolve them in the application service when needed. Keep them
+nullable/`None` where unrelated.
 
 Because these have no FK, EF cannot cascade them. When a referenced parent is deleted, the
 parent's application service **must delete the matching loose-reference rows in the same
@@ -145,9 +145,9 @@ Do not optimize for theoretical SaaS users.
 Do not add infrastructure unless a current slice requires it.
 Every slice must be usable from the UI and pass `just verify`.
 Prefer archive/status changes over destructive delete in UX.
-On delete, clean up loose-reference rows (FollowUpTask, AiAnalysis) — no orphans.
+On delete, clean up loose-reference rows (FollowUpTask) — no orphans.
 If orval blocks progress for more than half a day, use the documented fallback.
-Add the manual AI prompt export (S3.4) before any real AI provider integration.
+No in-solution AI provider (D51): all AI runs in external agents via the MCP server; the manual AI prompt export (S3.4) is the only in-app AI-adjacent surface.
 Never reorder or renumber an existing enum member's integer value.
 Inject IClock; never call DateTime.UtcNow directly in app/domain code.
 Use the dotnet CLI for project/solution/package/migration ops and npm/vite/shadcn/orval for
