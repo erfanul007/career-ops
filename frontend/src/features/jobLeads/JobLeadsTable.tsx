@@ -1,3 +1,4 @@
+import { ExternalLink } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -27,6 +28,13 @@ export function JobLeadsTable({ leads, onEdit, onDelete }: Props) {
             <TableCell><PriorityBadge priority={l.priority} /></TableCell>
             <TableCell>{enumLabel(remoteMode, l.remoteMode)}</TableCell>
             <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+              {l.sourceUrl && (
+                <Button asChild variant="ghost" size="icon-sm" aria-label="Open job posting">
+                  <a href={l.sourceUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </Button>
+              )}
               <Button variant="ghost" size="sm" onClick={() => onDelete(l)}>Delete</Button>
             </TableCell>
           </TableRow>

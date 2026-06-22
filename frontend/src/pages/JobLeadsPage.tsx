@@ -92,7 +92,7 @@ export default function JobLeadsPage() {
         <span className="text-sm text-muted-foreground">{leads.length} of {all.length}</span>
       </div>
 
-      <div className="min-h-0 flex-1">
+      <div className={view === "board" ? "" : "min-h-0 flex-1"}>
         {view === "board"
           ? <JobLeadsBoard leads={leads} onEdit={openEdit} onDelete={onDelete} showClosed={showClosed} />
           : <div className="h-full overflow-y-auto"><JobLeadsTable leads={leads} onEdit={openEdit} onDelete={onDelete} /></div>}

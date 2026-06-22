@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ExternalLink } from "lucide-react";
 import {
   Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
@@ -40,9 +41,16 @@ export function JobLeadSheet({ open, lead, onOpenChange }: Props) {
           <JobLeadForm initial={lead} pending={pending} errors={errors} onSubmit={onSubmit} />
           {lead && (
             <>
+              {lead.sourceUrl && (
+                <Button asChild variant="outline" className="mt-4 w-full">
+                  <a href={lead.sourceUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" /> Open job posting
+                  </a>
+                </Button>
+              )}
               <Button
                 variant="outline"
-                className="mt-4 w-full"
+                className={lead.sourceUrl ? "mt-2 w-full" : "mt-4 w-full"}
                 onClick={() => setConvertOpen(true)}
               >
                 Convert to application
