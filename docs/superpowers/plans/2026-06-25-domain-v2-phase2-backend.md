@@ -308,11 +308,17 @@ namespace CareerOps.Domain.Jobs;
 public enum JobSource
 {
     LinkedIn    = 0,
-    Finn        = 1,
+    Indeed      = 1,
     Referral    = 2,
     CompanySite = 3,
     Recruiter   = 4,
-    Other       = 5
+    Other       = 5,
+    Glassdoor   = 6,
+    Wellfound   = 7,
+    Otta        = 8,
+    StepStone   = 9,
+    Bdjobs      = 10,
+    Monster     = 11
 }
 ```
 
@@ -1217,13 +1223,15 @@ public record ListJobsQuery(
     JobSource? Source = null,
     RemoteMode? RemoteMode = null,
     EmploymentType? EmploymentType = null,
-    string? Country = null,
+    string[]? Countries = null,      // multi-country: BD, DE, IE, GB, NL, NO, …
+    int[]? CompanyIds = null,
+    string? CompanySearch = null,    // free-text match on Company.Name
     Priority? Priority = null,
     decimal? SalaryMin = null,
     decimal? SalaryMax = null,
     DateTime? AppliedFrom = null,
     DateTime? AppliedTo = null,
-    string? Search = null
+    string? Search = null            // full-text: title, company name, notes
 );
 ```
 
@@ -1671,8 +1679,15 @@ public sealed class JobService(IAppDbContext db, IClock clock, CompanyService co
             q = q.Where(j => j.RemoteMode == query.RemoteMode.Value);
         if (query.EmploymentType.HasValue)
             q = q.Where(j => j.EmploymentType == query.EmploymentType.Value);
-        if (query.Country is not null)
-            q = q.Where(j => j.Country == query.Country);
+        if (query.Countries is { Length: > 0 })
+            q = q.Where(j => query.Countries.Contains(j.Country));
+        if (query.CompanyIds is { Length: > 0 })
+            q = q.Where(j => query.CompanyIds.Contains(j.CompanyId));
+        if (query.CompanySearch is not null)
+        {
+            var cs = query.CompanySearch.ToLower();
+            q = q.Where(j => j.Company!.Name.ToLower().Contains(cs));
+        }
         if (query.Priority.HasValue)
             q = q.Where(j => j.Priority == query.Priority.Value);
         if (query.SalaryMin.HasValue)

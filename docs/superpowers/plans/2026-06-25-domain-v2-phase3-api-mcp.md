@@ -129,7 +129,8 @@ public static class JobEndpoints
         {
             var query = new ListJobsQuery(
                 p.Statuses, p.Source, p.RemoteMode, p.EmploymentType,
-                p.Country, p.Priority, p.SalaryMin, p.SalaryMax,
+                p.Countries, p.CompanyIds, p.CompanySearch,
+                p.Priority, p.SalaryMin, p.SalaryMax,
                 p.AppliedFrom, p.AppliedTo, p.Search);
             return TypedResults.Ok(await svc.ListJobsAsync(query));
         });
@@ -256,7 +257,9 @@ public record ListJobsQueryParams(
     [FromQuery] JobSource? Source,
     [FromQuery] RemoteMode? RemoteMode,
     [FromQuery] EmploymentType? EmploymentType,
-    [FromQuery] string? Country,
+    [FromQuery] string[]? Countries,
+    [FromQuery] int[]? CompanyIds,
+    [FromQuery] string? CompanySearch,
     [FromQuery] CareerOps.Domain.Common.Priority? Priority,
     [FromQuery] decimal? SalaryMin,
     [FromQuery] decimal? SalaryMax,

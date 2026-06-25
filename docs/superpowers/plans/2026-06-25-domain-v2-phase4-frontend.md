@@ -516,18 +516,18 @@ const COLUMN_COLORS: Partial<Record<JobStatus, string>> = {
 };
 
 interface Props {
-  status: JobStatus;
+  label: string;       // status name, country, or company — whatever groupBy is active
   jobs: JobDto[];
   onJobClick: (id: number) => void;
 }
 
-export function BoardColumn({ status, jobs, onJobClick }: Props) {
-  const { setNodeRef, isOver } = useDroppable({ id: status });
+export function BoardColumn({ label, jobs, onJobClick }: Props) {
+  const { setNodeRef, isOver } = useDroppable({ id: label });
 
   return (
     <div className="flex flex-col w-64 shrink-0">
-      <div className={cn('rounded-t-md border-t-2 px-2 py-1.5 bg-muted/50', COLUMN_COLORS[status] ?? '')}>
-        <span className="font-medium text-sm">{status}</span>
+      <div className={cn('rounded-t-md border-t-2 px-2 py-1.5 bg-muted/50', COLUMN_COLORS[label as JobStatus] ?? 'border-slate-300')}>
+        <span className="font-medium text-sm">{label}</span>
         <span className="ml-2 text-xs text-muted-foreground">{jobs.length}</span>
       </div>
       <div
@@ -556,42 +556,57 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BoardColumn } from './BoardColumn';
 import type { JobDto, JobStatus } from '@/lib/api/model';
+import type { GroupBy } from './JobFilterBar';
 
 const ACTIVE_STATUSES: JobStatus[] = ['Discovered', 'Interested', 'Applied', 'Interviewing', 'Offered'];
 const CLOSED_STATUSES: JobStatus[] = ['Rejected', 'Ghosted', 'Withdrawn', 'Archived'];
 
 interface Props {
   jobs: JobDto[];
+  groupBy: GroupBy;
   onJobClick: (id: number) => void;
 }
 
-export function JobsBoard({ jobs, onJobClick }: Props) {
+function groupJobs(jobs: JobDto[], groupBy: GroupBy): { key: string; label: string; jobs: JobDto[] }[] {
+  if (groupBy === 'country') {
+    const keys = [...new Set(jobs.map(j => j.country ?? 'Unknown'))].sort();
+    return keys.map(k => ({ key: k, label: k, jobs: jobs.filter(j => (j.country ?? 'Unknown') === k) }));
+  }
+  if (groupBy === 'company') {
+    const keys = [...new Set(jobs.map(j => j.companyName))].sort();
+    return keys.map(k => ({ key: k, label: k, jobs: jobs.filter(j => j.companyName === k) }));
+  }
+  // default: status
+  return [...ACTIVE_STATUSES, ...CLOSED_STATUSES].map(s => ({
+    key: s, label: s, jobs: jobs.filter(j => j.status === s),
+  }));
+}
+
+export function JobsBoard({ jobs, groupBy, onJobClick }: Props) {
   const [showClosed, setShowClosed] = useState(false);
 
-  const visibleStatuses = showClosed
-    ? [...ACTIVE_STATUSES, ...CLOSED_STATUSES]
-    : ACTIVE_STATUSES;
+  const allGroups = groupJobs(jobs, groupBy);
 
-  const byStatus = (status: JobStatus) => jobs.filter(j => j.status === status);
+  // For status grouping, hide closed unless toggled; for other groupings always show all
+  const visibleGroups = groupBy === 'status' && !showClosed
+    ? allGroups.filter(g => ACTIVE_STATUSES.includes(g.key as JobStatus))
+    : allGroups;
 
   return (
     <div className="space-y-2">
-      <div className="flex justify-end">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowClosed(v => !v)}
-          className="text-xs"
-        >
-          {showClosed ? 'Hide closed' : 'Show closed'}
-        </Button>
-      </div>
+      {groupBy === 'status' && (
+        <div className="flex justify-end">
+          <Button variant="ghost" size="sm" onClick={() => setShowClosed(v => !v)} className="text-xs">
+            {showClosed ? 'Hide closed' : 'Show closed'}
+          </Button>
+        </div>
+      )}
       <div className="flex gap-3 overflow-x-auto pb-4">
-        {visibleStatuses.map(status => (
+        {visibleGroups.map(group => (
           <BoardColumn
-            key={status}
-            status={status}
-            jobs={byStatus(status)}
+            key={group.key}
+            label={group.label}
+            jobs={group.jobs}
             onJobClick={onJobClick}
           />
         ))}
@@ -622,12 +637,29 @@ git commit -m "feat(frontend): BoardColumn and JobsBoard with status columns and
 // frontend/src/features/jobs/JobFilterBar.tsx
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
+import { useState } from 'react';
 import type { JobStatus } from '@/lib/api/model';
+
+export type GroupBy = 'status' | 'country' | 'company';
 
 export interface JobFilters {
   search: string;
   status: JobStatus | '';
+  countries: string[];    // ISO or free-text country strings; empty = all
+  companySearch: string;
+  groupBy: GroupBy;
 }
+
+export const DEFAULT_FILTERS: JobFilters = {
+  search: '',
+  status: '',
+  countries: [],
+  companySearch: '',
+  groupBy: 'status',
+};
 
 interface Props {
   filters: JobFilters;
@@ -639,15 +671,33 @@ const STATUSES: JobStatus[] = [
   'Rejected', 'Ghosted', 'Withdrawn', 'Archived',
 ];
 
+const GROUP_OPTIONS: { value: GroupBy; label: string }[] = [
+  { value: 'status',  label: 'By Status' },
+  { value: 'country', label: 'By Country' },
+  { value: 'company', label: 'By Company' },
+];
+
 export function JobFilterBar({ filters, onChange }: Props) {
+  const [countryInput, setCountryInput] = useState('');
+
+  const addCountry = (raw: string) => {
+    const c = raw.trim();
+    if (!c || filters.countries.includes(c)) { setCountryInput(''); return; }
+    onChange({ ...filters, countries: [...filters.countries, c] });
+    setCountryInput('');
+  };
+
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
+      {/* Full-text search */}
       <Input
         placeholder="Search jobs..."
         value={filters.search}
         onChange={e => onChange({ ...filters, search: e.target.value })}
-        className="h-8 w-64"
+        className="h-8 w-52"
       />
+
+      {/* Status filter */}
       <Select
         value={filters.status}
         onValueChange={value => onChange({ ...filters, status: value as JobStatus | '' })}
@@ -657,9 +707,51 @@ export function JobFilterBar({ filters, onChange }: Props) {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="">All statuses</SelectItem>
-          {STATUSES.map(s => (
-            <SelectItem key={s} value={s}>{s}</SelectItem>
-          ))}
+          {STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+        </SelectContent>
+      </Select>
+
+      {/* Country chips */}
+      <div className="flex items-center gap-1 flex-wrap">
+        {filters.countries.map(c => (
+          <Badge key={c} variant="secondary" className="h-7 gap-1 pr-1">
+            {c}
+            <Button
+              variant="ghost" size="icon" className="h-4 w-4 p-0"
+              onClick={() => onChange({ ...filters, countries: filters.countries.filter(x => x !== c) })}
+            >
+              <X className="h-2.5 w-2.5" />
+            </Button>
+          </Badge>
+        ))}
+        <Input
+          placeholder="Add country…"
+          value={countryInput}
+          onChange={e => setCountryInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCountry(countryInput); } }}
+          onBlur={() => addCountry(countryInput)}
+          className="h-8 w-32"
+        />
+      </div>
+
+      {/* Company search */}
+      <Input
+        placeholder="Company…"
+        value={filters.companySearch}
+        onChange={e => onChange({ ...filters, companySearch: e.target.value })}
+        className="h-8 w-36"
+      />
+
+      {/* Group by */}
+      <Select
+        value={filters.groupBy}
+        onValueChange={value => onChange({ ...filters, groupBy: value as GroupBy })}
+      >
+        <SelectTrigger className="h-8 w-36">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {GROUP_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
         </SelectContent>
       </Select>
     </div>
@@ -693,7 +785,11 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-const SOURCES: JobSource[] = ['LinkedIn', 'Finn', 'Referral', 'CompanySite', 'Recruiter', 'Other'];
+const SOURCES: JobSource[] = [
+  'LinkedIn', 'Indeed', 'Glassdoor', 'Wellfound', 'Otta',
+  'StepStone', 'Bdjobs', 'Monster',
+  'CompanySite', 'Recruiter', 'Referral', 'Other',
+];
 
 export function JobQuickAdd() {
   const [open, setOpen] = useState(false);
@@ -1571,18 +1667,22 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useGetApiJobs } from '@/lib/api/jobs/jobs';
 import { JobsBoard } from '@/features/jobs/JobsBoard';
 import { JobsTable } from '@/features/jobs/JobsTable';
-import { JobFilterBar, type JobFilters } from '@/features/jobs/JobFilterBar';
+import { JobFilterBar, DEFAULT_FILTERS, type JobFilters } from '@/features/jobs/JobFilterBar';
 import { JobQuickAdd } from '@/features/jobs/JobQuickAdd';
 import { JobDetailDrawer } from '@/features/jobs/JobDetailDrawer';
 import type { JobDto } from '@/lib/api/model';
 
 export default function JobsPage() {
-  const [filters, setFilters] = useState<JobFilters>({ search: '', status: '' });
+  const [filters, setFilters] = useState<JobFilters>(DEFAULT_FILTERS);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
 
-  const { data: jobs = [], isLoading } = useGetApiJobs(
-    filters.status ? { statuses: [filters.status] } : undefined
-  );
+  // Send server-side filters (status, countries, companySearch) to the API.
+  // Client-side search applied on top for instant UX.
+  const { data: jobs = [], isLoading, isError } = useGetApiJobs({
+    ...(filters.status ? { statuses: [filters.status] } : {}),
+    ...(filters.countries.length > 0 ? { countries: filters.countries } : {}),
+    ...(filters.companySearch ? { companySearch: filters.companySearch } : {}),
+  });
 
   const filtered = useMemo(() => {
     if (!filters.search) return jobs as JobDto[];
@@ -1597,9 +1697,9 @@ export default function JobsPage() {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-xl font-semibold">Jobs</h1>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <JobFilterBar filters={filters} onChange={setFilters} />
           <JobQuickAdd />
         </div>
@@ -1611,10 +1711,12 @@ export default function JobsPage() {
           <TabsTrigger value="table">Table</TabsTrigger>
         </TabsList>
         <TabsContent value="board">
-          {isLoading ? (
+          {isError ? (
+            <div className="py-8 text-center text-sm text-destructive">Failed to load jobs. Check your connection.</div>
+          ) : isLoading ? (
             <div className="text-sm text-muted-foreground py-8 text-center">Loading…</div>
           ) : (
-            <JobsBoard jobs={filtered} onJobClick={setSelectedJobId} />
+            <JobsBoard jobs={filtered} groupBy={filters.groupBy} onJobClick={setSelectedJobId} />
           )}
         </TabsContent>
         <TabsContent value="table">
@@ -1647,6 +1749,8 @@ git commit -m "feat(frontend): assemble JobsPage with board/table toggle, filter
 **Interfaces:**
 - Consumes: `@dnd-kit/core` `DndContext`, `DragOverlay`; `@dnd-kit/sortable` `useSortable`
 - Produces: drag-to-column triggers `transition_job`; optimistic card move + rollback on error
+
+> **Constraint:** DnD transitions only work when `groupBy === 'status'`. When groupBy is `country` or `company`, `BoardColumn` renders cards without `SortableContext` / `useDroppable` (or wrap the DndContext call in `{filters.groupBy === 'status' && ...}`). Drag handles are hidden when not in status grouping.
 
 - [ ] **Step 1: Add useSortable to JobCard**
 
@@ -1857,7 +1961,7 @@ git commit -m "feat(frontend): rebuild Dashboard and Tasks pages on V2 data mode
 
 ### Task 38: Phase 4 quality gate
 
-> **Deferred to post-MVP:** Advanced filter UI (filter by source, remote mode, employment type, company, salary range, applied date range) and table column sorting are explicitly out of scope for Phase 4. The backend `ListJobsQuery` supports all these params; the UI filter bar built in Task 29 covers status + search only. A dedicated Filters panel can be added post-MVP without backend changes.
+> **Deferred to post-MVP:** Source, remote mode, employment type, salary range, and applied date range filters are not in the filter bar UI. The backend supports them via `ListJobsQuery`; they can be added later without backend changes. Table column sorting is also post-MVP.
 
 - [ ] **Step 1: Run typecheck**
 
