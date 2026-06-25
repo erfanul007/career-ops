@@ -6,7 +6,7 @@
 
 **Architecture:** Clean Architecture layers (Domain → Application → Infrastructure). Direct EF Core via IAppDbContext, no repositories. IClock injected everywhere.
 
-**Tech Stack:** .NET 9, EF Core 9, PostgreSQL 17, FluentValidation, Mapster, xUnit, EF InMemory
+**Tech Stack:** .NET 10, EF Core 10, PostgreSQL 18, FluentValidation 12, Mapster 10, xUnit 2.9, EF InMemory
 
 ## Global Constraints
 

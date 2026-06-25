@@ -3,7 +3,7 @@
 **Date:** 2026-06-25  
 **Status:** Approved — ready for implementation planning  
 **Phases:** 5 (sequential, executed in one go)  
-**DB:** PostgreSQL 17 (Docker Compose) — destructive reset, no data preservation
+**DB:** PostgreSQL 18 (Docker Compose) — destructive reset, no data preservation
 
 ---
 

@@ -6,7 +6,7 @@
 
 **Architecture:** Minimal API endpoint groups in Presentation layer. MCP tool handlers delegate to Application services — no business logic in handlers. Enums serialized as strings in JSON (already configured in Program.cs).
 
-**Tech Stack:** .NET 9, ASP.NET Core Minimal APIs, ModelContextProtocol SDK, FluentValidation filter, xUnit integration tests
+**Tech Stack:** .NET 10, ASP.NET Core Minimal APIs, ModelContextProtocol.AspNetCore 1.4, FluentValidation 12, xUnit 2.9, FluentAssertions 8
 
 ## Global Constraints
 

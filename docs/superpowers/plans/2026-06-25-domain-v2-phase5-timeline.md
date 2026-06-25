@@ -6,7 +6,7 @@
 
 **Architecture:** Backend timeline service produces a sorted list of heterogeneous events. Frontend renders a vertical timeline in the drawer's dedicated tab. All types orval-generated.
 
-**Tech Stack:** .NET 9, React 18, TypeScript, orval-generated client, shadcn/ui
+**Tech Stack:** .NET 10, React 19, TypeScript 6, orval 8, shadcn/ui
 
 ## Global Constraints
 

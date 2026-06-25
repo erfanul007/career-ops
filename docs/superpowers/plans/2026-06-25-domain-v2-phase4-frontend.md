@@ -6,7 +6,7 @@
 
 **Architecture:** Feature-based file organization. All types from orval-generated client (`src/lib/api/`). Tanstack Query for server state. Optimistic updates with rollback. Status dropdown first, then DnD.
 
-**Tech Stack:** React 18, TypeScript, Vite, shadcn/ui, @tanstack/react-query, @dnd-kit/core + @dnd-kit/sortable, react-hook-form, zod, orval-generated client
+**Tech Stack:** React 19, TypeScript 6, Vite 8, shadcn/ui (radix-ui 1.6), @tanstack/react-query 5, @dnd-kit/core 6 + @dnd-kit/sortable, react-hook-form 7, zod 4, orval 8
 
 ## Global Constraints
 

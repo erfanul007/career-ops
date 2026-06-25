@@ -2,7 +2,7 @@ name: careerops
 
 services:
   careerops-postgres:
-    image: postgres:17
+    image: postgres:18
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-careerops}
       POSTGRES_USER: ${POSTGRES_USER:-careerops}
