@@ -449,7 +449,7 @@ PUT    /api/settings/profile
 
 ---
 
-## 5. MCP Tools (~24 tools)
+## 5. MCP Tools (~23 tools)
 
 Tools delegate to application services. No business logic in tool handlers. Enums as strings. MCP handler sets `actor = Agent` internally — not exposed as input.
 
@@ -497,16 +497,16 @@ list_companies
 upsert_company          # find-or-create by normalized name; update only non-null fields
 ```
 
-### Attachments / Properties (5)
+### Attachments / Properties (4)
 
 ```
-upsert_job_attachment   # create or update by id
+upsert_job_attachment   # create when attachmentId absent; update when attachmentId provided
 remove_job_attachment
 upsert_job_property     # idempotent by (jobId, key)
 remove_job_property
 ```
 
-**Total: 24 tools**
+**Total: 23 tools**
 
 No hard-delete tools for core records (Job, Company, Activity, FollowUp). Use archive/status transitions instead. Metadata cleanup tools (`remove_job_property`, `remove_job_attachment`) are acceptable — these are not core workflow records.
 
@@ -607,9 +607,9 @@ No data preservation. No rollback path. Clean break.
 **`JobWorkflowServiceTests`:**
 - `→ Applied` sets `AppliedAtUtc` if null; skips if already set
 - `→ Applied` creates follow-up "Check status in 7 days"
-- Every transition appends a `JobTransition` row
+- Every status-changing transition appends a `JobTransition` row
+- Same-status transition is a no-op: no date update, no follow-up, no transition row appended
 - `Archived` not auto-overwritten by system side effects
-- Same-status transition handled as no-op
 - Provided actor stored correctly on transition row
 
 **`DashboardServiceTests`:**
