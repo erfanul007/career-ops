@@ -68,15 +68,46 @@
 
 ### Task 23: Install @dnd-kit/sortable and delete V1 files
 
-- [ ] **Step 1: Install @dnd-kit/sortable**
+- [ ] **Step 1: Install @dnd-kit/sortable and @hookform/resolvers**
 
 ```
-cd frontend && npm install @dnd-kit/sortable
+cd frontend && npm install @dnd-kit/sortable @hookform/resolvers
 ```
 
-Expected: `@dnd-kit/sortable` added to `node_modules` and `package.json`.
+Expected: both packages added to `node_modules` and `package.json`.
 
-- [ ] **Step 2: Delete V1 pages**
+- [ ] **Step 2: Update Field component to support error display**
+
+In `frontend/src/components/form/Field.tsx`, add optional `error` prop:
+
+```tsx
+// frontend/src/components/form/Field.tsx
+import { ReactNode } from 'react';
+
+export function Field({
+  label,
+  htmlFor,
+  error,
+  children,
+}: {
+  label: string;
+  htmlFor?: string;
+  error?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-1">
+      <label htmlFor={htmlFor} className="text-sm font-medium leading-none">
+        {label}
+      </label>
+      {children}
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}
+```
+
+- [ ] **Step 3: Delete V1 pages**
 
 ```powershell
 Remove-Item frontend/src/pages/JobLeadsPage.tsx
@@ -85,7 +116,7 @@ Remove-Item frontend/src/pages/InterviewsPage.tsx
 Remove-Item frontend/src/pages/ResumeVariantsPage.tsx
 ```
 
-- [ ] **Step 3: Delete V1 feature directories**
+- [ ] **Step 4: Delete V1 feature directories**
 
 ```powershell
 Remove-Item -Recurse -Force frontend/src/features/jobLeads
@@ -94,7 +125,7 @@ Remove-Item -Recurse -Force frontend/src/features/interviews
 Remove-Item -Recurse -Force frontend/src/features/resumeVariants
 ```
 
-- [ ] **Step 4: Delete V1 generated API directories**
+- [ ] **Step 5: Delete V1 generated API directories**
 
 ```powershell
 Remove-Item -Recurse -Force frontend/src/lib/api/job-leads
@@ -103,11 +134,11 @@ Remove-Item -Recurse -Force frontend/src/lib/api/interviews
 Remove-Item -Recurse -Force frontend/src/lib/api/resume-variants
 ```
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add -A
-git commit -m "chore(frontend): delete V1 pages, features, and API dirs; install @dnd-kit/sortable"
+git commit -m "chore(frontend): delete V1 pages, features, and API dirs; install @dnd-kit/sortable, @hookform/resolvers; update Field with error prop"
 ```
 
 ---
@@ -1247,11 +1278,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   usePostApiJobsIdFollowUps,
+  getGetApiJobsIdQueryKey,
+} from '@/lib/api/jobs/jobs';
+import {
+  useGetApiFollowUpTasks,
   usePostApiFollowUpTasksIdComplete,
   usePostApiFollowUpTasksIdSkip,
-  getGetApiJobsIdQueryKey,
-  useGetApiFollowUpTasks,
-} from '@/lib/api/jobs/jobs';
+} from '@/lib/api/follow-up-tasks/follow-up-tasks';
 import type { JobDetailDto } from '@/lib/api/model';
 import { FollowUpForm } from './FollowUpForm';
 
@@ -1752,6 +1785,53 @@ git commit -m "feat(frontend): DnD board with optimistic status transition and r
 **Files:**
 - Modify: `frontend/src/pages/DashboardPage.tsx`
 - Modify: `frontend/src/pages/TasksPage.tsx`
+
+- [ ] **Step 0: Update frontend enums constants file**
+
+Open `frontend/src/lib/enums.ts` (or wherever `JOB_STATUS_LABELS`, `APPLICATION_STAGE_LABELS`, etc. are defined). Replace V1 enum maps with V2 ones:
+
+```ts
+// frontend/src/lib/enums.ts
+import type { JobStatus, JobActivityType, JobActivityStatus, JobActivityOutcome } from '@/lib/api/model';
+
+export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
+  Discovered:   'Discovered',
+  Interested:   'Interested',
+  Applied:      'Applied',
+  Interviewing: 'Interviewing',
+  Offered:      'Offered',
+  Rejected:     'Rejected',
+  Ghosted:      'Ghosted',
+  Withdrawn:    'Withdrawn',
+  Archived:     'Archived',
+};
+
+export const ACTIVITY_TYPE_LABELS: Record<JobActivityType, string> = {
+  PhoneScreen:   'Phone Screen',
+  Interview:     'Interview',
+  TechnicalTest: 'Technical Test',
+  Assessment:    'Assessment',
+  Offer:         'Offer',
+  Negotiation:   'Negotiation',
+  Other:         'Other',
+};
+
+export const ACTIVITY_STATUS_LABELS: Record<JobActivityStatus, string> = {
+  Planned:    'Planned',
+  Scheduled:  'Scheduled',
+  Completed:  'Completed',
+  Cancelled:  'Cancelled',
+};
+
+export const ACTIVITY_OUTCOME_LABELS: Record<JobActivityOutcome, string> = {
+  Unknown: 'Unknown',
+  Waiting: 'Waiting',
+  Passed:  'Passed',
+  Failed:  'Failed',
+};
+```
+
+Delete any old V1 enum maps (`JOB_LEAD_STATUS_LABELS`, `APPLICATION_STAGE_LABELS`, etc.).
 
 - [ ] **Step 1: Update DashboardPage to use V2 summary**
 

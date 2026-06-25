@@ -105,26 +105,25 @@ git commit -m "chore: delete V1 endpoint/MCP/test files"
 
 ```csharp
 // backend/src/CareerOps.Presentation/Endpoints/JobEndpoints.cs
+using CareerOps.Application.FollowUpTasks;
 using CareerOps.Application.Jobs;
 using CareerOps.Domain.Jobs;
-using Microsoft.AspNetCore.Http.HttpResults;
+using CareerOps.Presentation.Filters;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CareerOps.Presentation.Endpoints;
 
 public static class JobEndpoints
 {
-    public static IEndpointRouteBuilder MapJobs(this IEndpointRouteBuilder app)
+    public static RouteGroupBuilder MapJobs(this RouteGroupBuilder jobs)
     {
-        var jobs = app.MapGroup("/api/jobs").WithTags("Jobs");
-
         jobs.MapGet("/", async ([AsParameters] ListJobsQueryParams p, JobService svc) =>
         {
             var query = new ListJobsQuery(
                 p.Statuses, p.Source, p.RemoteMode, p.EmploymentType,
                 p.Country, p.Priority, p.SalaryMin, p.SalaryMax,
                 p.AppliedFrom, p.AppliedTo, p.Search);
-            return Results.Ok(await svc.ListJobsAsync(query));
+            return TypedResults.Ok(await svc.ListJobsAsync(query));
         });
 
         jobs.MapGet("/{id:int}", async (int id, JobService svc) =>
@@ -136,14 +135,16 @@ public static class JobEndpoints
         jobs.MapPost("/", async (CreateJobRequest req, JobService svc) =>
         {
             var job = await svc.CreateJobAsync(req);
-            return Results.Created($"/api/jobs/{job.Id}", job);
-        });
+            return TypedResults.Created($"/api/jobs/{job.Id}", job);
+        })
+        .AddEndpointFilter<ValidationFilter<CreateJobRequest>>();
 
         jobs.MapPut("/{id:int}", async (int id, UpdateJobRequest req, JobService svc) =>
         {
             var job = await svc.UpdateJobAsync(id, req);
             return job is null ? Results.NotFound() : Results.Ok(job);
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<UpdateJobRequest>>();
 
         jobs.MapDelete("/{id:int}", async (int id, JobService svc) =>
         {
@@ -155,27 +156,30 @@ public static class JobEndpoints
         {
             try
             {
-                var result = await svc.TransitionJobAsync(id, req.ToStatus, req.Notes, Domain.Jobs.TransitionActor.User);
+                var result = await svc.TransitionJobAsync(id, req.ToStatus, req.Notes, TransitionActor.User);
                 return Results.Ok(result);
             }
             catch (KeyNotFoundException)
             {
                 return Results.NotFound();
             }
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<TransitionJobRequest>>();
 
         // Activities
         jobs.MapPost("/{id:int}/activities", async (int id, CreateActivityRequest req, JobActivityService svc) =>
         {
             var activity = await svc.AddActivityAsync(id, req);
             return activity is null ? Results.NotFound() : Results.Created($"/api/jobs/{id}/activities/{activity.Id}", activity);
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<CreateActivityRequest>>();
 
         jobs.MapPut("/{id:int}/activities/{activityId:int}", async (int id, int activityId, UpdateActivityRequest req, JobActivityService svc) =>
         {
             var activity = await svc.UpdateActivityAsync(activityId, req);
             return activity is null ? Results.NotFound() : Results.Ok(activity);
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<UpdateActivityRequest>>();
 
         jobs.MapDelete("/{id:int}/activities/{activityId:int}", async (int id, int activityId, JobActivityService svc) =>
         {
@@ -187,20 +191,23 @@ public static class JobEndpoints
         {
             var (activity, suggestion) = await svc.CompleteActivityAsync(activityId, req);
             return activity is null ? Results.NotFound() : Results.Ok(new { activity, suggestion });
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<CompleteActivityRequest>>();
 
         // Attachments
         jobs.MapPost("/{id:int}/attachments", async (int id, AddAttachmentRequest req, JobService svc) =>
         {
             var att = await svc.AddAttachmentAsync(id, req);
             return att is null ? Results.NotFound() : Results.Created($"/api/jobs/{id}/attachments/{att.Id}", att);
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<AddAttachmentRequest>>();
 
         jobs.MapPut("/{id:int}/attachments/{attachmentId:int}", async (int id, int attachmentId, UpdateAttachmentRequest req, JobService svc) =>
         {
             var att = await svc.UpdateAttachmentAsync(id, attachmentId, req);
             return att is null ? Results.NotFound() : Results.Ok(att);
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<UpdateAttachmentRequest>>();
 
         jobs.MapDelete("/{id:int}/attachments/{attachmentId:int}", async (int id, int attachmentId, JobService svc) =>
         {
@@ -213,7 +220,8 @@ public static class JobEndpoints
         {
             var prop = await svc.UpsertPropertyAsync(id, key, req);
             return prop is null ? Results.NotFound() : Results.Ok(prop);
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<UpsertPropertyRequest>>();
 
         jobs.MapDelete("/{id:int}/properties/{key}", async (int id, string key, JobService svc) =>
         {
@@ -222,14 +230,15 @@ public static class JobEndpoints
         });
 
         // Follow-ups (job-scoped creation)
-        jobs.MapPost("/{id:int}/follow-ups", async (int id, CareerOps.Application.FollowUpTasks.CreateFollowUpTaskRequest req, CareerOps.Application.FollowUpTasks.FollowUpTaskService svc) =>
+        jobs.MapPost("/{id:int}/follow-ups", async (int id, CreateFollowUpTaskRequest req, FollowUpTaskService svc) =>
         {
             var reqWithJob = req with { JobId = id };
             var task = await svc.CreateAsync(reqWithJob);
-            return Results.Created($"/api/follow-up-tasks/{task.Id}", task);
-        });
+            return TypedResults.Created($"/api/follow-up-tasks/{task.Id}", task);
+        })
+        .AddEndpointFilter<ValidationFilter<CreateFollowUpTaskRequest>>();
 
-        return app;
+        return jobs;
     }
 }
 
@@ -271,24 +280,24 @@ git commit -m "feat(api): JobEndpoints — CRUD, transition, activities, attachm
 // backend/src/CareerOps.Presentation/Endpoints/FollowUpTaskEndpoints.cs
 using CareerOps.Application.FollowUpTasks;
 using CareerOps.Domain.FollowUpTasks;
+using CareerOps.Presentation.Filters;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CareerOps.Presentation.Endpoints;
 
 public static class FollowUpTaskEndpoints
 {
-    public static IEndpointRouteBuilder MapFollowUpTasks(this IEndpointRouteBuilder app)
+    public static RouteGroupBuilder MapFollowUpTasks(this RouteGroupBuilder tasks)
     {
-        var tasks = app.MapGroup("/api/follow-up-tasks").WithTags("FollowUpTasks");
-
         tasks.MapGet("/", async ([FromQuery] FollowUpStatus? status, [FromQuery] int? jobId, FollowUpTaskService svc)
-            => Results.Ok(await svc.ListAllAsync(status, jobId)));
+            => TypedResults.Ok(await svc.ListAllAsync(status, jobId)));
 
         tasks.MapPut("/{id:int}", async (int id, UpdateFollowUpTaskRequest req, FollowUpTaskService svc) =>
         {
             var task = await svc.UpdateAsync(id, req);
             return task is null ? Results.NotFound() : Results.Ok(task);
-        });
+        })
+        .AddEndpointFilter<ValidationFilter<UpdateFollowUpTaskRequest>>();
 
         tasks.MapPost("/{id:int}/complete", async (int id, FollowUpTaskService svc) =>
         {
@@ -302,7 +311,7 @@ public static class FollowUpTaskEndpoints
             return ok ? Results.NoContent() : Results.NotFound();
         });
 
-        return app;
+        return tasks;
     }
 }
 ```
@@ -331,12 +340,11 @@ namespace CareerOps.Presentation.Endpoints;
 
 public static class DashboardEndpoints
 {
-    public static IEndpointRouteBuilder MapDashboard(this IEndpointRouteBuilder app)
+    public static RouteGroupBuilder MapDashboard(this RouteGroupBuilder group)
     {
-        app.MapGroup("/api/dashboard").WithTags("Dashboard")
-            .MapGet("/summary", async (DashboardService svc) =>
-                Results.Ok(await svc.GetSummaryAsync()));
-        return app;
+        group.MapGet("/summary", async (DashboardService svc) =>
+            TypedResults.Ok(await svc.GetSummaryAsync()));
+        return group;
     }
 }
 ```
@@ -363,10 +371,10 @@ Add `.MapJobs()`.
 The endpoint registration section should look like:
 
 ```csharp
-app.MapJobs();
-app.MapFollowUpTasks();
-app.MapCompanies();
-app.MapDashboard();
+app.MapGroup("/api/jobs").WithTags("Jobs").MapJobs();
+app.MapGroup("/api/follow-up-tasks").WithTags("FollowUpTasks").MapFollowUpTasks();
+app.MapGroup("/api/companies").WithTags("Companies").MapCompanies();
+app.MapGroup("/api/dashboard").WithTags("Dashboard").MapDashboard();
 app.MapSettings();
 ```
 

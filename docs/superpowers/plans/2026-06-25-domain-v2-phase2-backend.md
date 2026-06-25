@@ -655,6 +655,7 @@ public interface IAppDbContext
     DbSet<FollowUpTask> FollowUpTasks { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+    Task<bool> CanConnectAsync(CancellationToken ct = default);
 }
 ```
 
@@ -2170,6 +2171,7 @@ using CareerOps.Application.Common;
 using CareerOps.Domain.Common;
 using CareerOps.Domain.FollowUpTasks;
 using CareerOps.Domain.Jobs;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace CareerOps.Application.Jobs;
@@ -2740,8 +2742,8 @@ public sealed class DashboardService(IAppDbContext db, IClock clock)
             .ToListAsync(ct);
 
         var profile = await db.UserProfiles.FirstOrDefaultAsync(ct);
-        int? daysUntilDeadline = profile?.SearchDeadlineAtUtc.HasValue == true
-            ? (int?)(profile.SearchDeadlineAtUtc!.Value - now).TotalDays
+        int? daysUntilDeadline = profile?.SearchDeadlineUtc.HasValue == true
+            ? (int?)(profile.SearchDeadlineUtc!.Value - now).TotalDays
             : null;
 
         return new DashboardSummaryDto(activeByStatus, dueToday, overdue, upcoming, staleJobs, offerDeadlines, daysUntilDeadline);
@@ -2800,11 +2802,14 @@ public async Task<bool> HasJobsAsync(int companyId, CancellationToken ct = defau
 
 ```csharp
 // backend/src/CareerOps.Application/DependencyInjection.cs
+using System.Reflection;
 using CareerOps.Application.Companies;
 using CareerOps.Application.Dashboard;
 using CareerOps.Application.FollowUpTasks;
 using CareerOps.Application.Jobs;
 using CareerOps.Application.Settings;
+using FluentValidation;
+using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CareerOps.Application;
@@ -2813,9 +2818,14 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
+        var assembly = Assembly.GetExecutingAssembly();
+        TypeAdapterConfig.GlobalSettings.Scan(assembly);
+        services.AddValidatorsFromAssembly(assembly);
+
         services.AddScoped<JobService>();
         services.AddScoped<JobWorkflowService>();
         services.AddScoped<JobActivityService>();
+        services.AddScoped<JobTimelineService>();
         services.AddScoped<FollowUpTaskService>();
         services.AddScoped<DashboardService>();
         services.AddScoped<CompanyService>();

@@ -148,17 +148,14 @@ public sealed class JobTimelineService(IAppDbContext db)
 
 - [ ] **Step 3: Wire timeline endpoint in JobEndpoints**
 
-Add to `JobEndpoints.cs` after the existing job routes, inside `MapJobs`:
+Add to `JobEndpoints.cs` after the existing job routes, inside `MapJobs` (before `return jobs;`):
 
 ```csharp
 jobs.MapGet("/{id:int}/timeline", async (int id, JobTimelineService svc) =>
-{
-    var timeline = await svc.GetTimelineAsync(id);
-    return Results.Ok(timeline);
-});
+    TypedResults.Ok(await svc.GetTimelineAsync(id)));
 ```
 
-Add `using CareerOps.Application.Jobs;` if not present.
+The `using CareerOps.Application.Jobs;` is already present from Phase 3.
 
 - [ ] **Step 4: Register JobTimelineService in DI**
 
@@ -230,7 +227,12 @@ git commit -m "chore(frontend): regenerate orval client with timeline endpoint"
 import { useGetApiJobsIdTimeline } from '@/lib/api/jobs/jobs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import type { TimelineEventDto, TimelineEventKind } from '@/lib/api/model';
+// TimelineEventKind may or may not be in orval-generated model depending on how orval treats plain enums.
+// Import it if available; otherwise use the local fallback below.
+import type { TimelineEventDto } from '@/lib/api/model';
+
+// Fallback — remove if orval exports TimelineEventKind from @/lib/api/model
+type TimelineEventKind = 'Transition' | 'Activity' | 'FollowUp';
 
 const KIND_STYLES: Record<TimelineEventKind, { dot: string; label: string }> = {
   Transition: { dot: 'bg-indigo-500', label: 'Status' },
