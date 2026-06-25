@@ -35,186 +35,30 @@
 
 ## Tasks
 
-### Task 39: Backend timeline read model
+### Task 39: Verify timeline backend (from Phase 3)
 
-**Files:**
-- Create: `backend/src/CareerOps.Application/Jobs/JobTimelineDto.cs`
-- Create: `backend/src/CareerOps.Application/Jobs/JobTimelineService.cs`
-- Modify: `backend/src/CareerOps.Presentation/Endpoints/JobEndpoints.cs`
-- Modify: `backend/src/CareerOps.Application/DependencyInjection.cs`
+The timeline backend (`JobTimelineService`, `JobTimelineDto`, `GET /api/jobs/{id}/timeline`) was implemented in Phase 3 Task 22. The orval client was regenerated in Phase 3 Task 23 and should include `useGetApiJobsIdTimeline`.
 
-**Interfaces:**
-- Consumes: `IAppDbContext`, job/activity/follow-up data
-- Produces: `GET /api/jobs/{id}/timeline` → `List<TimelineEventDto>` sorted by timestamp desc
+- [ ] **Step 1: Confirm hook exists**
 
-- [ ] **Step 1: Create timeline DTOs**
+Open `frontend/src/lib/api/jobs/jobs.ts` and verify `useGetApiJobsIdTimeline` is exported.
 
-```csharp
-// backend/src/CareerOps.Application/Jobs/JobTimelineDto.cs
-namespace CareerOps.Application.Jobs;
-
-public enum TimelineEventKind
-{
-    Transition = 0,
-    Activity   = 1,
-    FollowUp   = 2
-}
-
-public record TimelineEventDto(
-    int Id,
-    TimelineEventKind Kind,
-    DateTime TimestampUtc,
-    string Title,
-    string? Detail,
-    string? Actor   // "User" | "Agent" | "System" — only for Transition events
-);
+If the timeline endpoint was missed during Phase 3 gen-client:
 ```
-
-- [ ] **Step 2: Create JobTimelineService**
-
-```csharp
-// backend/src/CareerOps.Application/Jobs/JobTimelineService.cs
-using CareerOps.Application.Common;
-using CareerOps.Domain.Jobs;
-using Microsoft.EntityFrameworkCore;
-
-namespace CareerOps.Application.Jobs;
-
-public sealed class JobTimelineService(IAppDbContext db)
-{
-    public async Task<List<TimelineEventDto>> GetTimelineAsync(int jobId, CancellationToken ct = default)
-    {
-        var events = new List<TimelineEventDto>();
-
-        var transitions = await db.JobTransitions
-            .Where(t => t.JobId == jobId)
-            .OrderByDescending(t => t.ChangedAtUtc)
-            .ToListAsync(ct);
-
-        foreach (var t in transitions)
-        {
-            var title = t.FromStatus.HasValue
-                ? $"{t.FromStatus} → {t.ToStatus}"
-                : $"Created as {t.ToStatus}";
-            events.Add(new TimelineEventDto(
-                t.Id,
-                TimelineEventKind.Transition,
-                t.ChangedAtUtc,
-                title,
-                t.Notes,
-                t.Actor.ToString()
-            ));
-        }
-
-        var activities = await db.JobActivities
-            .Where(a => a.JobId == jobId)
-            .OrderByDescending(a => a.ScheduledAtUtc ?? a.CreatedAtUtc)
-            .ToListAsync(ct);
-
-        foreach (var a in activities)
-        {
-            var ts = a.ScheduledAtUtc ?? a.CreatedAtUtc;
-            events.Add(new TimelineEventDto(
-                a.Id,
-                TimelineEventKind.Activity,
-                ts,
-                $"{a.Type}: {a.Label}",
-                $"{a.Status} · {a.Outcome}",
-                null
-            ));
-        }
-
-        var followUps = await db.FollowUpTasks
-            .Where(f => f.JobId == jobId)
-            .OrderByDescending(f => f.DueAtUtc)
-            .ToListAsync(ct);
-
-        foreach (var f in followUps)
-        {
-            events.Add(new TimelineEventDto(
-                f.Id,
-                TimelineEventKind.FollowUp,
-                f.DueAtUtc,
-                f.Title,
-                f.Status.ToString(),
-                null
-            ));
-        }
-
-        return [.. events.OrderByDescending(e => e.TimestampUtc)];
-    }
-}
-```
-
-- [ ] **Step 3: Wire timeline endpoint in JobEndpoints**
-
-Add to `JobEndpoints.cs` after the existing job routes, inside `MapJobs` (before `return jobs;`):
-
-```csharp
-jobs.MapGet("/{id:int}/timeline", async (int id, JobTimelineService svc) =>
-    TypedResults.Ok(await svc.GetTimelineAsync(id)));
-```
-
-The `using CareerOps.Application.Jobs;` is already present from Phase 3.
-
-- [ ] **Step 4: Register JobTimelineService in DI**
-
-In `backend/src/CareerOps.Application/DependencyInjection.cs`, add:
-
-```csharp
-services.AddScoped<JobTimelineService>();
-```
-
-- [ ] **Step 5: Build and test**
-
-```
-dotnet build backend/CareerOps.slnx
-```
-
-Expected: `Build succeeded.`
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add backend/src/CareerOps.Application/Jobs/JobTimelineDto.cs
-git add backend/src/CareerOps.Application/Jobs/JobTimelineService.cs
-git add backend/src/CareerOps.Application/DependencyInjection.cs
-git add backend/src/CareerOps.Presentation/Endpoints/JobEndpoints.cs
-git commit -m "feat(api): job timeline read model — GET /api/jobs/{id}/timeline"
-```
-
----
-
-### Task 40: Regenerate orval client with timeline endpoint
-
-- [ ] **Step 1: Start API**
-
-```
-just api
-```
-
-Wait for `Now listening on: http://localhost:8080`
-
-- [ ] **Step 2: Regenerate client**
-
-```
+just api   # start API
 just gen-client
 ```
 
-Expected: `src/lib/api/jobs/jobs.ts` updated with `useGetApiJobsIdTimeline` hook.
-
-- [ ] **Step 3: Stop API**
-
-- [ ] **Step 4: Commit**
+- [ ] **Step 2: Commit if regenerated**
 
 ```bash
 git add frontend/src/lib/api/
-git commit -m "chore(frontend): regenerate orval client with timeline endpoint"
+git commit -m "chore(frontend): ensure timeline hook in orval client"
 ```
 
 ---
 
-### Task 41: Frontend Timeline tab
+### Task 40: Frontend Timeline tab
 
 **Files:**
 - Create: `frontend/src/features/jobs/drawer/TimelineTab.tsx`
@@ -333,7 +177,7 @@ git commit -m "feat(frontend): Timeline tab in job detail drawer"
 
 ---
 
-### Task 42: Empty, loading, and error states
+### Task 41: Empty, loading, and error states
 
 **Files:**
 - Modify: `frontend/src/features/jobs/JobsBoard.tsx`
@@ -398,7 +242,7 @@ git commit -m "feat(frontend): empty and error states for board and jobs page"
 
 ---
 
-### Task 43: Final quality gate
+### Task 42: Final quality gate
 
 - [ ] **Step 1: Run full verify**
 
@@ -458,7 +302,7 @@ This checklist was run against the spec after writing the plan:
 - [x] Closed columns toggle (Phase 4, Task 28)
 - [x] Properties collapsed / "Agent Notes" label (Phase 4, Task 34)
 - [x] No file upload (Phase 4, Task 34 — metadata only)
-- [x] Timeline endpoint (Phase 5, Task 39)
+- [x] Timeline endpoint (Phase 3, Task 22 — backend; Phase 5, Task 39 verifies client)
 - [x] DB wipe + V1 migrations deleted (Phase 2, Task 1)
 - [x] Delete V1 tests (Phase 2, Task 1 + Phase 3, Task 15)
 

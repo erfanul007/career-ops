@@ -43,6 +43,17 @@
 - `backend/tests/CareerOps.UnitTests/Interviews/` — entire directory
 - `backend/tests/CareerOps.UnitTests/ResumeVariants/` — entire directory
 - `backend/tests/CareerOps.UnitTests/FollowUpTasks/CascadeCleanTests.cs`
+- `backend/src/CareerOps.Presentation/Endpoints/JobLeadEndpoints.cs`
+- `backend/src/CareerOps.Presentation/Endpoints/ApplicationEndpoints.cs`
+- `backend/src/CareerOps.Presentation/Endpoints/InterviewEndpoints.cs`
+- `backend/src/CareerOps.Presentation/Endpoints/ResumeVariantEndpoints.cs`
+- `backend/src/CareerOps.Presentation/Mcp/JobLeadTools.cs`
+- `backend/src/CareerOps.Presentation/Mcp/ApplicationTools.cs`
+- `backend/src/CareerOps.Presentation/Mcp/InterviewTools.cs`
+- `backend/src/CareerOps.Presentation/Mcp/ResumeVariantTools.cs`
+- `backend/tests/CareerOps.IntegrationTests/JobLeadEndpointTests.cs`
+- `backend/tests/CareerOps.IntegrationTests/ApplicationEndpointTests.cs`
+- `backend/tests/CareerOps.IntegrationTests/ResumeVariantEndpointTests.cs`
 
 ### Create (V2 domain)
 - `backend/src/CareerOps.Domain/Common/Priority.cs` — moved from JobLeads
@@ -200,7 +211,34 @@ Remove-Item -Recurse -Force backend/tests/CareerOps.UnitTests/ResumeVariants
 Remove-Item backend/tests/CareerOps.UnitTests/FollowUpTasks/CascadeCleanTests.cs
 ```
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 7: Delete stale Presentation endpoints, MCP tools, and integration tests**
+
+```powershell
+Remove-Item backend/src/CareerOps.Presentation/Endpoints/JobLeadEndpoints.cs
+Remove-Item backend/src/CareerOps.Presentation/Endpoints/ApplicationEndpoints.cs
+Remove-Item backend/src/CareerOps.Presentation/Endpoints/InterviewEndpoints.cs
+Remove-Item backend/src/CareerOps.Presentation/Endpoints/ResumeVariantEndpoints.cs
+Remove-Item backend/src/CareerOps.Presentation/Mcp/JobLeadTools.cs
+Remove-Item backend/src/CareerOps.Presentation/Mcp/ApplicationTools.cs
+Remove-Item backend/src/CareerOps.Presentation/Mcp/InterviewTools.cs
+Remove-Item backend/src/CareerOps.Presentation/Mcp/ResumeVariantTools.cs
+Remove-Item backend/tests/CareerOps.IntegrationTests/JobLeadEndpointTests.cs
+Remove-Item backend/tests/CareerOps.IntegrationTests/ApplicationEndpointTests.cs
+Remove-Item backend/tests/CareerOps.IntegrationTests/ResumeVariantEndpointTests.cs
+```
+
+Also, open `backend/src/CareerOps.Presentation/Program.cs` and remove the old endpoint registrations:
+```csharp
+// Delete these lines:
+app.MapJobLeads();
+app.MapApplications();
+app.MapInterviews();
+app.MapResumeVariants();
+```
+
+Also remove old `using` directives for deleted MCP tool types and endpoint types.
+
+- [ ] **Step 8: Commit**
 
 ```bash
 git add -A
@@ -1029,6 +1067,7 @@ public record JobDto(
 
 ```csharp
 // backend/src/CareerOps.Application/Jobs/JobDetailDto.cs
+using CareerOps.Application.FollowUpTasks;
 using CareerOps.Domain.Common;
 using CareerOps.Domain.Jobs;
 
@@ -1071,7 +1110,8 @@ public record JobDetailDto(
     DateTime UpdatedAtUtc,
     List<JobActivityDto> Activities,
     List<JobPropertyDto> Properties,
-    List<JobAttachmentDto> Attachments
+    List<JobAttachmentDto> Attachments,
+    List<FollowUpTaskDto> FollowUps
 );
 ```
 
@@ -1195,7 +1235,7 @@ using CareerOps.Domain.Jobs;
 namespace CareerOps.Application.Jobs;
 
 public record CreateJobRequest(
-    int CompanyId,
+    int? CompanyId,
     string Title,
     JobStatus Status,
     Priority Priority,
@@ -1216,7 +1256,8 @@ public record CreateJobRequest(
     string? ResumeLabel,
     string? ResumeAngle,
     string? CoverLetterNotes,
-    string? Notes
+    string? Notes,
+    string? CompanyName = null
 );
 ```
 
@@ -1382,7 +1423,8 @@ public sealed class JobMappingConfig : IRegister
             .Map(d => d.CompanyName, s => s.Company != null ? s.Company.Name : "")
             .Map(d => d.Activities, s => s.Activities)
             .Map(d => d.Properties, s => s.Properties)
-            .Map(d => d.Attachments, s => s.Attachments);
+            .Map(d => d.Attachments, s => s.Attachments)
+            .Map(d => d.FollowUps, s => s.FollowUps);
     }
 }
 ```
@@ -1400,9 +1442,12 @@ public sealed class CreateJobRequestValidator : AbstractValidator<CreateJobReque
     public CreateJobRequestValidator()
     {
         RuleFor(x => x.Title).NotEmpty().MaximumLength(300);
-        RuleFor(x => x.CompanyId).GreaterThan(0);
+        RuleFor(x => x.CompanyId).GreaterThan(0).When(x => x.CompanyId.HasValue);
         RuleFor(x => x.SourceUrl).MaximumLength(2000).When(x => x.SourceUrl is not null);
         RuleFor(x => x.FitScore).InclusiveBetween(1, 10).When(x => x.FitScore is not null);
+        RuleFor(x => x)
+            .Must(x => x.CompanyId.HasValue || !string.IsNullOrWhiteSpace(x.CompanyName))
+            .WithMessage("Either CompanyId or CompanyName must be provided");
     }
 }
 
@@ -1517,19 +1562,23 @@ git commit -m "feat(app): V2 DTOs, request types, validators, and mapping config
 ```csharp
 // backend/src/CareerOps.Application/Jobs/JobService.cs
 using CareerOps.Application.Common;
+using CareerOps.Application.Companies;
 using CareerOps.Domain.Jobs;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace CareerOps.Application.Jobs;
 
-public sealed class JobService(IAppDbContext db, IClock clock)
+public sealed class JobService(IAppDbContext db, IClock clock, CompanyService companySvc)
 {
     public async Task<JobDetailDto> CreateJobAsync(CreateJobRequest req, CancellationToken ct = default)
     {
+        var companyId = req.CompanyId
+            ?? (await companySvc.FindOrCreateByNameAsync(req.CompanyName!, ct)).Id;
+
         var job = new Job
         {
-            CompanyId = req.CompanyId,
+            CompanyId = companyId,
             Title = req.Title,
             Status = req.Status,
             Priority = req.Priority,
@@ -1604,6 +1653,7 @@ public sealed class JobService(IAppDbContext db, IClock clock)
             .Include(j => j.Activities)
             .Include(j => j.Properties)
             .Include(j => j.Attachments)
+            .Include(j => j.FollowUps)
             .FirstOrDefaultAsync(j => j.Id == id, ct);
 
         return job?.Adapt<JobDetailDto>();
@@ -2825,7 +2875,6 @@ public static class DependencyInjection
         services.AddScoped<JobService>();
         services.AddScoped<JobWorkflowService>();
         services.AddScoped<JobActivityService>();
-        services.AddScoped<JobTimelineService>();
         services.AddScoped<FollowUpTaskService>();
         services.AddScoped<DashboardService>();
         services.AddScoped<CompanyService>();

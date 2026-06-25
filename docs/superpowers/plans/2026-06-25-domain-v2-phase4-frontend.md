@@ -680,12 +680,11 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Field } from '@/components/form/Field';
 import { useJobMutations } from './useJobMutations';
-import { useGetApiCompanies } from '@/lib/api/companies/companies';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { JobSource } from '@/lib/api/model';
 
 const schema = z.object({
-  companyId: z.number({ required_error: 'Company required' }),
+  companyName: z.string().min(1, 'Company required'),
   title: z.string().min(1, 'Title required').max(300),
   source: z.string().min(1) as z.ZodType<JobSource>,
   sourceUrl: z.string().url().optional().or(z.literal('')),
@@ -699,7 +698,6 @@ const SOURCES: JobSource[] = ['LinkedIn', 'Finn', 'Referral', 'CompanySite', 'Re
 export function JobQuickAdd() {
   const [open, setOpen] = useState(false);
   const { create } = useJobMutations();
-  const { data: companies } = useGetApiCompanies();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -709,7 +707,7 @@ export function JobQuickAdd() {
   const onSubmit = async (values: FormValues) => {
     await create.mutateAsync({
       data: {
-        companyId: values.companyId,
+        companyName: values.companyName,
         title: values.title,
         status: 'Discovered',
         priority: values.priority,
@@ -734,15 +732,8 @@ export function JobQuickAdd() {
           <DialogTitle>Add job</DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-          <Field label="Company" error={form.formState.errors.companyId?.message}>
-            <Select onValueChange={v => form.setValue('companyId', parseInt(v))}>
-              <SelectTrigger><SelectValue placeholder="Select company" /></SelectTrigger>
-              <SelectContent>
-                {companies?.map(c => (
-                  <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <Field label="Company" error={form.formState.errors.companyName?.message}>
+            <Input {...form.register('companyName')} placeholder="e.g. Acme Corp" />
           </Field>
           <Field label="Title" error={form.formState.errors.title?.message}>
             <Input {...form.register('title')} placeholder="e.g. Senior Software Engineer" />
@@ -1281,7 +1272,6 @@ import {
   getGetApiJobsIdQueryKey,
 } from '@/lib/api/jobs/jobs';
 import {
-  useGetApiFollowUpTasks,
   usePostApiFollowUpTasksIdComplete,
   usePostApiFollowUpTasksIdSkip,
 } from '@/lib/api/follow-up-tasks/follow-up-tasks';
@@ -1295,7 +1285,7 @@ export function FollowUpsTab({ job }: Props) {
   const [adding, setAdding] = useState(false);
   const invalidate = () => qc.invalidateQueries({ queryKey: getGetApiJobsIdQueryKey(job.id) });
 
-  const { data: followUps } = useGetApiFollowUpTasks({ jobId: job.id });
+  const followUps = job.followUps ?? [];
   const add = usePostApiJobsIdFollowUps({ mutation: { onSuccess: () => { invalidate(); setAdding(false); }, onError: () => toast.error('Failed') } });
   const complete = usePostApiFollowUpTasksIdComplete({ mutation: { onSuccess: invalidate, onError: () => toast.error('Failed') } });
   const skip = usePostApiFollowUpTasksIdSkip({ mutation: { onSuccess: invalidate, onError: () => toast.error('Failed') } });
@@ -1866,6 +1856,8 @@ git commit -m "feat(frontend): rebuild Dashboard and Tasks pages on V2 data mode
 ---
 
 ### Task 38: Phase 4 quality gate
+
+> **Deferred to post-MVP:** Advanced filter UI (filter by source, remote mode, employment type, company, salary range, applied date range) and table column sorting are explicitly out of scope for Phase 4. The backend `ListJobsQuery` supports all these params; the UI filter bar built in Task 29 covers status + search only. A dedicated Filters panel can be added post-MVP without backend changes.
 
 - [ ] **Step 1: Run typecheck**
 

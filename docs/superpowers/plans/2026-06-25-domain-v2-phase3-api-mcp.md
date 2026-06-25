@@ -61,17 +61,25 @@
 
 **Files:** V1 endpoint/MCP/test deletions listed above
 
-- [ ] **Step 1: Delete stale V1 endpoints and MCP tools**
+- [ ] **Step 1: Verify V1 Presentation files already deleted**
+
+V1 endpoint and MCP files were deleted in Phase 2 Task 1 Step 7. Verify none remain:
 
 ```powershell
-Remove-Item backend/src/CareerOps.Presentation/Endpoints/JobLeadEndpoints.cs
-Remove-Item backend/src/CareerOps.Presentation/Endpoints/ApplicationEndpoints.cs
-Remove-Item backend/src/CareerOps.Presentation/Endpoints/InterviewEndpoints.cs
-Remove-Item backend/src/CareerOps.Presentation/Endpoints/ResumeVariantEndpoints.cs
-Remove-Item backend/src/CareerOps.Presentation/Mcp/JobLeadTools.cs
-Remove-Item backend/src/CareerOps.Presentation/Mcp/ApplicationTools.cs
-Remove-Item backend/src/CareerOps.Presentation/Mcp/InterviewTools.cs
-Remove-Item backend/src/CareerOps.Presentation/Mcp/ResumeVariantTools.cs
+Test-Path backend/src/CareerOps.Presentation/Endpoints/JobLeadEndpoints.cs  # must be False
+Test-Path backend/src/CareerOps.Presentation/Mcp/JobLeadTools.cs             # must be False
+```
+
+If any file exists (Phase 2 wasn't followed exactly), delete it now:
+```powershell
+Remove-Item -ErrorAction SilentlyContinue backend/src/CareerOps.Presentation/Endpoints/JobLeadEndpoints.cs
+Remove-Item -ErrorAction SilentlyContinue backend/src/CareerOps.Presentation/Endpoints/ApplicationEndpoints.cs
+Remove-Item -ErrorAction SilentlyContinue backend/src/CareerOps.Presentation/Endpoints/InterviewEndpoints.cs
+Remove-Item -ErrorAction SilentlyContinue backend/src/CareerOps.Presentation/Endpoints/ResumeVariantEndpoints.cs
+Remove-Item -ErrorAction SilentlyContinue backend/src/CareerOps.Presentation/Mcp/JobLeadTools.cs
+Remove-Item -ErrorAction SilentlyContinue backend/src/CareerOps.Presentation/Mcp/ApplicationTools.cs
+Remove-Item -ErrorAction SilentlyContinue backend/src/CareerOps.Presentation/Mcp/InterviewTools.cs
+Remove-Item -ErrorAction SilentlyContinue backend/src/CareerOps.Presentation/Mcp/ResumeVariantTools.cs
 ```
 
 - [ ] **Step 2: Delete stale integration tests**
@@ -455,27 +463,54 @@ public sealed class JobTools(JobService jobSvc, JobWorkflowService workflowSvc, 
             country, city, null, remoteMode, employmentType,
             null, null, null, SalaryPeriod.Annual, null, null, null, null, notes));
 
-    [McpServerTool, Description("Update job details. Does not change status — use transition_job for that.")]
+    [McpServerTool, Description("Update job details (patch — only provided fields change). Does not change status — use transition_job for that.")]
     public async Task<object?> update_job(
         [Description("Job ID")] int jobId,
-        [Description("Job title")] string title,
-        [Description("Company ID")] int companyId,
-        [Description("Priority")] Priority priority,
-        [Description("Source")] JobSource source,
-        [Description("Source URL")] string? sourceUrl = null,
-        [Description("Notes")] string? notes = null,
-        [Description("Next action date (UTC)")] DateTime? nextActionAtUtc = null,
-        [Description("FitScore 1-10")] int? fitScore = null,
-        [Description("Resume label")] string? resumeLabel = null,
-        [Description("Offer salary")] decimal? offerSalary = null,
-        [Description("Offer notes")] string? offerNotes = null,
-        [Description("Rejection reason")] string? rejectionReason = null)
-        => await jobSvc.UpdateJobAsync(jobId, new UpdateJobRequest(
-            companyId, title, priority, source, sourceUrl, null,
-            null, null, null, RemoteMode.OnSite, EmploymentType.FullTime,
-            null, null, null, SalaryPeriod.Annual, null, null, null, nextActionAtUtc,
-            fitScore, resumeLabel, null, null, offerSalary, null, null, offerNotes,
-            rejectionReason, notes));
+        [Description("Job title (optional)")] string? title = null,
+        [Description("Priority (optional)")] Priority? priority = null,
+        [Description("Source (optional)")] JobSource? source = null,
+        [Description("Source URL (optional)")] string? sourceUrl = null,
+        [Description("Notes (optional)")] string? notes = null,
+        [Description("Next action date UTC (optional)")] DateTime? nextActionAtUtc = null,
+        [Description("FitScore 1-10 (optional)")] int? fitScore = null,
+        [Description("Resume label (optional)")] string? resumeLabel = null,
+        [Description("Offer salary (optional)")] decimal? offerSalary = null,
+        [Description("Offer notes (optional)")] string? offerNotes = null,
+        [Description("Rejection reason (optional)")] string? rejectionReason = null)
+    {
+        var existing = await jobSvc.GetJobDetailAsync(jobId);
+        if (existing is null) return null;
+        return await jobSvc.UpdateJobAsync(jobId, new UpdateJobRequest(
+            existing.CompanyId,
+            title ?? existing.Title,
+            priority ?? existing.Priority,
+            source ?? existing.Source,
+            sourceUrl ?? existing.SourceUrl,
+            existing.JobDescription,
+            existing.Country,
+            existing.City,
+            existing.LocationText,
+            existing.RemoteMode,
+            existing.EmploymentType,
+            existing.SalaryMin,
+            existing.SalaryMax,
+            existing.SalaryCurrency,
+            existing.SalaryPeriod,
+            existing.DeadlineAtUtc,
+            existing.AppliedAtUtc,
+            existing.LastContactedAtUtc,
+            nextActionAtUtc ?? existing.NextActionAtUtc,
+            fitScore ?? existing.FitScore,
+            resumeLabel ?? existing.ResumeLabel,
+            existing.ResumeAngle,
+            existing.CoverLetterNotes,
+            offerSalary ?? existing.OfferSalary,
+            existing.OfferCurrency,
+            existing.OfferDeadlineAtUtc,
+            offerNotes ?? existing.OfferNotes,
+            rejectionReason ?? existing.RejectionReason,
+            notes ?? existing.Notes));
+    }
 
     [McpServerTool, Description("Transition a job to a new status. Actor is set to Agent automatically.")]
     public async Task<object> transition_job(
@@ -603,9 +638,15 @@ public sealed class FollowUpTools(FollowUpTaskService svc)
         [Description("Filter by status")] FollowUpStatus? status = null,
         [Description("Filter by job ID")] int? jobId = null)
     {
-        if (due == "today" || due == "overdue")
-            return await svc.ListDueAsync();
-        return await svc.ListAllAsync(status, jobId);
+        var now = DateTime.UtcNow.Date;
+        var tomorrow = now.AddDays(1);
+        var allPending = await svc.ListAllAsync(FollowUpStatus.Pending, jobId);
+        return due switch
+        {
+            "today"   => allPending.Where(f => f.DueAtUtc >= now && f.DueAtUtc < tomorrow).ToList(),
+            "overdue" => allPending.Where(f => f.DueAtUtc < now).ToList(),
+            _         => await svc.ListAllAsync(status, jobId)
+        };
     }
 
     [McpServerTool, Description("Add a follow-up task. Optionally link to a job or job activity.")]
@@ -702,6 +743,7 @@ git commit -m "feat(mcp): update FollowUp/Company/Dashboard/Profile tools for V2
 // backend/tests/CareerOps.IntegrationTests/JobEndpointTests.cs
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using CareerOps.Application.Jobs;
 using FluentAssertions;
 using Xunit;
@@ -712,6 +754,12 @@ public sealed class JobEndpointTests(ApiFactory factory) : IClassFixture<ApiFact
 {
     private readonly HttpClient _client = factory.CreateClient();
 
+    private static async Task<int> ReadIdAsync(HttpResponseMessage res)
+    {
+        using var doc = await JsonDocument.ParseAsync(await res.Content.ReadAsStreamAsync());
+        return doc.RootElement.GetProperty("id").GetInt32();
+    }
+
     [Fact]
     public async Task CreateJob_Returns201WithId()
     {
@@ -719,11 +767,11 @@ public sealed class JobEndpointTests(ApiFactory factory) : IClassFixture<ApiFact
         var companyRes = await _client.PostAsJsonAsync("/api/companies",
             new { name = "Test Corp", type = 0 });
         companyRes.StatusCode.Should().Be(HttpStatusCode.Created);
-        var company = await companyRes.Content.ReadFromJsonAsync<dynamic>();
+        var companyId = await ReadIdAsync(companyRes);
 
         var req = new
         {
-            companyId = (int)company!.id,
+            companyId,
             title = "Software Engineer",
             status = "Discovered",
             priority = "Medium",
@@ -751,11 +799,11 @@ public sealed class JobEndpointTests(ApiFactory factory) : IClassFixture<ApiFact
     public async Task TransitionJob_ToApplied_Returns200WithSuggestionNull()
     {
         var companyRes = await _client.PostAsJsonAsync("/api/companies", new { name = "TransCorp", type = 0 });
-        var company = await companyRes.Content.ReadFromJsonAsync<dynamic>();
+        var companyId = await ReadIdAsync(companyRes);
 
         var createRes = await _client.PostAsJsonAsync("/api/jobs", new
         {
-            companyId = (int)company!.id,
+            companyId,
             title = "Backend Dev",
             status = "Interested",
             priority = "High",
@@ -798,6 +846,7 @@ public sealed class JobEndpointTests(ApiFactory factory) : IClassFixture<ApiFact
 // backend/tests/CareerOps.IntegrationTests/JobMcpToolTests.cs
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using FluentAssertions;
 using Xunit;
 
@@ -807,6 +856,12 @@ public sealed class JobMcpToolTests(ApiFactory factory) : IClassFixture<ApiFacto
 {
     private readonly HttpClient _client = factory.CreateClient();
 
+    private static async Task<int> ReadIdAsync(HttpResponseMessage res)
+    {
+        using var doc = await JsonDocument.ParseAsync(await res.Content.ReadAsStreamAsync());
+        return doc.RootElement.GetProperty("id").GetInt32();
+    }
+
     [Fact]
     public async Task TransitionJob_ViaMcp_SetsActorAgent()
     {
@@ -815,11 +870,11 @@ public sealed class JobMcpToolTests(ApiFactory factory) : IClassFixture<ApiFacto
         // This test uses the REST API to seed data and verify the result
 
         var companyRes = await _client.PostAsJsonAsync("/api/companies", new { name = "McpCorp", type = 0 });
-        var company = await companyRes.Content.ReadFromJsonAsync<dynamic>();
+        var companyId = await ReadIdAsync(companyRes);
 
         var jobRes = await _client.PostAsJsonAsync("/api/jobs", new
         {
-            companyId = (int)company!.id,
+            companyId,
             title = "MCP Test Job",
             status = "Interested",
             priority = "Medium",
@@ -850,15 +905,14 @@ public sealed class JobMcpToolTests(ApiFactory factory) : IClassFixture<ApiFacto
 
 - [ ] **Step 3: Update CompanyEndpointTests — add 409 test**
 
-Add to `CompanyEndpointTests.cs`:
+Add to `CompanyEndpointTests.cs`. Ensure the class has a `ReadIdAsync` helper (add `using System.Text.Json;` and the same helper as in `JobEndpointTests`):
 
 ```csharp
 [Fact]
 public async Task DeleteCompany_WithJobs_Returns409()
 {
     var companyRes = await _client.PostAsJsonAsync("/api/companies", new { name = "BusyCorp", type = 0 });
-    var company = await companyRes.Content.ReadFromJsonAsync<dynamic>();
-    var companyId = (int)company!.id;
+    var companyId = await ReadIdAsync(companyRes);
 
     // Create a job referencing the company
     await _client.PostAsJsonAsync("/api/jobs", new
@@ -895,7 +949,137 @@ git commit -m "test(api): integration tests for jobs, company 409, MCP transitio
 
 ---
 
-### Task 22: Phase 3 quality gate + client generation
+### Task 22: Timeline backend — JobTimelineService + endpoint
+
+**Files:**
+- Create: `backend/src/CareerOps.Application/Jobs/JobTimelineDto.cs`
+- Create: `backend/src/CareerOps.Application/Jobs/JobTimelineService.cs`
+- Modify: `backend/src/CareerOps.Presentation/Endpoints/JobEndpoints.cs`
+- Modify: `backend/src/CareerOps.Application/DependencyInjection.cs`
+
+**Interfaces:**
+- Consumes: `IAppDbContext`, job/activity/follow-up data
+- Produces: `GET /api/jobs/{id}/timeline` → `List<TimelineEventDto>` sorted by timestamp desc
+
+- [ ] **Step 1: Create timeline DTOs**
+
+```csharp
+// backend/src/CareerOps.Application/Jobs/JobTimelineDto.cs
+namespace CareerOps.Application.Jobs;
+
+public enum TimelineEventKind
+{
+    Transition = 0,
+    Activity   = 1,
+    FollowUp   = 2
+}
+
+public record TimelineEventDto(
+    int Id,
+    TimelineEventKind Kind,
+    DateTime TimestampUtc,
+    string Title,
+    string? Detail,
+    string? Actor   // "User" | "Agent" | "System" — only for Transition events
+);
+```
+
+- [ ] **Step 2: Create JobTimelineService**
+
+```csharp
+// backend/src/CareerOps.Application/Jobs/JobTimelineService.cs
+using CareerOps.Application.Common;
+using CareerOps.Domain.Jobs;
+using Microsoft.EntityFrameworkCore;
+
+namespace CareerOps.Application.Jobs;
+
+public sealed class JobTimelineService(IAppDbContext db)
+{
+    public async Task<List<TimelineEventDto>> GetTimelineAsync(int jobId, CancellationToken ct = default)
+    {
+        var events = new List<TimelineEventDto>();
+
+        var transitions = await db.JobTransitions
+            .Where(t => t.JobId == jobId)
+            .OrderByDescending(t => t.ChangedAtUtc)
+            .ToListAsync(ct);
+
+        foreach (var t in transitions)
+        {
+            var title = t.FromStatus.HasValue
+                ? $"{t.FromStatus} → {t.ToStatus}"
+                : $"Created as {t.ToStatus}";
+            events.Add(new TimelineEventDto(
+                t.Id, TimelineEventKind.Transition, t.ChangedAtUtc, title, t.Notes, t.Actor.ToString()));
+        }
+
+        var activities = await db.JobActivities
+            .Where(a => a.JobId == jobId)
+            .OrderByDescending(a => a.ScheduledAtUtc ?? a.CreatedAtUtc)
+            .ToListAsync(ct);
+
+        foreach (var a in activities)
+        {
+            var ts = a.ScheduledAtUtc ?? a.CreatedAtUtc;
+            events.Add(new TimelineEventDto(
+                a.Id, TimelineEventKind.Activity, ts, $"{a.Type}: {a.Label}", $"{a.Status} · {a.Outcome}", null));
+        }
+
+        var followUps = await db.FollowUpTasks
+            .Where(f => f.JobId == jobId)
+            .OrderByDescending(f => f.DueAtUtc)
+            .ToListAsync(ct);
+
+        foreach (var f in followUps)
+        {
+            events.Add(new TimelineEventDto(
+                f.Id, TimelineEventKind.FollowUp, f.DueAtUtc, f.Title, f.Status.ToString(), null));
+        }
+
+        return [.. events.OrderByDescending(e => e.TimestampUtc)];
+    }
+}
+```
+
+- [ ] **Step 3: Wire timeline endpoint in JobEndpoints**
+
+Add to `JobEndpoints.cs` inside `MapJobs` (before `return jobs;`):
+
+```csharp
+jobs.MapGet("/{id:int}/timeline", async (int id, JobTimelineService svc) =>
+    TypedResults.Ok(await svc.GetTimelineAsync(id)));
+```
+
+- [ ] **Step 4: Register JobTimelineService in DI**
+
+In `backend/src/CareerOps.Application/DependencyInjection.cs`, add:
+
+```csharp
+services.AddScoped<JobTimelineService>();
+```
+
+- [ ] **Step 5: Build and test**
+
+```
+dotnet build backend/CareerOps.slnx
+```
+
+Expected: `Build succeeded.`
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add backend/src/CareerOps.Application/Jobs/JobTimelineDto.cs
+git add backend/src/CareerOps.Application/Jobs/JobTimelineService.cs
+git add backend/src/CareerOps.Application/DependencyInjection.cs
+git add backend/src/CareerOps.Presentation/Endpoints/JobEndpoints.cs
+git commit -m "feat(api): job timeline read model — GET /api/jobs/{id}/timeline"
+```
+
+---
+
+### Task 23: Phase 3 quality gate + client generation
 
 - [ ] **Step 1: Run full verify**
 
@@ -942,4 +1126,4 @@ git commit -m "chore(frontend): regenerate orval client from V2 OpenAPI spec"
 
 ---
 
-*Phase 3 complete. Proceed to `docs/superpowers/plans/2026-06-25-domain-v2-phase4-frontend.md`.*
+*Phase 3 complete (Tasks 15–23). Proceed to `docs/superpowers/plans/2026-06-25-domain-v2-phase4-frontend.md`.*
