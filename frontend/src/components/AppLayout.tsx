@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from "react-router";
-import { LayoutDashboard, KanbanSquare, Send, CalendarClock, Building2, FileText, Settings, ListChecks } from "lucide-react";
+import { LayoutDashboard, Briefcase, CheckSquare, Building2, Settings } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
   SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -8,13 +8,10 @@ import {
 import { useGetUserProfile } from "@/lib/api/settings/settings";
 
 const nav = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/job-leads", label: "Job Leads", icon: KanbanSquare },
-  { to: "/applications", label: "Applications", icon: Send },
-  { to: "/interviews", label: "Interviews", icon: CalendarClock },
-  { to: "/tasks", label: "Tasks", icon: ListChecks },
+  { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/jobs", label: "Jobs", icon: Briefcase },
+  { to: "/tasks", label: "Tasks", icon: CheckSquare },
   { to: "/companies", label: "Companies", icon: Building2 },
-  { to: "/resume-variants", label: "Resume Variants", icon: FileText },
   { to: "/settings/profile", label: "Settings", icon: Settings },
 ];
 
@@ -32,7 +29,7 @@ export function AppLayout() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {nav.map((n) => {
-                  const isActive = pathname === n.to || pathname.startsWith(`${n.to}/`);
+                  const isActive = n.to === '/' ? pathname === '/' : (pathname === n.to || pathname.startsWith(`${n.to}/`));
                   return (
                     <SidebarMenuItem key={n.to}>
                       <SidebarMenuButton asChild isActive={isActive} tooltip={n.label}>

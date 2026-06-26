@@ -1,52 +1,69 @@
-using CareerOps.Application.Common;
 using CareerOps.Application.FollowUpTasks;
+using CareerOps.Domain.Common;
 using CareerOps.Domain.FollowUpTasks;
-using CareerOps.Domain.JobLeads;
 using CareerOps.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using Xunit;
 
 namespace CareerOps.UnitTests.FollowUpTasks;
 
-public class FollowUpTaskServiceTests
+public sealed class FollowUpTaskServiceTests
 {
-    private sealed class FixedClock : IClock
+    private sealed class FixedClock(DateTime utcNow) : CareerOps.Application.Common.IClock
     {
-        public DateTime UtcNow => new(2026, 6, 20, 12, 0, 0, DateTimeKind.Utc);
-        public DateOnly Today => new(2026, 6, 20);
+        public DateTime UtcNow => utcNow;
+        public DateOnly Today => DateOnly.FromDateTime(utcNow);
     }
 
-    private static readonly FixedClock Clock = new();
+    private static readonly InMemoryDatabaseRoot Root = new();
 
-    private static CareerOpsDbContext NewDb() =>
-        new(new DbContextOptionsBuilder<CareerOpsDbContext>()
-            .UseInMemoryDatabase($"careerops-{Guid.NewGuid()}").Options, Clock);
-
-    private static CreateFollowUpTaskRequest Task(DateTime due, FollowUpStatus status = FollowUpStatus.Pending) =>
-        new("Email recruiter", null, RelatedEntityType.JobLead, 1, due, status, Priority.High);
-
-    [Fact]
-    public async Task GetDue_returns_pending_tasks_at_or_before_now()
+    private static CareerOpsDbContext Db(string name, FixedClock clock)
     {
-        await using var db = NewDb();
-        var svc = new FollowUpTaskService(db, Clock);
-        await svc.CreateAsync(Task(Clock.UtcNow.AddHours(-1)));            // due
-        await svc.CreateAsync(Task(Clock.UtcNow.AddDays(1)));             // future, not due
-        await svc.CreateAsync(Task(Clock.UtcNow.AddHours(-1), FollowUpStatus.Completed)); // done, excluded
-
-        var due = await svc.GetDueAsync();
-
-        Assert.Single(due);
+        var opts = new DbContextOptionsBuilder<CareerOpsDbContext>()
+            .UseInMemoryDatabase(name, Root).Options;
+        return new CareerOpsDbContext(opts, clock);
     }
 
     [Fact]
-    public async Task Complete_sets_status_completed()
+    public async Task Create_StandaloneTask_NoJobId()
     {
-        await using var db = NewDb();
-        var svc = new FollowUpTaskService(db, Clock);
-        var created = await svc.CreateAsync(Task(Clock.UtcNow));
+        var dbName = nameof(Create_StandaloneTask_NoJobId);
+        var clock = new FixedClock(new DateTime(2026, 6, 25, 10, 0, 0, DateTimeKind.Utc));
+        await using var db = Db(dbName, clock);
+        var svc = new FollowUpTaskService(db, clock);
 
-        var done = await svc.CompleteAsync(created.Id);
+        var dto = await svc.CreateAsync(new CreateFollowUpTaskRequest("Call recruiter", null, clock.UtcNow.AddDays(3), Priority.Low, null, null));
 
-        Assert.Equal(FollowUpStatus.Completed, done!.Status);
+        Assert.Null(dto.JobId);
+        Assert.Null(dto.JobActivityId);
+    }
+
+    [Fact]
+    public async Task Create_WithActivityButNoJob_Throws()
+    {
+        var dbName = nameof(Create_WithActivityButNoJob_Throws);
+        var clock = new FixedClock(new DateTime(2026, 6, 25, 10, 0, 0, DateTimeKind.Utc));
+        await using var db = Db(dbName, clock);
+        var svc = new FollowUpTaskService(db, clock);
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            svc.CreateAsync(new CreateFollowUpTaskRequest("Test", null, clock.UtcNow.AddDays(1), Priority.Low, JobId: null, JobActivityId: 99)));
+    }
+
+    [Fact]
+    public async Task Complete_SetsStatusCompleted()
+    {
+        var dbName = nameof(Complete_SetsStatusCompleted);
+        var clock = new FixedClock(new DateTime(2026, 6, 25, 10, 0, 0, DateTimeKind.Utc));
+        await using var db = Db(dbName, clock);
+        var svc = new FollowUpTaskService(db, clock);
+        var dto = await svc.CreateAsync(new CreateFollowUpTaskRequest("Test", null, clock.UtcNow.AddDays(1), Priority.Low, null, null));
+
+        await svc.CompleteAsync(dto.Id);
+
+        await using var db2 = Db(dbName, clock);
+        var task = await db2.FollowUpTasks.FindAsync(dto.Id);
+        Assert.Equal(FollowUpStatus.Completed, task!.Status);
     }
 }

@@ -1,41 +1,36 @@
-using System.ComponentModel;
 using CareerOps.Application.FollowUpTasks;
+using CareerOps.Domain.Common;
+using CareerOps.Domain.FollowUpTasks;
 using ModelContextProtocol.Server;
+using System.ComponentModel;
 
 namespace CareerOps.Presentation.Mcp;
 
 [McpServerToolType]
-public static class FollowUpTools
+public sealed class FollowUpTools(FollowUpTaskService svc)
 {
-    [McpServerTool, Description("List follow-up tasks that are due now or overdue (pending, due-at <= now).")]
-    public static Task<IReadOnlyList<FollowUpTaskDto>> ListDueFollowUps(FollowUpTaskService service, CancellationToken ct = default)
-        => service.GetDueAsync(ct);
+    [McpServerTool, Description("List follow-up tasks. Filter by due (today, overdue, all), status, or jobId.")]
+    public async Task<object> list_follow_ups(
+        [Description("'today' = due today, 'overdue' = past due, 'all' = everything (default: all)")] string? due = null,
+        [Description("Filter by status")] FollowUpStatus? status = null,
+        [Description("Filter by job ID")] int? jobId = null)
+        => await svc.ListAllAsync(status, jobId, due);
 
-    [McpServerTool, Description("Create a follow-up task (title, due date, priority; optionally linked to a job lead / application / interview).")]
-    public static Task<FollowUpTaskDto> CreateFollowUp(CreateFollowUpTaskRequest request, FollowUpTaskService service, CancellationToken ct = default)
-        => service.CreateAsync(request, ct);
+    [McpServerTool, Description("Add a follow-up task. Optionally link to a job or job activity.")]
+    public async Task<object> add_follow_up(
+        [Description("Task title")] string title,
+        [Description("Due date (UTC)")] DateTime dueAtUtc,
+        [Description("Priority")] Priority priority = Priority.Medium,
+        [Description("Description")] string? description = null,
+        [Description("Job ID (optional)")] int? jobId = null,
+        [Description("Job activity ID (requires jobId)")] int? jobActivityId = null)
+        => await svc.CreateAsync(new CreateFollowUpTaskRequest(title, description, dueAtUtc, priority, jobId, jobActivityId));
 
-    [McpServerTool, Description("Mark a follow-up task complete. Returns null if not found.")]
-    public static Task<FollowUpTaskDto?> CompleteFollowUp(int id, FollowUpTaskService service, CancellationToken ct = default)
-        => service.CompleteAsync(id, ct);
+    [McpServerTool, Description("Mark a follow-up task as completed.")]
+    public async Task<bool> complete_follow_up([Description("Follow-up task ID")] int taskId)
+        => await svc.CompleteAsync(taskId);
 
-    [McpServerTool, Description("Skip a follow-up task. Returns null if not found.")]
-    public static Task<FollowUpTaskDto?> SkipFollowUp(int id, FollowUpTaskService service, CancellationToken ct = default)
-        => service.SkipAsync(id, ct);
-
-    [McpServerTool, Description("List ALL follow-up tasks (not only those due/overdue).")]
-    public static Task<IReadOnlyList<FollowUpTaskDto>> ListFollowUps(FollowUpTaskService service, CancellationToken ct = default)
-        => service.ListAsync(ct);
-
-    [McpServerTool, Description("Get one follow-up task by id. Returns null if not found.")]
-    public static Task<FollowUpTaskDto?> GetFollowUp(int id, FollowUpTaskService service, CancellationToken ct = default)
-        => service.GetAsync(id, ct);
-
-    [McpServerTool, Description("Update a follow-up task (title, description, related entity, due date, status, priority). Returns null if not found.")]
-    public static Task<FollowUpTaskDto?> UpdateFollowUp(int id, UpdateFollowUpTaskRequest request, FollowUpTaskService service, CancellationToken ct = default)
-        => service.UpdateAsync(id, request, ct);
-
-    [McpServerTool, Description("Delete a follow-up task by id. Returns true if deleted, false if not found.")]
-    public static Task<bool> DeleteFollowUp(int id, FollowUpTaskService service, CancellationToken ct = default)
-        => service.DeleteAsync(id, ct);
+    [McpServerTool, Description("Skip (dismiss) a follow-up task.")]
+    public async Task<bool> skip_follow_up([Description("Follow-up task ID")] int taskId)
+        => await svc.SkipAsync(taskId);
 }

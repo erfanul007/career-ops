@@ -1,25 +1,38 @@
-using CareerOps.Application.Applications;
-using CareerOps.Application.FollowUpTasks;
-using CareerOps.Application.Interviews;
-using CareerOps.Application.JobLeads;
-using CareerOps.Domain.Applications;
-using CareerOps.Domain.JobLeads;
+using CareerOps.Domain.Jobs;
 
 namespace CareerOps.Application.Dashboard;
 
-public sealed record StatusCount(JobLeadStatus Status, int Count);
+public record DashboardSummaryDto(
+    Dictionary<JobStatus, int> ActiveJobsByStatus,
+    int FollowUpsDueToday,
+    int OverdueFollowUps,
+    List<UpcomingActivityDto> UpcomingActivities,
+    List<StaleJobDto> StaleJobs,
+    List<OfferDeadlineDto> OfferDeadlines,
+    int? DaysUntilSearchDeadline
+);
 
-public sealed record StageCount(ApplicationStage Stage, int Count);
+public record UpcomingActivityDto(
+    int JobId,
+    string JobTitle,
+    string CompanyName,
+    int ActivityId,
+    string ActivityLabel,
+    DateTime ScheduledAtUtc
+);
 
-public sealed record DeadlineCountdown(DateTime DeadlineUtc, int DaysRemaining);
+public record StaleJobDto(
+    int Id,
+    string Title,
+    string CompanyName,
+    JobStatus Status,
+    DateTime UpdatedAtUtc,
+    DateTime? NextActionAtUtc
+);
 
-public sealed record DashboardSummaryDto(
-    int ActiveApplicationCount,
-    IReadOnlyList<StatusCount> LeadsByStatus,
-    IReadOnlyList<StageCount> ApplicationsByStage,
-    IReadOnlyList<FollowUpTaskDto> FollowUpsDue,
-    IReadOnlyList<FollowUpTaskDto> OverdueFollowUps,
-    IReadOnlyList<InterviewDto> UpcomingInterviews,
-    IReadOnlyList<JobLeadDto> HighPriorityLeads,
-    IReadOnlyList<ApplicationDto> StaleApplications,
-    DeadlineCountdown? SearchDeadline);
+public record OfferDeadlineDto(
+    int JobId,
+    string Title,
+    string CompanyName,
+    DateTime OfferDeadlineAtUtc
+);

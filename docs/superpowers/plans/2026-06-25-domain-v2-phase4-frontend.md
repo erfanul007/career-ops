@@ -10,8 +10,9 @@
 
 ## Global Constraints
 
+- **Prerequisite:** Phase 3 Task 23 (`just gen-client`) must have completed successfully and `frontend/src/lib/api/jobs/jobs.ts` must exist before any Phase 4 task begins. If it doesn't exist, complete Phase 3 Task 23 first.
 - All TypeScript types come from `src/lib/api/` (orval-generated) — do not hand-author API types
-- `@dnd-kit/core` already installed; install `@dnd-kit/sortable` in Task 23
+- `@dnd-kit/core` already installed; `@dnd-kit/sortable` is NOT used — DnD uses `useDraggable` on cards + `useDroppable` on columns
 - Status dropdown transitions come BEFORE DnD implementation
 - Optimistic updates: move card immediately, rollback on API error + toast
 - Same-column DnD drop = no-op (no API call)
@@ -38,6 +39,8 @@
 
 ### Create (V2)
 - `frontend/src/pages/JobsPage.tsx`
+- `frontend/src/pages/JobDetailPage.tsx`
+- `frontend/src/features/jobs/JobDetailContent.tsx`
 - `frontend/src/features/jobs/useJobMutations.ts`
 - `frontend/src/features/jobs/JobsBoard.tsx`
 - `frontend/src/features/jobs/BoardColumn.tsx`
@@ -159,6 +162,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import AppLayout from '@/components/AppLayout';
 import DashboardPage from '@/pages/DashboardPage';
 import JobsPage from '@/pages/JobsPage';
+import JobDetailPage from '@/pages/JobDetailPage';
 import CompaniesPage from '@/pages/CompaniesPage';
 import TasksPage from '@/pages/TasksPage';
 import SettingsProfilePage from '@/pages/SettingsProfilePage';
@@ -170,6 +174,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <DashboardPage /> },
       { path: 'jobs', element: <JobsPage /> },
+      { path: 'jobs/:id', element: <JobDetailPage /> },  // no nav item; opened via JOB-{id} link
       { path: 'companies', element: <CompaniesPage /> },
       { path: 'tasks', element: <TasksPage /> },
       { path: 'settings/profile', element: <SettingsProfilePage /> },
@@ -208,6 +213,17 @@ Expected: errors about missing `JobsPage` import — that's fine, create a place
 // frontend/src/pages/JobsPage.tsx
 export default function JobsPage() {
   return <div>Jobs</div>;
+}
+```
+
+- [ ] **Step 4b: Create placeholder JobDetailPage**
+
+The router imports `JobDetailPage` (line `{ path: 'jobs/:id', element: <JobDetailPage /> }`). Create a placeholder so the router compiles — this file is fully implemented in Task 38.
+
+```tsx
+// frontend/src/pages/JobDetailPage.tsx
+export default function JobDetailPage() {
+  return <div>Job Detail</div>;
 }
 ```
 
@@ -291,6 +307,7 @@ export function useJobMutations() {
       onSuccess: (data, vars) => {
         invalidateJobs();
         qc.invalidateQueries({ queryKey: getGetApiJobsIdQueryKey(vars.id) });
+        // orval serializes C# `Suggestion` → camelCase `suggestion`; verify in generated type if needed
         if (data.suggestion) {
           toast.info(data.suggestion);
         }
@@ -399,7 +416,7 @@ git commit -m "feat(frontend): JobStatusDropdown — inline status transition"
 
 **Interfaces:**
 - Consumes: `JobDto` from `src/lib/api/model`, `JobStatusDropdown`
-- Produces: `<JobCard job={JobDto} onClick={() => void} />` — board card with company+title, priority, remote mode, salary, next action date
+- Produces: `<JobCard job={JobDto} onClick={() => void} />` — board card with JOB-{id} link (opens `/jobs/:id` in new tab), company+title, priority, remote mode, salary, next action date
 
 - [ ] **Step 1: Create JobCard**
 
@@ -407,6 +424,7 @@ git commit -m "feat(frontend): JobStatusDropdown — inline status transition"
 // frontend/src/features/jobs/JobCard.tsx
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Link } from 'react-router-dom';
 import { JobStatusDropdown } from './JobStatusDropdown';
 import type { JobDto } from '@/lib/api/model';
 import { cn } from '@/lib/utils';
@@ -435,14 +453,26 @@ export function JobCard({ job, onClick, isDragging }: Props) {
       onClick={onClick}
     >
       <CardContent className="p-3 space-y-1.5">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-xs text-muted-foreground truncate">{job.companyName}</p>
-            <p className="font-medium text-sm leading-tight truncate">{job.title}</p>
-          </div>
+        {/* Header: ID link (new tab) + priority badge */}
+        <div className="flex items-center justify-between">
+          <Link
+            to={`/jobs/${job.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            className="text-[10px] font-mono text-muted-foreground hover:text-foreground hover:underline"
+          >
+            JOB-{job.id}
+          </Link>
           <Badge className={cn('text-[10px] px-1.5 py-0 shrink-0', PRIORITY_COLOR[job.priority])}>
             {job.priority}
           </Badge>
+        </div>
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground truncate">{job.companyName}</p>
+            <p className="font-medium text-sm leading-tight truncate">{job.title}</p>
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
@@ -500,7 +530,6 @@ git commit -m "feat(frontend): JobCard with priority, location, salary, next-act
 import type { JobDto, JobStatus } from '@/lib/api/model';
 import { JobCard } from './JobCard';
 import { useDroppable } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { cn } from '@/lib/utils';
 
 const COLUMN_COLORS: Partial<Record<JobStatus, string>> = {
@@ -537,11 +566,14 @@ export function BoardColumn({ label, jobs, onJobClick }: Props) {
           isOver && 'bg-muted/50',
         )}
       >
-        <SortableContext items={jobs.map(j => j.id)} strategy={verticalListSortingStrategy}>
-          {jobs.map(job => (
-            <JobCard key={job.id} job={job} onClick={() => onJobClick(job.id)} />
-          ))}
-        </SortableContext>
+        {jobs.length === 0 && (
+          <div className="rounded border-2 border-dashed border-muted-foreground/20 py-4 text-center text-xs text-muted-foreground">
+            Drop here
+          </div>
+        )}
+        {jobs.map(job => (
+          <JobCard key={job.id} job={job} onClick={() => onJobClick(job.id)} />
+        ))}
       </div>
     </div>
   );
@@ -556,7 +588,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BoardColumn } from './BoardColumn';
 import type { JobDto, JobStatus } from '@/lib/api/model';
-import type { GroupBy } from './JobFilterBar';
+
+// GroupBy is defined here (not in JobFilterBar) so Task 28 compiles before Task 29 creates JobFilterBar.
+// JobFilterBar imports it from here.
+export type GroupBy = 'status' | 'country' | 'company';
 
 const ACTIVE_STATUSES: JobStatus[] = ['Discovered', 'Interested', 'Applied', 'Interviewing', 'Offered'];
 const CLOSED_STATUSES: JobStatus[] = ['Rejected', 'Ghosted', 'Withdrawn', 'Archived'];
@@ -642,12 +677,14 @@ import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { useState } from 'react';
 import type { JobStatus } from '@/lib/api/model';
+import type { GroupBy } from './JobsBoard';
 
-export type GroupBy = 'status' | 'country' | 'company';
+// GroupBy is defined in JobsBoard.tsx and re-exported here for consumers of JobFilterBar.
+export type { GroupBy };
 
 export interface JobFilters {
   search: string;
-  status: JobStatus | '';
+  status?: JobStatus;     // undefined = all statuses
   countries: string[];    // ISO or free-text country strings; empty = all
   companySearch: string;
   groupBy: GroupBy;
@@ -655,7 +692,7 @@ export interface JobFilters {
 
 export const DEFAULT_FILTERS: JobFilters = {
   search: '',
-  status: '',
+  status: undefined,
   countries: [],
   companySearch: '',
   groupBy: 'status',
@@ -699,8 +736,8 @@ export function JobFilterBar({ filters, onChange }: Props) {
 
       {/* Status filter */}
       <Select
-        value={filters.status}
-        onValueChange={value => onChange({ ...filters, status: value as JobStatus | '' })}
+        value={filters.status ?? ''}
+        onValueChange={value => onChange({ ...filters, status: value ? value as JobStatus : undefined })}
       >
         <SelectTrigger className="h-8 w-36">
           <SelectValue placeholder="All statuses" />
@@ -1371,7 +1408,7 @@ import {
   usePostApiFollowUpTasksIdComplete,
   usePostApiFollowUpTasksIdSkip,
 } from '@/lib/api/follow-up-tasks/follow-up-tasks';
-import type { JobDetailDto } from '@/lib/api/model';
+import type { JobDetailDto, FollowUpStatus } from '@/lib/api/model';
 import { FollowUpForm } from './FollowUpForm';
 
 interface Props { job: JobDetailDto }
@@ -1386,7 +1423,11 @@ export function FollowUpsTab({ job }: Props) {
   const complete = usePostApiFollowUpTasksIdComplete({ mutation: { onSuccess: invalidate, onError: () => toast.error('Failed') } });
   const skip = usePostApiFollowUpTasksIdSkip({ mutation: { onSuccess: invalidate, onError: () => toast.error('Failed') } });
 
-  const STATUS_COLOR = { Pending: 'bg-yellow-100 text-yellow-800', Completed: 'bg-green-100 text-green-800', Skipped: 'bg-slate-100' };
+  const STATUS_COLOR: Record<FollowUpStatus, string> = {
+    Pending: 'bg-yellow-100 text-yellow-800',
+    Completed: 'bg-green-100 text-green-800',
+    Skipped: 'bg-slate-100',
+  };
 
   return (
     <div className="space-y-2 py-2">
@@ -1747,36 +1788,52 @@ git commit -m "feat(frontend): assemble JobsPage with board/table toggle, filter
 - Modify: `frontend/src/features/jobs/BoardColumn.tsx`
 
 **Interfaces:**
-- Consumes: `@dnd-kit/core` `DndContext`, `DragOverlay`; `@dnd-kit/sortable` `useSortable`
+- Consumes: `@dnd-kit/core` `DndContext`, `DragOverlay`, `useDraggable`; `useDroppable` already on `BoardColumn` from Task 28; no `@dnd-kit/sortable`
 - Produces: drag-to-column triggers `transition_job`; optimistic card move + rollback on error
 
-> **Constraint:** DnD transitions only work when `groupBy === 'status'`. When groupBy is `country` or `company`, `BoardColumn` renders cards without `SortableContext` / `useDroppable` (or wrap the DndContext call in `{filters.groupBy === 'status' && ...}`). Drag handles are hidden when not in status grouping.
+> **Constraint:** DnD transitions only work when `groupBy === 'status'`. The `DndContext` is only rendered when `groupBy === 'status'`; other groupings render columns directly. `BoardColumn`'s `useDroppable` is harmless without a `DndContext` — `isOver` stays false and `setNodeRef` is a no-op.
 
-- [ ] **Step 1: Add useSortable to JobCard**
+- [ ] **Step 1: Replace JobCard with useDraggable version**
 
-Wrap the card with `useSortable`:
+Replace the entire file content. Uses `useDraggable` (not `useSortable`) — only the card's own position matters, not sortable ordering within a column. The `PointerSensor` in Step 2 ensures drag only activates after 8px movement, so normal clicks still open the drawer.
 
 ```tsx
 // Modify frontend/src/features/jobs/JobCard.tsx
-import { useSortable } from '@dnd-kit/sortable';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Link } from 'react-router-dom';
+import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
+import { JobStatusDropdown } from './JobStatusDropdown';
+import type { JobDto } from '@/lib/api/model';
+import { cn } from '@/lib/utils';
 
-// Add to Props interface:
-// draggable?: boolean   (when true, apply sortable transforms)
+const PRIORITY_COLOR = {
+  Low: 'bg-slate-100 text-slate-600',
+  Medium: 'bg-blue-100 text-blue-700',
+  High: 'bg-red-100 text-red-700',
+} as const;
+
+interface Props {
+  job: JobDto;
+  onClick: () => void;
+  isDragging?: boolean;
+}
 
 export function JobCard({ job, onClick, isDragging }: Props) {
+  const isOverdue = job.nextActionAtUtc && new Date(job.nextActionAtUtc) < new Date();
+
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
-    transition: dndTransition,
-    isDragging: isSortableDragging,
-  } = useSortable({ id: job.id });
+    isDragging: isBeingDragged,
+  } = useDraggable({ id: job.id });
 
+  // CSS.Translate.toString ignores scale — correct for a draggable card (not sortable)
   const style = {
-    transform: CSS.Transform.toString(transform),
-    transition: dndTransition,
+    transform: transform ? CSS.Translate.toString(transform) : undefined,
   };
 
   return (
@@ -1786,29 +1843,80 @@ export function JobCard({ job, onClick, isDragging }: Props) {
       {...attributes}
       {...listeners}
       className={cn(
-        'cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow select-none',
-        (isDragging || isSortableDragging) && 'opacity-40',
+        // cursor-pointer (not cursor-grab) — drag activates only after 8px movement, not on click
+        'cursor-pointer hover:shadow-md transition-shadow select-none',
+        (isDragging || isBeingDragged) && 'opacity-40',
       )}
       onClick={onClick}
     >
-      {/* ... existing card content unchanged ... */}
+      <CardContent className="p-3 space-y-1.5">
+        {/* Header: ID link (new tab) + priority badge */}
+        <div className="flex items-center justify-between">
+          <Link
+            to={`/jobs/${job.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            className="text-[10px] font-mono text-muted-foreground hover:text-foreground hover:underline"
+          >
+            JOB-{job.id}
+          </Link>
+          <Badge className={cn('text-[10px] px-1.5 py-0 shrink-0', PRIORITY_COLOR[job.priority])}>
+            {job.priority}
+          </Badge>
+        </div>
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground truncate">{job.companyName}</p>
+            <p className="font-medium text-sm leading-tight truncate">{job.title}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          {job.country && <span>{job.country}</span>}
+          {job.country && job.remoteMode !== 'OnSite' && <span>·</span>}
+          {job.remoteMode !== 'OnSite' && <span>{job.remoteMode}</span>}
+        </div>
+
+        {job.salaryMin && (
+          <p className="text-[11px] text-muted-foreground">
+            {job.salaryCurrency ?? ''} {job.salaryMin.toLocaleString()}
+            {job.salaryMax ? `–${job.salaryMax.toLocaleString()}` : '+'}
+          </p>
+        )}
+
+        {job.nextActionAtUtc && (
+          <p className={cn('text-[11px]', isOverdue ? 'text-red-500 font-medium' : 'text-muted-foreground')}>
+            Next: {new Date(job.nextActionAtUtc).toLocaleDateString()}
+            {isOverdue && ' ⚠'}
+          </p>
+        )}
+
+        <div onClick={e => e.stopPropagation()}>
+          <JobStatusDropdown jobId={job.id} currentStatus={job.status} />
+        </div>
+      </CardContent>
     </Card>
   );
 }
 ```
 
-- [ ] **Step 2: Wrap JobsBoard with DndContext**
+- [ ] **Step 2: Add DnD to JobsBoard**
+
+Build on top of the `JobsBoard` from Task 28. Add DnD imports, state, and handlers; then replace the return statement with a DnD-conditional version.
 
 ```tsx
 // Modify frontend/src/features/jobs/JobsBoard.tsx
-import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent, closestCenter } from '@dnd-kit/core';
+// Add these imports alongside existing ones from Task 28:
+import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent, closestCenter, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { useJobMutations } from './useJobMutations';
 import { getGetApiJobsQueryKey } from '@/lib/api/jobs/jobs';
-import type { JobDto, JobStatus } from '@/lib/api/model';
-import { useState } from 'react';
 
-// Inside JobsBoard component, add:
+// Inside JobsBoard component, add state and handlers after the existing groupJobs/visibleGroups lines:
+const sensors = useSensors(
+  useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+);
 const [activeJob, setActiveJob] = useState<JobDto | null>(null);
 const qc = useQueryClient();
 const { transition } = useJobMutations();
@@ -1819,6 +1927,7 @@ const handleDragStart = ({ active }: DragStartEvent) => {
 
 const handleDragEnd = ({ active, over }: DragEndEvent) => {
   setActiveJob(null);
+  if (groupBy !== 'status') return;   // DnD only active for status grouping
   if (!over) return;
 
   const job = jobs.find(j => j.id === active.id);
@@ -1835,34 +1944,43 @@ const handleDragEnd = ({ active, over }: DragEndEvent) => {
 
   transition.mutate(
     { id: job.id, data: { toStatus } },
-    {
-      onError: () => {
-        qc.setQueryData(getGetApiJobsQueryKey(), prevJobs);
-      },
-    }
+    { onError: () => qc.setQueryData(getGetApiJobsQueryKey(), prevJobs) }
   );
 };
 
-// Wrap board columns in:
-return (
+// Replace the return statement from Task 28 with this DnD-conditional version.
+// `visibleGroups` comes from Task 28's groupJobs() — no change needed there.
+const columns = (
+  <div className="space-y-2">
+    {groupBy === 'status' && (
+      <div className="flex justify-end">
+        <Button variant="ghost" size="sm" onClick={() => setShowClosed(v => !v)} className="text-xs">
+          {showClosed ? 'Hide closed' : 'Show closed'}
+        </Button>
+      </div>
+    )}
+    <div className="flex gap-3 overflow-x-auto pb-4">
+      {visibleGroups.map(group => (
+        <BoardColumn key={group.key} label={group.label} jobs={group.jobs} onJobClick={onJobClick} />
+      ))}
+    </div>
+  </div>
+);
+
+// DndContext wraps only when groupBy === 'status'; other groupings render columns directly.
+return groupBy === 'status' ? (
   <DndContext
+    sensors={sensors}
     collisionDetection={closestCenter}
     onDragStart={handleDragStart}
     onDragEnd={handleDragEnd}
   >
-    <div className="space-y-2">
-      {/* ... existing toggle button ... */}
-      <div className="flex gap-3 overflow-x-auto pb-4">
-        {visibleStatuses.map(status => (
-          <BoardColumn key={status} status={status} jobs={byStatus(status)} onJobClick={onJobClick} />
-        ))}
-      </div>
-    </div>
+    {columns}
     <DragOverlay>
       {activeJob && <JobCard job={activeJob} onClick={() => {}} isDragging />}
     </DragOverlay>
   </DndContext>
-);
+) : columns;
 ```
 
 - [ ] **Step 3: Commit**
@@ -1881,6 +1999,8 @@ git commit -m "feat(frontend): DnD board with optimistic status transition and r
 - Modify: `frontend/src/pages/TasksPage.tsx`
 
 - [ ] **Step 0: Update frontend enums constants file**
+
+**Prerequisite:** `frontend/src/lib/api/model` must exist (generated in Phase 3 Task 23). If it doesn't, complete Phase 3 Task 23 before this step.
 
 Open `frontend/src/lib/enums.ts` (or wherever `JOB_STATUS_LABELS`, `APPLICATION_STAGE_LABELS`, etc. are defined). Replace V1 enum maps with V2 ones:
 
@@ -1901,13 +2021,15 @@ export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
 };
 
 export const ACTIVITY_TYPE_LABELS: Record<JobActivityType, string> = {
-  PhoneScreen:   'Phone Screen',
-  Interview:     'Interview',
-  TechnicalTest: 'Technical Test',
-  Assessment:    'Assessment',
-  Offer:         'Offer',
-  Negotiation:   'Negotiation',
-  Other:         'Other',
+  Screening:       'Screening',
+  Interview:       'Interview',
+  Technical:       'Technical',
+  SystemDesign:    'System Design',
+  Behavioral:      'Behavioral',
+  TakeHome:        'Take-home',
+  Assessment:      'Assessment',
+  OfferDiscussion: 'Offer Discussion',
+  Other:           'Other',
 };
 
 export const ACTIVITY_STATUS_LABELS: Record<JobActivityStatus, string> = {
@@ -1927,28 +2049,309 @@ export const ACTIVITY_OUTCOME_LABELS: Record<JobActivityOutcome, string> = {
 
 Delete any old V1 enum maps (`JOB_LEAD_STATUS_LABELS`, `APPLICATION_STAGE_LABELS`, etc.).
 
-- [ ] **Step 1: Update DashboardPage to use V2 summary**
+- [ ] **Step 1: Rewrite DashboardPage**
 
-Replace old `useGetApiDashboardSummary` consumption with V2 shape. The `DashboardSummaryDto` from V2 has `activeJobsByStatus`, `followUpsDueToday`, `overdueFollowUps`, `upcomingActivities`, `staleJobs`, `offerDeadlines`, `daysUntilSearchDeadline`.
-
-Update DashboardPage to show:
-- Active jobs count per status (from `activeJobsByStatus`)
-- `followUpsDueToday` + `overdueFollowUps` count cards
-- `upcomingActivities` list
-- `staleJobs` list
-- `offerDeadlines` list
-
-Remove any references to old V1 DTOs (`ApplicationDto`, `JobLeadDto`, `InterviewDto`).
-
-- [ ] **Step 2: Update TasksPage to use V2 follow-ups**
+Replace the entire file with:
 
 ```tsx
-// frontend/src/pages/TasksPage.tsx — key changes:
-import { useGetApiFollowUpTasks } from '@/lib/api/follow-up-tasks/follow-up-tasks';
-// Use: const { data: tasks } = useGetApiFollowUpTasks()
-// Remove: any references to old application/job-lead data
-// Show: task title, job link (job.title), due date, status, complete/skip buttons
+// frontend/src/pages/DashboardPage.tsx
+import { Link } from 'react-router-dom';
+import { useGetApiDashboardSummary } from '@/lib/api/dashboard/dashboard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { JobStatus } from '@/lib/api/model';
+
+const STATUS_ORDER: JobStatus[] = ['Discovered', 'Interested', 'Applied', 'Interviewing', 'Offered'];
+
+export default function DashboardPage() {
+  const { data: summary, isLoading, isError } = useGetApiDashboardSummary();
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-4">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !summary) {
+    return <div className="p-6 text-sm text-destructive">Failed to load dashboard.</div>;
+  }
+
+  // activeJobsByStatus is serialized as { "Applied": 5, "Interviewing": 2, ... }
+  const byStatus = summary.activeJobsByStatus as Record<string, number>;
+
+  return (
+    <div className="p-6 space-y-6 max-w-5xl">
+      <h1 className="text-xl font-semibold">Dashboard</h1>
+
+      {/* Active jobs by status */}
+      <section>
+        <h2 className="text-sm font-medium text-muted-foreground mb-3">Active pipeline</h2>
+        <div className="flex gap-3 flex-wrap">
+          {STATUS_ORDER.map(status => (
+            <Card key={status} className="flex-1 min-w-[100px]">
+              <CardContent className="pt-4 pb-3 text-center">
+                <p className="text-2xl font-bold">{byStatus[status] ?? 0}</p>
+                <p className="text-xs text-muted-foreground mt-1">{status}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* Follow-up counts */}
+      <section className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-1">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Due today</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{summary.followUpsDueToday}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-1">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Overdue</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className={`text-2xl font-bold ${summary.overdueFollowUps > 0 ? 'text-red-500' : ''}`}>
+              {summary.overdueFollowUps}
+            </p>
+          </CardContent>
+        </Card>
+        {summary.daysUntilSearchDeadline != null && (
+          <Card>
+            <CardHeader className="pb-1">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Days until deadline</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className={`text-2xl font-bold ${summary.daysUntilSearchDeadline <= 7 ? 'text-orange-500' : ''}`}>
+                {summary.daysUntilSearchDeadline}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </section>
+
+      {/* Upcoming activities */}
+      {summary.upcomingActivities.length > 0 && (
+        <section>
+          <h2 className="text-sm font-medium text-muted-foreground mb-2">Upcoming activities (next 7 days)</h2>
+          <div className="space-y-2">
+            {summary.upcomingActivities.map(a => (
+              <div key={a.activityId} className="flex items-center justify-between p-3 rounded-md border text-sm">
+                <div>
+                  <Link to={`/jobs/${a.jobId}`} className="font-medium hover:underline">{a.jobTitle}</Link>
+                  <span className="text-muted-foreground"> · {a.companyName}</span>
+                  <p className="text-xs text-muted-foreground">{a.activityLabel}</p>
+                </div>
+                <p className="text-xs text-muted-foreground shrink-0">
+                  {new Date(a.scheduledAtUtc).toLocaleDateString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Stale jobs */}
+      {summary.staleJobs.length > 0 && (
+        <section>
+          <h2 className="text-sm font-medium text-muted-foreground mb-2">Stale jobs</h2>
+          <div className="space-y-2">
+            {summary.staleJobs.map(j => (
+              <div key={j.id} className="flex items-center justify-between p-3 rounded-md border text-sm">
+                <div>
+                  <Link to={`/jobs/${j.id}`} className="font-medium hover:underline">{j.title}</Link>
+                  <span className="text-muted-foreground"> · {j.companyName}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">{j.status}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Offer deadlines */}
+      {summary.offerDeadlines.length > 0 && (
+        <section>
+          <h2 className="text-sm font-medium text-muted-foreground mb-2">Offer deadlines</h2>
+          <div className="space-y-2">
+            {summary.offerDeadlines.map(o => (
+              <div key={o.jobId} className="flex items-center justify-between p-3 rounded-md border text-sm">
+                <div>
+                  <Link to={`/jobs/${o.jobId}`} className="font-medium hover:underline">{o.title}</Link>
+                  <span className="text-muted-foreground"> · {o.companyName}</span>
+                </div>
+                <p className="text-xs font-medium text-orange-500">
+                  {new Date(o.offerDeadlineAtUtc).toLocaleDateString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
 ```
+
+- [ ] **Step 2: Rewrite TasksPage**
+
+Replace the entire file with:
+
+```tsx
+// frontend/src/pages/TasksPage.tsx
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  useGetApiFollowUpTasks,
+  getGetApiFollowUpTasksQueryKey,
+  usePostApiFollowUpTasksIdComplete,
+  usePostApiFollowUpTasksIdSkip,
+} from '@/lib/api/follow-up-tasks/follow-up-tasks';
+import { useQueryClient } from '@tanstack/react-query';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { FollowUpStatus } from '@/lib/api/model';
+import { toast } from 'sonner';
+
+type DueFilter = 'all' | 'today' | 'overdue';
+
+const STATUS_BADGE: Record<FollowUpStatus, string> = {
+  Pending: 'bg-yellow-100 text-yellow-800',
+  Completed: 'bg-green-100 text-green-800',
+  Skipped: 'bg-gray-100 text-gray-600',
+};
+
+export default function TasksPage() {
+  const [due, setDue] = useState<DueFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<FollowUpStatus | undefined>(undefined);
+  const qc = useQueryClient();
+
+  const { data: tasks = [], isLoading, isError } = useGetApiFollowUpTasks({
+    params: {
+      due: due === 'all' ? undefined : due,
+      status: statusFilter,
+    },
+  });
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: getGetApiFollowUpTasksQueryKey() });
+
+  const complete = usePostApiFollowUpTasksIdComplete({
+    mutation: { onSuccess: invalidate, onError: () => toast.error('Failed to complete task') },
+  });
+
+  const skip = usePostApiFollowUpTasksIdSkip({
+    mutation: { onSuccess: invalidate, onError: () => toast.error('Failed to skip task') },
+  });
+
+  return (
+    <div className="p-6 max-w-3xl space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h1 className="text-xl font-semibold">Tasks</h1>
+        <div className="flex gap-2">
+          <Select value={due} onValueChange={v => setDue(v as DueFilter)}>
+            <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="today">Due today</SelectItem>
+              <SelectItem value="overdue">Overdue</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={statusFilter ?? 'all'}
+            onValueChange={v => setStatusFilter(v === 'all' ? undefined : v as FollowUpStatus)}
+          >
+            <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any status</SelectItem>
+              <SelectItem value="Pending">Pending</SelectItem>
+              <SelectItem value="Completed">Completed</SelectItem>
+              <SelectItem value="Skipped">Skipped</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {isError && <p className="text-sm text-destructive">Failed to load tasks.</p>}
+
+      {isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+        </div>
+      ) : tasks.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-4">No tasks found.</p>
+      ) : (
+        <div className="space-y-2">
+          {tasks.map(task => {
+            const isPending = task.status === 'Pending';
+            const isOverdue = isPending && task.dueAtUtc && new Date(task.dueAtUtc) < new Date();
+            return (
+              <div key={task.id} className="flex items-start justify-between p-3 rounded-md border gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm truncate">{task.title}</p>
+                  {task.jobId && (
+                    <Link
+                      to={`/jobs/${task.jobId}`}
+                      className="text-xs text-muted-foreground hover:underline"
+                    >
+                      {task.jobTitle ?? `JOB-${task.jobId}`}
+                    </Link>
+                  )}
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] px-1.5 py-0 ${STATUS_BADGE[task.status as FollowUpStatus] ?? ''}`}
+                    >
+                      {task.status}
+                    </Badge>
+                    {task.dueAtUtc && (
+                      <span className={`text-[11px] ${isOverdue ? 'text-red-500 font-medium' : 'text-muted-foreground'}`}>
+                        {new Date(task.dueAtUtc).toLocaleDateString()}{isOverdue ? ' · overdue' : ''}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {isPending && (
+                  <div className="flex gap-1 shrink-0">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={() => complete.mutate({ id: task.id })}
+                      disabled={complete.isPending}
+                    >
+                      Done
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-xs"
+                      onClick={() => skip.mutate({ id: task.id })}
+                      disabled={skip.isPending}
+                    >
+                      Skip
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+> **Note:** Verify exact hook names in `frontend/src/lib/api/follow-up-tasks/follow-up-tasks.ts` after orval generation — `useGetApiFollowUpTasks`, `usePostApiFollowUpTasksIdComplete`, `usePostApiFollowUpTasksIdSkip`, and `getGetApiFollowUpTasksQueryKey` are the expected names from the V2 API routes.
 
 - [ ] **Step 3: Commit**
 
@@ -1959,7 +2362,172 @@ git commit -m "feat(frontend): rebuild Dashboard and Tasks pages on V2 data mode
 
 ---
 
-### Task 38: Phase 4 quality gate
+### Task 38: JobDetailContent + JobDetailPage
+
+**Files:**
+- Create: `frontend/src/features/jobs/JobDetailContent.tsx`
+- Create: `frontend/src/pages/JobDetailPage.tsx`
+- Modify: `frontend/src/features/jobs/JobDetailDrawer.tsx`
+
+**Interfaces:**
+- Consumes: all drawer tab components (OverviewTab, ActivitiesTab, FollowUpsTab, AttachmentsTab, PropertiesTab) built in Tasks 31–34
+- Produces: `<JobDetailContent job={JobDetailDto} />` — shared tab content used by both drawer and full page; `<JobDetailPage />` — dedicated `/jobs/:id` full-page view
+
+> **Timeline tab:** `TimelineTab` is created in Phase 5 Task 40. After completing that task, add `<TabsTrigger value="timeline">Timeline</TabsTrigger>` + `<TabsContent value="timeline"><TimelineTab jobId={job.id} /></TabsContent>` to `JobDetailContent.tsx`.
+
+- [ ] **Step 1: Create JobDetailContent**
+
+Extract the tabs from the drawer into a shared component. Both the drawer and the full page render this.
+
+```tsx
+// frontend/src/features/jobs/JobDetailContent.tsx
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { OverviewTab } from './drawer/OverviewTab';
+import { ActivitiesTab } from './drawer/ActivitiesTab';
+import { FollowUpsTab } from './drawer/FollowUpsTab';
+import { AttachmentsTab } from './drawer/AttachmentsTab';
+import { PropertiesTab } from './drawer/PropertiesTab';
+import type { JobDetailDto } from '@/lib/api/model';
+
+interface Props { job: JobDetailDto }
+
+export function JobDetailContent({ job }: Props) {
+  return (
+    <Tabs defaultValue="overview">
+      <TabsList className="w-full justify-start overflow-x-auto">
+        <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsTrigger value="activities">Activities ({job.activities?.length ?? 0})</TabsTrigger>
+        <TabsTrigger value="followups">Follow-ups</TabsTrigger>
+        <TabsTrigger value="attachments">Attachments ({job.attachments?.length ?? 0})</TabsTrigger>
+        <TabsTrigger value="properties">Properties</TabsTrigger>
+        {/* Timeline tab added here in Phase 5 Task 40 */}
+      </TabsList>
+      <TabsContent value="overview"><OverviewTab job={job} /></TabsContent>
+      <TabsContent value="activities"><ActivitiesTab job={job} /></TabsContent>
+      <TabsContent value="followups"><FollowUpsTab job={job} /></TabsContent>
+      <TabsContent value="attachments"><AttachmentsTab job={job} /></TabsContent>
+      <TabsContent value="properties"><PropertiesTab job={job} /></TabsContent>
+    </Tabs>
+  );
+}
+```
+
+- [ ] **Step 2: Rewrite JobDetailDrawer to use JobDetailContent**
+
+Replace the entire file content with:
+
+```tsx
+// frontend/src/features/jobs/JobDetailDrawer.tsx
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useGetApiJobsId } from '@/lib/api/jobs/jobs';
+import { JobStatusDropdown } from './JobStatusDropdown';
+import { JobDetailContent } from './JobDetailContent';
+
+interface Props {
+  jobId: number | null;
+  onClose: () => void;
+}
+
+export function JobDetailDrawer({ jobId, onClose }: Props) {
+  const { data: job, isLoading } = useGetApiJobsId(jobId ?? 0, {
+    query: { enabled: jobId !== null },
+  });
+
+  return (
+    <Sheet open={jobId !== null} onOpenChange={open => !open && onClose()}>
+      <SheetContent className="w-[640px] sm:max-w-[640px] overflow-y-auto">
+        {isLoading || !job ? (
+          <div className="space-y-3 p-4">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-32 w-full" />
+          </div>
+        ) : (
+          <>
+            <SheetHeader className="pb-2">
+              <SheetTitle className="text-lg">{job.title}</SheetTitle>
+              <p className="text-sm text-muted-foreground">{job.companyName}</p>
+              <div className="pt-1">
+                <JobStatusDropdown jobId={job.id} currentStatus={job.status} />
+              </div>
+            </SheetHeader>
+            <JobDetailContent job={job} />
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
+```
+
+This removes the inline `<Tabs>` block, all `TabsList`/`TabsTrigger`/`TabsContent` elements, and the individual tab imports (`OverviewTab`, etc.) — those are now in `JobDetailContent.tsx`.
+
+- [ ] **Step 3: Create JobDetailPage**
+
+```tsx
+// frontend/src/pages/JobDetailPage.tsx
+import { useParams, Link } from 'react-router-dom';
+import { useGetApiJobsId } from '@/lib/api/jobs/jobs';
+import { JobDetailContent } from '@/features/jobs/JobDetailContent';
+import { JobStatusDropdown } from '@/features/jobs/JobStatusDropdown';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowLeft } from 'lucide-react';
+
+export default function JobDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const jobId = Number(id);
+  const { data: job, isLoading, isError } = useGetApiJobsId(jobId);
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-4">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  if (isError || !job) {
+    return <div className="p-6 text-sm text-destructive">Job not found.</div>;
+  }
+
+  return (
+    <div className="flex flex-col gap-4 p-6 max-w-4xl mx-auto">
+      <Link
+        to="/jobs"
+        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground w-fit"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Jobs
+      </Link>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <p className="text-xs text-muted-foreground font-mono mb-1">JOB-{job.id}</p>
+          <h1 className="text-xl font-semibold">{job.title}</h1>
+          <p className="text-sm text-muted-foreground">{job.companyName}</p>
+        </div>
+        <JobStatusDropdown jobId={job.id} currentStatus={job.status} />
+      </div>
+      <JobDetailContent job={job} />
+    </div>
+  );
+}
+```
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add frontend/src/features/jobs/JobDetailContent.tsx \
+        frontend/src/features/jobs/JobDetailDrawer.tsx \
+        frontend/src/pages/JobDetailPage.tsx
+git commit -m "feat(frontend): JobDetailContent shared + JobDetailPage at /jobs/:id"
+```
+
+---
+
+### Task 39: Phase 4 quality gate
 
 > **Deferred to post-MVP:** Source, remote mode, employment type, salary range, and applied date range filters are not in the filter bar UI. The backend supports them via `ListJobsQuery`; they can be added later without backend changes. Table column sorting is also post-MVP.
 

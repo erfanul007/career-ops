@@ -8,9 +8,10 @@ public sealed class CreateFollowUpTaskRequestValidator : AbstractValidator<Creat
     {
         RuleFor(r => r.Title).NotEmpty().MaximumLength(300);
         RuleFor(r => r.DueAtUtc).NotEmpty();
-        RuleFor(r => r.Status).IsInEnum();
         RuleFor(r => r.Priority).IsInEnum();
-        RuleFor(r => r.RelatedEntityType).IsInEnum();
+        RuleFor(r => r.JobActivityId)
+            .Null().When(r => !r.JobId.HasValue)
+            .WithMessage("JobId must be set when JobActivityId is set");
     }
 }
 
@@ -20,8 +21,9 @@ public sealed class UpdateFollowUpTaskRequestValidator : AbstractValidator<Updat
     {
         RuleFor(r => r.Title).NotEmpty().MaximumLength(300);
         RuleFor(r => r.DueAtUtc).NotEmpty();
-        RuleFor(r => r.Status).IsInEnum();
         RuleFor(r => r.Priority).IsInEnum();
-        RuleFor(r => r.RelatedEntityType).IsInEnum();
+        RuleFor(r => r.JobActivityId)
+            .Null().When(r => !r.JobId.HasValue)
+            .WithMessage("JobId must be set when JobActivityId is set");
     }
 }

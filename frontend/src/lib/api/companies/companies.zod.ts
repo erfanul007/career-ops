@@ -17,9 +17,9 @@ export const GetCompaniesResponseItem = zod.object({
   "linkedInUrl": zod.string().nullable(),
   "country": zod.string().nullable(),
   "city": zod.string().nullable(),
-  "companyType": zod.number(),
-  "marketType": zod.number(),
-  "compensationFit": zod.number(),
+  "companyType": zod.enum(['Unknown', 'Product', 'Outsourcing', 'Startup', 'Enterprise', 'Agency']),
+  "marketType": zod.enum(['Unknown', 'Local', 'Remote', 'Hybrid', 'International']),
+  "compensationFit": zod.enum(['Unknown', 'Low', 'Medium', 'High']),
   "notes": zod.string().nullable(),
   "createdAtUtc": zod.iso.datetime({"offset":true}),
   "updatedAtUtc": zod.iso.datetime({"offset":true})
@@ -32,9 +32,9 @@ export const CreateCompanyBody = zod.object({
   "linkedInUrl": zod.string().nullable(),
   "country": zod.string().nullable(),
   "city": zod.string().nullable(),
-  "companyType": zod.number(),
-  "marketType": zod.number(),
-  "compensationFit": zod.number(),
+  "companyType": zod.enum(['Unknown', 'Product', 'Outsourcing', 'Startup', 'Enterprise', 'Agency']),
+  "marketType": zod.enum(['Unknown', 'Local', 'Remote', 'Hybrid', 'International']),
+  "compensationFit": zod.enum(['Unknown', 'Low', 'Medium', 'High']),
   "notes": zod.string().nullable()
 })
 
@@ -48,9 +48,9 @@ export const CreateCompanyResponse = zod.object({
   "linkedInUrl": zod.string().nullable(),
   "country": zod.string().nullable(),
   "city": zod.string().nullable(),
-  "companyType": zod.number(),
-  "marketType": zod.number(),
-  "compensationFit": zod.number(),
+  "companyType": zod.enum(['Unknown', 'Product', 'Outsourcing', 'Startup', 'Enterprise', 'Agency']),
+  "marketType": zod.enum(['Unknown', 'Local', 'Remote', 'Hybrid', 'International']),
+  "compensationFit": zod.enum(['Unknown', 'Low', 'Medium', 'High']),
   "notes": zod.string().nullable(),
   "createdAtUtc": zod.iso.datetime({"offset":true}),
   "updatedAtUtc": zod.iso.datetime({"offset":true})
@@ -70,9 +70,9 @@ export const GetCompanyResponse = zod.object({
   "linkedInUrl": zod.string().nullable(),
   "country": zod.string().nullable(),
   "city": zod.string().nullable(),
-  "companyType": zod.number(),
-  "marketType": zod.number(),
-  "compensationFit": zod.number(),
+  "companyType": zod.enum(['Unknown', 'Product', 'Outsourcing', 'Startup', 'Enterprise', 'Agency']),
+  "marketType": zod.enum(['Unknown', 'Local', 'Remote', 'Hybrid', 'International']),
+  "compensationFit": zod.enum(['Unknown', 'Low', 'Medium', 'High']),
   "notes": zod.string().nullable(),
   "createdAtUtc": zod.iso.datetime({"offset":true}),
   "updatedAtUtc": zod.iso.datetime({"offset":true})
@@ -88,9 +88,9 @@ export const UpdateCompanyBody = zod.object({
   "linkedInUrl": zod.string().nullable(),
   "country": zod.string().nullable(),
   "city": zod.string().nullable(),
-  "companyType": zod.number(),
-  "marketType": zod.number(),
-  "compensationFit": zod.number(),
+  "companyType": zod.enum(['Unknown', 'Product', 'Outsourcing', 'Startup', 'Enterprise', 'Agency']),
+  "marketType": zod.enum(['Unknown', 'Local', 'Remote', 'Hybrid', 'International']),
+  "compensationFit": zod.enum(['Unknown', 'Low', 'Medium', 'High']),
   "notes": zod.string().nullable()
 })
 
@@ -104,9 +104,9 @@ export const UpdateCompanyResponse = zod.object({
   "linkedInUrl": zod.string().nullable(),
   "country": zod.string().nullable(),
   "city": zod.string().nullable(),
-  "companyType": zod.number(),
-  "marketType": zod.number(),
-  "compensationFit": zod.number(),
+  "companyType": zod.enum(['Unknown', 'Product', 'Outsourcing', 'Startup', 'Enterprise', 'Agency']),
+  "marketType": zod.enum(['Unknown', 'Local', 'Remote', 'Hybrid', 'International']),
+  "compensationFit": zod.enum(['Unknown', 'Low', 'Medium', 'High']),
   "notes": zod.string().nullable(),
   "createdAtUtc": zod.iso.datetime({"offset":true}),
   "updatedAtUtc": zod.iso.datetime({"offset":true})
@@ -116,5 +116,5 @@ export const DeleteCompanyParams = zod.object({
   "id": zod.number()
 })
 
-export const DeleteCompanyResponse = zod.void()
+export const DeleteCompanyResponse = zod.unknown()
 

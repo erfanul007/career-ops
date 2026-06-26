@@ -5,4 +5,14 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type CompanyType = number;
+export type CompanyType = typeof CompanyType[keyof typeof CompanyType];
+
+
+export const CompanyType = {
+  Unknown: 'Unknown',
+  Product: 'Product',
+  Outsourcing: 'Outsourcing',
+  Startup: 'Startup',
+  Enterprise: 'Enterprise',
+  Agency: 'Agency',
+} as const;

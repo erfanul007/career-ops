@@ -1,11 +1,8 @@
 using CareerOps.Domain.Companies;
 using CareerOps.Domain.FollowUpTasks;
-using CareerOps.Domain.Interviews;
-using CareerOps.Domain.JobLeads;
-using CareerOps.Domain.ResumeVariants;
+using CareerOps.Domain.Jobs;
 using CareerOps.Domain.UserProfiles;
 using Microsoft.EntityFrameworkCore;
-using DomainApplication = CareerOps.Domain.Applications.Application;
 
 namespace CareerOps.Application.Common;
 
@@ -13,11 +10,13 @@ public interface IAppDbContext
 {
     DbSet<UserProfile> UserProfiles { get; }
     DbSet<Company> Companies { get; }
-    DbSet<JobLead> JobLeads { get; }
-    DbSet<ResumeVariant> ResumeVariants { get; }
-    DbSet<DomainApplication> Applications { get; }
+    DbSet<Job> Jobs { get; }
+    DbSet<JobActivity> JobActivities { get; }
+    DbSet<JobTransition> JobTransitions { get; }
+    DbSet<JobProperty> JobProperties { get; }
+    DbSet<JobAttachment> JobAttachments { get; }
     DbSet<FollowUpTask> FollowUpTasks { get; }
-    DbSet<Interview> Interviews { get; }
-    Task<bool> CanConnectAsync(CancellationToken cancellationToken = default);
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+    Task<bool> CanConnectAsync(CancellationToken ct = default);
 }

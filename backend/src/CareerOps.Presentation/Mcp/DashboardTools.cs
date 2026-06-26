@@ -1,13 +1,13 @@
-using System.ComponentModel;
 using CareerOps.Application.Dashboard;
 using ModelContextProtocol.Server;
+using System.ComponentModel;
 
 namespace CareerOps.Presentation.Mcp;
 
 [McpServerToolType]
-public static class DashboardTools
+public sealed class DashboardTools(DashboardService svc)
 {
-    [McpServerTool, Description("Get the full dashboard summary: active application count, leads by status, applications by stage, follow-ups due today, overdue follow-ups, upcoming interviews (next 7 days), high-priority leads, stale applications, and the search-deadline countdown.")]
-    public static Task<DashboardSummaryDto> GetDashboardSummary(DashboardService service, CancellationToken ct = default)
-        => service.GetSummaryAsync(ct);
+    [McpServerTool, Description("Get dashboard summary: active jobs by status, follow-ups due today, overdue, upcoming activities, stale jobs, offer deadlines.")]
+    public async Task<object> get_dashboard_summary()
+        => await svc.GetSummaryAsync();
 }

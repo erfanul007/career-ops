@@ -5,4 +5,13 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type MarketType = number;
+export type MarketType = typeof MarketType[keyof typeof MarketType];
+
+
+export const MarketType = {
+  Unknown: 'Unknown',
+  Local: 'Local',
+  Remote: 'Remote',
+  Hybrid: 'Hybrid',
+  International: 'International',
+} as const;

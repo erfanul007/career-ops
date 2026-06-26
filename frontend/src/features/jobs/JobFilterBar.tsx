@@ -1,0 +1,118 @@
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
+import { useState } from 'react';
+import type { JobStatus } from '@/lib/api/model';
+import type { GroupBy } from './JobsBoard';
+
+export type { GroupBy };
+
+export interface JobFilters {
+  search: string;
+  status?: JobStatus;
+  countries: string[];
+  companySearch: string;
+  groupBy: GroupBy;
+}
+
+export const DEFAULT_FILTERS: JobFilters = {
+  search: '',
+  status: undefined,
+  countries: [],
+  companySearch: '',
+  groupBy: 'status',
+};
+
+interface Props {
+  filters: JobFilters;
+  onChange: (filters: JobFilters) => void;
+}
+
+const STATUSES: JobStatus[] = [
+  'Discovered', 'Interested', 'Applied', 'Interviewing', 'Offered',
+  'Rejected', 'Ghosted', 'Withdrawn', 'Archived',
+];
+
+const GROUP_OPTIONS: { value: GroupBy; label: string }[] = [
+  { value: 'status',  label: 'By Status' },
+  { value: 'country', label: 'By Country' },
+  { value: 'company', label: 'By Company' },
+];
+
+export function JobFilterBar({ filters, onChange }: Props) {
+  const [countryInput, setCountryInput] = useState('');
+
+  const addCountry = (raw: string) => {
+    const c = raw.trim();
+    if (!c || filters.countries.includes(c)) { setCountryInput(''); return; }
+    onChange({ ...filters, countries: [...filters.countries, c] });
+    setCountryInput('');
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Input
+        placeholder="Search jobs..."
+        value={filters.search}
+        onChange={e => onChange({ ...filters, search: e.target.value })}
+        className="h-8 w-52"
+      />
+
+      <Select
+        value={filters.status ?? ''}
+        onValueChange={value => onChange({ ...filters, status: value ? value as JobStatus : undefined })}
+      >
+        <SelectTrigger className="h-8 w-36">
+          <SelectValue placeholder="All statuses" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">All statuses</SelectItem>
+          {STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+        </SelectContent>
+      </Select>
+
+      <div className="flex items-center gap-1 flex-wrap">
+        {filters.countries.map(c => (
+          <Badge key={c} variant="secondary" className="h-7 gap-1 pr-1">
+            {c}
+            <Button
+              variant="ghost" size="icon" className="h-4 w-4 p-0"
+              onClick={() => onChange({ ...filters, countries: filters.countries.filter(x => x !== c) })}
+            >
+              <X className="h-2.5 w-2.5" />
+            </Button>
+          </Badge>
+        ))}
+        <Input
+          placeholder="Add country…"
+          value={countryInput}
+          onChange={e => setCountryInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCountry(countryInput); } }}
+          onBlur={() => addCountry(countryInput)}
+          className="h-8 w-32"
+        />
+      </div>
+
+      <Input
+        placeholder="Company…"
+        value={filters.companySearch}
+        onChange={e => onChange({ ...filters, companySearch: e.target.value })}
+        className="h-8 w-36"
+      />
+
+      <Select
+        value={filters.groupBy}
+        onValueChange={value => onChange({ ...filters, groupBy: value as GroupBy })}
+      >
+        <SelectTrigger className="h-8 w-36">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {GROUP_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}

@@ -4,21 +4,22 @@
  * CareerOps.Presentation | v1
  * OpenAPI spec version: 1.0.0
  */
-import type { FollowUpStatus } from './followUpStatus';
 import type { Priority } from './priority';
-import type { RelatedEntityType } from './relatedEntityType';
 
 export interface CreateFollowUpTaskRequest {
   title: string;
   /** @nullable */
   description: string | null;
-  relatedEntityType: RelatedEntityType;
+  dueAtUtc: string;
+  priority: Priority;
   /**
      * @nullable
      * @pattern ^-?(?:0|[1-9]\d*)$
      */
-  relatedEntityId: number | string | null;
-  dueAtUtc: string;
-  status: FollowUpStatus;
-  priority: Priority;
+  jobId: number | string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)$
+     */
+  jobActivityId: number | string | null;
 }

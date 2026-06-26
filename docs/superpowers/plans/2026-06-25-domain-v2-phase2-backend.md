@@ -16,7 +16,7 @@
 - EF Core code-first; use dotnet CLI for migrations (`just migrate <Name>`)
 - Use `dotnet` CLI for all project/package ops — do not hand-author .csproj
 - Enums stored as ints in DB; serialized as strings in JSON (handled in Program.cs)
-- Phase ends with `just verify` — must pass before Phase 3 begins
+- Phase ends with backend build + backend tests (`dotnet build backend/CareerOps.slnx && dotnet test backend/CareerOps.slnx`) — must pass before Phase 3 begins; frontend is not touched in Phase 2 so do not use `just verify` as the gate
 - Working directory: `E:\personal\projects\CareerOps`
 
 ---
@@ -227,16 +227,19 @@ Remove-Item backend/tests/CareerOps.IntegrationTests/ApplicationEndpointTests.cs
 Remove-Item backend/tests/CareerOps.IntegrationTests/ResumeVariantEndpointTests.cs
 ```
 
-Also, open `backend/src/CareerOps.Presentation/Program.cs` and remove the old endpoint registrations:
+**Critical:** Open `backend/src/CareerOps.Presentation/Program.cs` and remove all stale endpoint registrations before the Phase 2 build gate (Task 14). Without this, `dotnet build` fails because the deleted endpoint classes are no longer available.
+
+Remove these calls (and any others referencing deleted endpoint classes):
 ```csharp
-// Delete these lines:
+// Delete these lines — exact names may vary; remove all that reference deleted endpoint files:
 app.MapJobLeads();
 app.MapApplications();
 app.MapInterviews();
 app.MapResumeVariants();
+app.MapConvertToApplication();   // if present
 ```
 
-Also remove old `using` directives for deleted MCP tool types and endpoint types.
+Also remove `using` directives for the deleted endpoint/MCP namespaces (e.g. `using CareerOps.Presentation.Endpoints.JobLeads;`, `using CareerOps.Presentation.Mcp;` aliases for deleted tools). Save Program.cs and verify `dotnet build` passes before proceeding.
 
 - [ ] **Step 8: Commit**
 
@@ -987,13 +990,9 @@ dotnet ef database update --project backend/src/CareerOps.Infrastructure --start
 
 Expected: `Done. 1 migration applied.`
 
-- [ ] **Step 3: Verify build still compiles**
+- [ ] **Step 3: Optional compile check**
 
-```
-dotnet build backend/CareerOps.slnx
-```
-
-Expected: `Build succeeded.` (will have errors about missing services — that's fine here, fix in next tasks)
+At this point V1 services are deleted but V2 services don't yet exist, so `dotnet build` will likely fail with missing-service errors in `DependencyInjection.cs`. Skip this step — the real backend build gate is Task 14.
 
 - [ ] **Step 4: Commit**
 
@@ -1415,6 +1414,8 @@ public record UpsertPropertyRequest(string? Value, JobPropertyValueType ValueTyp
 
 ```csharp
 // backend/src/CareerOps.Application/Jobs/JobMappingConfig.cs
+using CareerOps.Application.FollowUpTasks;
+using CareerOps.Domain.FollowUpTasks;
 using CareerOps.Domain.Jobs;
 using Mapster;
 
@@ -1433,6 +1434,12 @@ public sealed class JobMappingConfig : IRegister
             .Map(d => d.Properties, s => s.Properties)
             .Map(d => d.Attachments, s => s.Attachments)
             .Map(d => d.FollowUps, s => s.FollowUps);
+
+        // FollowUpTaskDto has two derived string fields that Mapster cannot resolve by convention.
+        // JobTitle and JobActivityLabel require explicit navigation-property mappings.
+        config.NewConfig<FollowUpTask, FollowUpTaskDto>()
+            .Map(d => d.JobTitle, s => s.Job != null ? s.Job.Title : null)
+            .Map(d => d.JobActivityLabel, s => s.JobActivity != null ? s.JobActivity.Label : null);
     }
 }
 ```
@@ -1610,6 +1617,16 @@ public sealed class JobService(IAppDbContext db, IClock clock, CompanyService co
             Notes = req.Notes
         };
         db.Jobs.Add(job);
+        // Seed the timeline with a creation entry so a new job's history is never empty.
+        db.JobTransitions.Add(new JobTransition
+        {
+            Job = job,
+            FromStatus = null,
+            ToStatus = job.Status,
+            ChangedAtUtc = clock.UtcNow,
+            Actor = TransitionActor.User,
+            Notes = "Job created"
+        });
         await db.SaveChangesAsync(ct);
         return await GetJobDetailAsync(job.Id, ct)
             ?? throw new InvalidOperationException("Job not found after create");
@@ -2167,7 +2184,7 @@ public sealed class JobActivityServiceTests
         await db.SaveChangesAsync();
 
         var svc = new JobActivityService(db, clock);
-        await svc.CompleteActivityAsync(activity.Id, new CompleteActivityRequest(JobActivityOutcome.Passed, "Good", "Notes", false));
+        await svc.CompleteActivityAsync(job.Id, activity.Id, new CompleteActivityRequest(JobActivityOutcome.Passed, "Good", "Notes", false));
 
         await using var db2 = Db(dbName, clock);
         var updated = await db2.JobActivities.FindAsync(activity.Id);
@@ -2188,7 +2205,7 @@ public sealed class JobActivityServiceTests
         await db.SaveChangesAsync();
 
         var svc = new JobActivityService(db, clock);
-        await svc.CompleteActivityAsync(activity.Id, new CompleteActivityRequest(JobActivityOutcome.Passed, null, null, CreateFollowUp: true));
+        await svc.CompleteActivityAsync(job.Id, activity.Id, new CompleteActivityRequest(JobActivityOutcome.Passed, null, null, CreateFollowUp: true));
 
         await using var db2 = Db(dbName, clock);
         var followUp = await db2.FollowUpTasks.FirstOrDefaultAsync(f => f.JobActivityId == activity.Id);
@@ -2211,7 +2228,7 @@ public sealed class JobActivityServiceTests
         await db.SaveChangesAsync();
 
         var svc = new JobActivityService(db, clock);
-        await svc.DeleteActivityAsync(activity.Id);
+        await svc.DeleteActivityAsync(job.Id, activity.Id);
 
         await using var db2 = Db(dbName, clock);
         var fu = await db2.FollowUpTasks.FindAsync(followUp.Id);
@@ -2266,9 +2283,9 @@ public sealed class JobActivityService(IAppDbContext db, IClock clock)
         return activity.Adapt<JobActivityDto>();
     }
 
-    public async Task<JobActivityDto?> UpdateActivityAsync(int activityId, UpdateActivityRequest req, CancellationToken ct = default)
+    public async Task<JobActivityDto?> UpdateActivityAsync(int jobId, int activityId, UpdateActivityRequest req, CancellationToken ct = default)
     {
-        var activity = await db.JobActivities.FindAsync([activityId], ct);
+        var activity = await db.JobActivities.FirstOrDefaultAsync(a => a.Id == activityId && a.JobId == jobId, ct);
         if (activity is null) return null;
         activity.Label = req.Label;
         activity.Type = req.Type;
@@ -2285,11 +2302,12 @@ public sealed class JobActivityService(IAppDbContext db, IClock clock)
     }
 
     public async Task<(JobActivityDto? Activity, string? Suggestion)> CompleteActivityAsync(
+        int jobId,
         int activityId,
         CompleteActivityRequest req,
         CancellationToken ct = default)
     {
-        var activity = await db.JobActivities.FindAsync([activityId], ct);
+        var activity = await db.JobActivities.FirstOrDefaultAsync(a => a.Id == activityId && a.JobId == jobId, ct);
         if (activity is null) return (null, null);
 
         activity.Status = JobActivityStatus.Completed;
@@ -2314,9 +2332,9 @@ public sealed class JobActivityService(IAppDbContext db, IClock clock)
         return (activity.Adapt<JobActivityDto>(), "Great — log your notes while fresh");
     }
 
-    public async Task<bool> DeleteActivityAsync(int activityId, CancellationToken ct = default)
+    public async Task<bool> DeleteActivityAsync(int jobId, int activityId, CancellationToken ct = default)
     {
-        var activity = await db.JobActivities.FindAsync([activityId], ct);
+        var activity = await db.JobActivities.FirstOrDefaultAsync(a => a.Id == activityId && a.JobId == jobId, ct);
         if (activity is null) return false;
 
         // Nullify the activity link on follow-ups; preserve the Job link
@@ -2452,7 +2470,11 @@ public sealed class FollowUpTaskService(IAppDbContext db, IClock clock)
         return tasks.Adapt<List<FollowUpTaskDto>>();
     }
 
-    public async Task<List<FollowUpTaskDto>> ListAllAsync(FollowUpStatus? status = null, int? jobId = null, CancellationToken ct = default)
+    public async Task<List<FollowUpTaskDto>> ListAllAsync(
+        FollowUpStatus? status = null,
+        int? jobId = null,
+        string? due = null,   // "today" | "overdue" | null = all
+        CancellationToken ct = default)
     {
         var q = db.FollowUpTasks
             .Include(f => f.Job)
@@ -2460,6 +2482,15 @@ public sealed class FollowUpTaskService(IAppDbContext db, IClock clock)
             .AsQueryable();
         if (status.HasValue) q = q.Where(f => f.Status == status.Value);
         if (jobId.HasValue) q = q.Where(f => f.JobId == jobId.Value);
+        if (due == "today")
+        {
+            var today = clock.UtcNow.Date;
+            q = q.Where(f => f.DueAtUtc >= today && f.DueAtUtc < today.AddDays(1));
+        }
+        else if (due == "overdue")
+        {
+            q = q.Where(f => f.DueAtUtc < clock.UtcNow.Date);
+        }
         return (await q.OrderBy(f => f.DueAtUtc).ToListAsync(ct)).Adapt<List<FollowUpTaskDto>>();
     }
 
@@ -2920,34 +2951,23 @@ git commit -m "feat(app): update CompanyService find-or-create, rebuild DI regis
 
 **Interfaces:**
 - Consumes: all tasks above
-- Produces: `just verify` passes — build + all tests + frontend typecheck + frontend build
+- Produces: backend build + all backend tests pass
 
-- [ ] **Step 1: Run full verify**
-
-```
-just verify
-```
-
-Expected: `Build succeeded`, all tests pass, frontend typecheck succeeds, frontend build succeeds.
-
-If frontend fails due to old imports referencing deleted endpoints, that's expected — note the errors but do not fix frontend here (Phase 4). The backend must build and test clean.
-
-- [ ] **Step 2: Fix any backend compile errors**
-
-Common issues:
-- Leftover `using` directives referencing deleted namespaces
-- Old endpoint files in Presentation still referencing deleted Application services — leave those for Phase 3 (they'll be deleted then)
-- `FollowUpTaskMappingConfig.cs` may reference old FK fields — update to use `JobId`/`JobActivityId`
-
-- [ ] **Step 3: Run backend-only verify**
+- [ ] **Step 1: Run backend build + tests**
 
 ```
 dotnet build backend/CareerOps.slnx && dotnet test backend/CareerOps.slnx
 ```
 
-Expected: all tests pass.
+Expected: `Build succeeded`, all tests pass.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 2: Fix any backend compile errors**
+
+Common issues:
+- Leftover `using` directives referencing deleted namespaces
+- `FollowUpTaskMappingConfig.cs` may reference old FK fields — update to use `JobId`/`JobActivityId`
+
+- [ ] **Step 3: Commit**
 
 ```bash
 git add -A

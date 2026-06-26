@@ -1,24 +1,27 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { companyType, marketType, compensationFit, type EnumMap } from "@/lib/enums";
-import type { CompanyDto, CreateCompanyRequest } from "@/lib/api/model";
+import type { CompanyDto, CreateCompanyRequest, CompanyType, MarketType, CompensationFit } from "@/lib/api/model";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/form/Field";
 import { FormErrors } from "@/components/form/FormErrors";
-import { EnumSelect } from "@/components/form/EnumSelect";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const COMPANY_TYPES: CompanyType[] = ['Unknown', 'Product', 'Outsourcing', 'Startup', 'Enterprise', 'Agency'];
+const MARKET_TYPES: MarketType[] = ['Unknown', 'Local', 'Remote', 'Hybrid', 'International'];
+const COMP_FITS: CompensationFit[] = ['Unknown', 'Low', 'Medium', 'High'];
 
 type FormValues = {
   name: string; websiteUrl: string; linkedInUrl: string;
   country: string; city: string;
-  companyType: number; marketType: number; compensationFit: number;
+  companyType: CompanyType; marketType: MarketType; compensationFit: CompensationFit;
   notes: string;
 };
 
 const EMPTY: FormValues = {
   name: "", websiteUrl: "", linkedInUrl: "", country: "", city: "",
-  companyType: 0, marketType: 0, compensationFit: 0, notes: "",
+  companyType: 'Unknown', marketType: 'Unknown', compensationFit: 'Unknown', notes: "",
 };
 
 const toFormValues = (c: CompanyDto): FormValues => ({
@@ -39,7 +42,7 @@ type Props = {
 };
 
 export function CompanyForm({ initial, pending, errors, onSubmit, onCancel }: Props) {
-  const { register, handleSubmit, reset, control } = useForm<FormValues>({ defaultValues: EMPTY });
+  const { register, handleSubmit, reset, setValue, getValues } = useForm<FormValues>({ defaultValues: EMPTY });
 
   useEffect(() => {
     reset(initial ? toFormValues(initial) : EMPTY);
@@ -52,18 +55,12 @@ export function CompanyForm({ initial, pending, errors, onSubmit, onCancel }: Pr
       linkedInUrl: trimToNull(v.linkedInUrl),
       country: trimToNull(v.country),
       city: trimToNull(v.city),
-      companyType: Number(v.companyType),
-      marketType: Number(v.marketType),
-      compensationFit: Number(v.compensationFit),
+      companyType: v.companyType,
+      marketType: v.marketType,
+      compensationFit: v.compensationFit,
       notes: trimToNull(v.notes),
     }),
   );
-
-  const selects: { name: keyof FormValues; label: string; map: EnumMap }[] = [
-    { name: "companyType", label: "Type", map: companyType },
-    { name: "marketType", label: "Market", map: marketType },
-    { name: "compensationFit", label: "Compensation fit", map: compensationFit },
-  ];
 
   return (
     <form onSubmit={submit} className="space-y-4">
@@ -77,11 +74,24 @@ export function CompanyForm({ initial, pending, errors, onSubmit, onCancel }: Pr
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {selects.map((s) => (
-          <Field key={s.name} label={s.label}>
-            <EnumSelect control={control} name={s.name} map={s.map} />
-          </Field>
-        ))}
+        <Field label="Type">
+          <Select defaultValue={getValues('companyType')} onValueChange={v => setValue('companyType', v as CompanyType)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{COMPANY_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+          </Select>
+        </Field>
+        <Field label="Market">
+          <Select defaultValue={getValues('marketType')} onValueChange={v => setValue('marketType', v as MarketType)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{MARKET_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+          </Select>
+        </Field>
+        <Field label="Compensation fit">
+          <Select defaultValue={getValues('compensationFit')} onValueChange={v => setValue('compensationFit', v as CompensationFit)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{COMP_FITS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+          </Select>
+        </Field>
       </div>
 
       <Field label="Notes"><Textarea rows={3} {...register("notes")} /></Field>

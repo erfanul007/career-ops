@@ -1,57 +1,38 @@
-using CareerOps.Presentation.Filters;
 using CareerOps.Application.FollowUpTasks;
-using Microsoft.AspNetCore.Http.HttpResults;
+using CareerOps.Domain.FollowUpTasks;
+using CareerOps.Presentation.Filters;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CareerOps.Presentation.Endpoints;
 
 public static class FollowUpTaskEndpoints
 {
-    public static RouteGroupBuilder MapFollowUpTasks(this RouteGroupBuilder group)
+    public static RouteGroupBuilder MapFollowUpTasks(this RouteGroupBuilder tasks)
     {
-        group.MapGet("/", async (FollowUpTaskService svc, CancellationToken ct) =>
-                TypedResults.Ok(await svc.ListAsync(ct)))
-             .WithName("GetFollowUpTasks");
+        tasks.MapGet("/", async ([FromQuery] FollowUpStatus? status, [FromQuery] int? jobId, [FromQuery] string? due, FollowUpTaskService svc)
+            => TypedResults.Ok(await svc.ListAllAsync(status, jobId, due)))
+            .WithName("ListFollowUpTasks");
 
-        group.MapGet("/due", async (FollowUpTaskService svc, CancellationToken ct) =>
-                TypedResults.Ok(await svc.GetDueAsync(ct)))
-             .WithName("GetDueFollowUpTasks");
+        tasks.MapPut("/{id:int}", async (int id, UpdateFollowUpTaskRequest req, FollowUpTaskService svc) =>
+        {
+            var task = await svc.UpdateAsync(id, req);
+            return task is null ? Results.NotFound() : Results.Ok(task);
+        })
+        .WithName("UpdateFollowUpTask")
+        .AddEndpointFilter<ValidationFilter<UpdateFollowUpTaskRequest>>();
 
-        group.MapGet("/{id:int}", async Task<Results<Ok<FollowUpTaskDto>, NotFound>> (
-                int id, FollowUpTaskService svc, CancellationToken ct) =>
-                await svc.GetAsync(id, ct) is { } dto ? TypedResults.Ok(dto) : TypedResults.NotFound())
-             .WithName("GetFollowUpTask");
+        tasks.MapPost("/{id:int}/complete", async (int id, FollowUpTaskService svc) =>
+        {
+            var ok = await svc.CompleteAsync(id);
+            return ok ? Results.NoContent() : Results.NotFound();
+        }).WithName("CompleteFollowUpTask");
 
-        group.MapPost("/", async (CreateFollowUpTaskRequest req, FollowUpTaskService svc, CancellationToken ct) =>
-            {
-                var dto = await svc.CreateAsync(req, ct);
-                return TypedResults.Created($"/api/follow-up-tasks/{dto.Id}", dto);
-            })
-             .WithName("CreateFollowUpTask")
-             .AddEndpointFilter<ValidationFilter<CreateFollowUpTaskRequest>>()
-             .ProducesValidationProblem();
+        tasks.MapPost("/{id:int}/skip", async (int id, FollowUpTaskService svc) =>
+        {
+            var ok = await svc.SkipAsync(id);
+            return ok ? Results.NoContent() : Results.NotFound();
+        }).WithName("SkipFollowUpTask");
 
-        group.MapPut("/{id:int}", async Task<Results<Ok<FollowUpTaskDto>, NotFound>> (
-                int id, UpdateFollowUpTaskRequest req, FollowUpTaskService svc, CancellationToken ct) =>
-                await svc.UpdateAsync(id, req, ct) is { } dto ? TypedResults.Ok(dto) : TypedResults.NotFound())
-             .WithName("UpdateFollowUpTask")
-             .AddEndpointFilter<ValidationFilter<UpdateFollowUpTaskRequest>>()
-             .ProducesValidationProblem();
-
-        group.MapDelete("/{id:int}", async Task<Results<NoContent, NotFound>> (
-                int id, FollowUpTaskService svc, CancellationToken ct) =>
-                await svc.DeleteAsync(id, ct) ? TypedResults.NoContent() : TypedResults.NotFound())
-             .WithName("DeleteFollowUpTask");
-
-        group.MapPost("/{id:int}/complete", async Task<Results<Ok<FollowUpTaskDto>, NotFound>> (
-                int id, FollowUpTaskService svc, CancellationToken ct) =>
-                await svc.CompleteAsync(id, ct) is { } dto ? TypedResults.Ok(dto) : TypedResults.NotFound())
-             .WithName("CompleteFollowUpTask");
-
-        group.MapPost("/{id:int}/skip", async Task<Results<Ok<FollowUpTaskDto>, NotFound>> (
-                int id, FollowUpTaskService svc, CancellationToken ct) =>
-                await svc.SkipAsync(id, ct) is { } dto ? TypedResults.Ok(dto) : TypedResults.NotFound())
-             .WithName("SkipFollowUpTask");
-
-        return group;
+        return tasks;
     }
 }

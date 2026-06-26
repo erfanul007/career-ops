@@ -1,7 +1,6 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import type { CompanyDto } from "@/lib/api/model";
-import { companyType, marketType, compensationFit, enumLabel } from "@/lib/enums";
 
 function Row({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
@@ -23,9 +22,9 @@ export function CompanyDetailSheet({ company, open, onOpenChange, onEdit }: Prop
         <SheetHeader><SheetTitle>{company.name}</SheetTitle></SheetHeader>
         <div className="p-4">
           <dl>
-            <Row label="Type" value={enumLabel(companyType, company.companyType)} />
-            <Row label="Market" value={enumLabel(marketType, company.marketType)} />
-            <Row label="Compensation fit" value={enumLabel(compensationFit, company.compensationFit)} />
+            <Row label="Type" value={company.companyType} />
+            <Row label="Market" value={company.marketType} />
+            <Row label="Compensation fit" value={company.compensationFit} />
             <Row label="Website" value={company.websiteUrl} />
             <Row label="LinkedIn" value={company.linkedInUrl} />
             <Row label="Country" value={company.country} />

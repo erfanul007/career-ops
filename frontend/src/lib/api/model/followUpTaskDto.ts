@@ -6,20 +6,27 @@
  */
 import type { FollowUpStatus } from './followUpStatus';
 import type { Priority } from './priority';
-import type { RelatedEntityType } from './relatedEntityType';
 
 export interface FollowUpTaskDto {
   /** @pattern ^-?(?:0|[1-9]\d*)$ */
   id: number | string;
-  title: string;
-  /** @nullable */
-  description: string | null;
-  relatedEntityType: RelatedEntityType;
   /**
      * @nullable
      * @pattern ^-?(?:0|[1-9]\d*)$
      */
-  relatedEntityId: number | string | null;
+  jobId: number | string | null;
+  /** @nullable */
+  jobTitle: string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)$
+     */
+  jobActivityId: number | string | null;
+  /** @nullable */
+  jobActivityLabel: string | null;
+  title: string;
+  /** @nullable */
+  description: string | null;
   dueAtUtc: string;
   status: FollowUpStatus;
   priority: Priority;

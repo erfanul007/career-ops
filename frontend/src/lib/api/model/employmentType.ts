@@ -5,4 +5,13 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type EmploymentType = number;
+export type EmploymentType = typeof EmploymentType[keyof typeof EmploymentType];
+
+
+export const EmploymentType = {
+  FullTime: 'FullTime',
+  PartTime: 'PartTime',
+  Contract: 'Contract',
+  Freelance: 'Freelance',
+  Internship: 'Internship',
+} as const;

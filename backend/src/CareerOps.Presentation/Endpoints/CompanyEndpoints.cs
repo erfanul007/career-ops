@@ -33,10 +33,13 @@ public static class CompanyEndpoints
              .AddEndpointFilter<ValidationFilter<UpdateCompanyRequest>>()
              .ProducesValidationProblem();
 
-        group.MapDelete("/{id:int}", async Task<Results<NoContent, NotFound>> (
-                int id, CompanyService svc, CancellationToken ct) =>
-                await svc.DeleteAsync(id, ct) ? TypedResults.NoContent() : TypedResults.NotFound())
-             .WithName("DeleteCompany");
+        group.MapDelete("/{id:int}", async (int id, CompanyService svc, CancellationToken ct) =>
+        {
+            if (await svc.HasJobsAsync(id, ct))
+                return Results.Conflict(new { error = "Company has associated jobs and cannot be deleted." });
+            var deleted = await svc.DeleteAsync(id, ct);
+            return deleted ? Results.NoContent() : Results.NotFound();
+        }).WithName("DeleteCompany");
 
         return group;
     }

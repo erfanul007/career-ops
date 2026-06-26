@@ -14,7 +14,7 @@
 - MCP handlers always set `actor = Agent` internally, never expose it as input
 - Enums in JSON as strings; stored as ints in DB
 - `just gen-client` runs after this phase (requires API on localhost:8080)
-- Phase ends with `just verify` + `just gen-client`
+- Phase ends with backend build + backend tests + successful `just gen-client`; frontend type errors after client regeneration are expected and fixed in Phase 4
 - Working directory: `E:\personal\projects\CareerOps`
 
 ---
@@ -185,20 +185,20 @@ public static class JobEndpoints
 
         jobs.MapPut("/{id:int}/activities/{activityId:int}", async (int id, int activityId, UpdateActivityRequest req, JobActivityService svc) =>
         {
-            var activity = await svc.UpdateActivityAsync(activityId, req);
+            var activity = await svc.UpdateActivityAsync(id, activityId, req);
             return activity is null ? Results.NotFound() : Results.Ok(activity);
         })
         .AddEndpointFilter<ValidationFilter<UpdateActivityRequest>>();
 
         jobs.MapDelete("/{id:int}/activities/{activityId:int}", async (int id, int activityId, JobActivityService svc) =>
         {
-            var deleted = await svc.DeleteActivityAsync(activityId);
+            var deleted = await svc.DeleteActivityAsync(id, activityId);
             return deleted ? Results.NoContent() : Results.NotFound();
         });
 
         jobs.MapPost("/{id:int}/activities/{activityId:int}/complete", async (int id, int activityId, CompleteActivityRequest req, JobActivityService svc) =>
         {
-            var (activity, suggestion) = await svc.CompleteActivityAsync(activityId, req);
+            var (activity, suggestion) = await svc.CompleteActivityAsync(id, activityId, req);
             return activity is null ? Results.NotFound() : Results.Ok(new { activity, suggestion });
         })
         .AddEndpointFilter<ValidationFilter<CompleteActivityRequest>>();
@@ -300,8 +300,8 @@ public static class FollowUpTaskEndpoints
 {
     public static RouteGroupBuilder MapFollowUpTasks(this RouteGroupBuilder tasks)
     {
-        tasks.MapGet("/", async ([FromQuery] FollowUpStatus? status, [FromQuery] int? jobId, FollowUpTaskService svc)
-            => TypedResults.Ok(await svc.ListAllAsync(status, jobId)));
+        tasks.MapGet("/", async ([FromQuery] FollowUpStatus? status, [FromQuery] int? jobId, [FromQuery] string? due, FollowUpTaskService svc)
+            => TypedResults.Ok(await svc.ListAllAsync(status, jobId, due)));
 
         tasks.MapPut("/{id:int}", async (int id, UpdateFollowUpTaskRequest req, FollowUpTaskService svc) =>
         {
@@ -332,7 +332,7 @@ public static class FollowUpTaskEndpoints
 In `CompanyEndpoints.cs`, find the delete handler and replace it:
 
 ```csharp
-app.MapDelete("/{id:int}", async (int id, CompanyService svc) =>
+companies.MapDelete("/{id:int}", async (int id, CompanyService svc) =>
 {
     if (await svc.HasJobsAsync(id))
         return Results.Conflict(new { error = "Company has associated jobs and cannot be deleted." });
@@ -432,39 +432,73 @@ namespace CareerOps.Presentation.Mcp;
 [McpServerToolType]
 public sealed class JobTools(JobService jobSvc, JobWorkflowService workflowSvc, JobActivityService activitySvc)
 {
-    [McpServerTool, Description("List jobs with optional filters. Statuses, source, remoteMode, priority, country can all be filtered. Search matches title, company name, source URL, and notes.")]
+    [McpServerTool, Description("List jobs with optional filters. Statuses, source, remoteMode, priority, countries (multi-value) can all be filtered. Search matches title, company name, source URL, and notes.")]
     public async Task<object> list_jobs(
         [Description("Filter by statuses (e.g. Applied, Interviewing)")] JobStatus[]? statuses = null,
         [Description("Filter by source")] JobSource? source = null,
         [Description("Filter by remote mode")] RemoteMode? remoteMode = null,
         [Description("Filter by employment type")] EmploymentType? employmentType = null,
-        [Description("Filter by country")] string? country = null,
+        [Description("Filter by countries (e.g. [\"BD\",\"DE\",\"IE\"])")] string[]? countries = null,
+        [Description("Filter by company name (partial match)")] string? companySearch = null,
         [Description("Filter by priority")] Priority? priority = null,
         [Description("Free-text search across title, company, sourceUrl, notes")] string? search = null)
-        => await jobSvc.ListJobsAsync(new ListJobsQuery(statuses, source, remoteMode, employmentType, country, priority, Search: search));
+        => await jobSvc.ListJobsAsync(new ListJobsQuery(
+            Statuses: statuses,
+            Source: source,
+            RemoteMode: remoteMode,
+            EmploymentType: employmentType,
+            Countries: countries,
+            CompanySearch: companySearch,
+            Priority: priority,
+            Search: search));
 
     [McpServerTool, Description("Get full job detail including activities, follow-ups, properties, and attachments.")]
     public async Task<object?> get_job([Description("Job ID")] int jobId)
         => await jobSvc.GetJobDetailAsync(jobId);
 
-    [McpServerTool, Description("Create a new job. Status defaults to Discovered if not specified.")]
+    [McpServerTool, Description("Create a new job. Provide either companyId (if company already exists) or companyName (auto find-or-create). Status defaults to Discovered if not specified.")]
     public async Task<object> create_job(
-        [Description("Company ID")] int companyId,
         [Description("Job title")] string title,
         [Description("Job source")] JobSource source,
+        [Description("Company ID (provide this OR companyName)")] int? companyId = null,
+        [Description("Company name — used to find or create the company (provide this OR companyId)")] string? companyName = null,
         [Description("Starting status")] JobStatus status = JobStatus.Discovered,
         [Description("Priority")] Priority priority = Priority.Medium,
         [Description("Source URL (job posting link)")] string? sourceUrl = null,
         [Description("Job description text")] string? jobDescription = null,
-        [Description("Country")] string? country = null,
+        [Description("Country code or name (e.g. BD, DE, IE, GB, NO)")] string? country = null,
         [Description("City")] string? city = null,
         [Description("Remote mode")] RemoteMode remoteMode = RemoteMode.OnSite,
         [Description("Employment type")] EmploymentType employmentType = EmploymentType.FullTime,
         [Description("Notes")] string? notes = null)
-        => await jobSvc.CreateJobAsync(new CreateJobRequest(
-            companyId, title, status, priority, source, sourceUrl, jobDescription,
-            country, city, null, remoteMode, employmentType,
-            null, null, null, SalaryPeriod.Annual, null, null, null, null, notes));
+    {
+        if (!companyId.HasValue && string.IsNullOrWhiteSpace(companyName))
+            throw new ArgumentException("Either companyId or companyName must be provided");
+        return await jobSvc.CreateJobAsync(new CreateJobRequest(
+            CompanyId: companyId,
+            Title: title,
+            Status: status,
+            Priority: priority,
+            Source: source,
+            SourceUrl: sourceUrl,
+            JobDescription: jobDescription,
+            Country: country,
+            City: city,
+            LocationText: null,
+            RemoteMode: remoteMode,
+            EmploymentType: employmentType,
+            SalaryMin: null,
+            SalaryMax: null,
+            SalaryCurrency: null,
+            SalaryPeriod: SalaryPeriod.Annual,
+            DeadlineAtUtc: null,
+            FitScore: null,
+            ResumeLabel: null,
+            ResumeAngle: null,
+            CoverLetterNotes: null,
+            Notes: notes,
+            CompanyName: companyName));
+    }
 
     [McpServerTool, Description("Update job details (patch — only provided fields change). Does not change status — use transition_job for that.")]
     public async Task<object?> update_job(
@@ -542,6 +576,7 @@ public sealed class JobTools(JobService jobSvc, JobWorkflowService workflowSvc, 
 
     [McpServerTool, Description("Update a job activity.")]
     public async Task<object?> update_job_activity(
+        [Description("Job ID")] int jobId,
         [Description("Activity ID")] int activityId,
         [Description("Activity label")] string label,
         [Description("Activity type")] JobActivityType type,
@@ -550,11 +585,12 @@ public sealed class JobTools(JobService jobSvc, JobWorkflowService workflowSvc, 
         [Description("Contact name")] string? contactName = null,
         [Description("Meeting URL")] string? meetingUrl = null,
         [Description("Notes")] string? notes = null)
-        => await activitySvc.UpdateActivityAsync(activityId, new UpdateActivityRequest(
+        => await activitySvc.UpdateActivityAsync(jobId, activityId, new UpdateActivityRequest(
             label, type, status, scheduledAtUtc, null, contactName, null, meetingUrl, null, notes));
 
     [McpServerTool, Description("Mark a job activity as completed with outcome and optional feedback.")]
     public async Task<object> complete_job_activity(
+        [Description("Job ID")] int jobId,
         [Description("Activity ID")] int activityId,
         [Description("Outcome")] JobActivityOutcome outcome,
         [Description("Feedback notes")] string? feedback = null,
@@ -562,7 +598,7 @@ public sealed class JobTools(JobService jobSvc, JobWorkflowService workflowSvc, 
         [Description("Create a follow-up task?")] bool createFollowUp = false)
     {
         var (activity, suggestion) = await activitySvc.CompleteActivityAsync(
-            activityId, new CompleteActivityRequest(outcome, feedback, notes, createFollowUp));
+            jobId, activityId, new CompleteActivityRequest(outcome, feedback, notes, createFollowUp));
         return new { activity, suggestion };
     }
 
@@ -637,20 +673,11 @@ public sealed class FollowUpTools(FollowUpTaskService svc)
 {
     [McpServerTool, Description("List follow-up tasks. Filter by due (today, overdue, all), status, or jobId.")]
     public async Task<object> list_follow_ups(
-        [Description("'today' = due today, 'overdue' = past due, 'all' = everything (default: all)")] string due = "all",
+        [Description("'today' = due today, 'overdue' = past due, 'all' = everything (default: all)")] string? due = null,
         [Description("Filter by status")] FollowUpStatus? status = null,
         [Description("Filter by job ID")] int? jobId = null)
-    {
-        var now = DateTime.UtcNow.Date;
-        var tomorrow = now.AddDays(1);
-        var allPending = await svc.ListAllAsync(FollowUpStatus.Pending, jobId);
-        return due switch
-        {
-            "today"   => allPending.Where(f => f.DueAtUtc >= now && f.DueAtUtc < tomorrow).ToList(),
-            "overdue" => allPending.Where(f => f.DueAtUtc < now).ToList(),
-            _         => await svc.ListAllAsync(status, jobId)
-        };
-    }
+        // Service handles due-date filtering with IClock; no in-memory filtering needed here.
+        => await svc.ListAllAsync(status, jobId, due);
 
     [McpServerTool, Description("Add a follow-up task. Optionally link to a job or job activity.")]
     public async Task<object> add_follow_up(
@@ -845,11 +872,14 @@ public sealed class JobEndpointTests(ApiFactory factory) : IClassFixture<ApiFact
 
 - [ ] **Step 2: Create JobMcpToolTests (transition_job sets actor=Agent)**
 
+> **Prerequisite:** This test uses `TimelineEventDto` from `CareerOps.Application.Jobs` (defined in Task 22) and the `GET /api/jobs/{id}/timeline` endpoint (added in Task 22). Complete Task 22 before running this test; it will compile and pass only after Task 22 is in place.
+
 ```csharp
 // backend/tests/CareerOps.IntegrationTests/JobMcpToolTests.cs
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using CareerOps.Application.Jobs;
 using FluentAssertions;
 using Xunit;
 
@@ -902,6 +932,12 @@ public sealed class JobMcpToolTests(ApiFactory factory) : IClassFixture<ApiFacto
         };
         var mcpRes = await _client.PostAsJsonAsync("/mcp", mcpReq);
         mcpRes.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Verify the stored transition row has Actor = Agent (MCP always sets agent actor)
+        var timelineRes = await _client.GetAsync($"/api/jobs/{job.Id}/timeline");
+        timelineRes.StatusCode.Should().Be(HttpStatusCode.OK);
+        var timeline = await timelineRes.Content.ReadFromJsonAsync<List<TimelineEventDto>>();
+        timeline.Should().Contain(e => e.Actor == "Agent" && e.Title.Contains("Applied"));
     }
 }
 ```
@@ -1084,15 +1120,21 @@ git commit -m "feat(api): job timeline read model — GET /api/jobs/{id}/timelin
 
 ### Task 23: Phase 3 quality gate + client generation
 
-- [ ] **Step 1: Run full verify**
+- [ ] **Step 1: Run backend build + tests**
 
 ```
-just verify
+dotnet build backend/CareerOps.slnx && dotnet test backend/CareerOps.slnx
 ```
 
-Expected: `Build succeeded`, all tests pass, frontend build passes (frontend still uses old API — that's fine until Phase 4).
+Expected: `Build succeeded`, all tests pass. (Frontend is not regenerated yet; skip frontend build here — Phase 4 fixes it after gen-client.)
 
-- [ ] **Step 2: Start API locally**
+- [ ] **Step 2: Ensure Docker DB is running, then start API**
+
+```
+just up
+```
+
+Wait for Postgres to be healthy (usually a few seconds). Then start the API:
 
 ```
 just api

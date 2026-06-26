@@ -5,4 +5,12 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type CompensationFit = number;
+export type CompensationFit = typeof CompensationFit[keyof typeof CompensationFit];
+
+
+export const CompensationFit = {
+  Unknown: 'Unknown',
+  Low: 'Low',
+  Medium: 'Medium',
+  High: 'High',
+} as const;

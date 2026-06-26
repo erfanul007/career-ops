@@ -1,6 +1,5 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { companyType, marketType, compensationFit, enumLabel } from "@/lib/enums";
 import type { CompanyDto } from "@/lib/api/model";
 
 type Props = { companies: CompanyDto[]; onEdit: (c: CompanyDto) => void; onDelete: (c: CompanyDto) => void };
@@ -17,11 +16,11 @@ export function CompaniesTable({ companies, onEdit, onDelete }: Props) {
       </TableHeader>
       <TableBody>
         {companies.map((c) => (
-          <TableRow key={c.id} className="cursor-pointer" onClick={() => onEdit(c)}>
+          <TableRow key={c.id as number} className="cursor-pointer" onClick={() => onEdit(c)}>
             <TableCell className="font-medium">{c.name}</TableCell>
-            <TableCell>{enumLabel(companyType, c.companyType)}</TableCell>
-            <TableCell>{enumLabel(marketType, c.marketType)}</TableCell>
-            <TableCell>{enumLabel(compensationFit, c.compensationFit)}</TableCell>
+            <TableCell>{c.companyType}</TableCell>
+            <TableCell>{c.marketType}</TableCell>
+            <TableCell>{c.compensationFit}</TableCell>
             <TableCell>{[c.city, c.country].filter(Boolean).join(", ")}</TableCell>
             <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
               <Button variant="ghost" size="sm" onClick={() => onDelete(c)}>Delete</Button>

@@ -5,4 +5,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type SalaryPeriod = number;
+export type SalaryPeriod = typeof SalaryPeriod[keyof typeof SalaryPeriod];
+
+
+export const SalaryPeriod = {
+  Annual: 'Annual',
+  Monthly: 'Monthly',
+  Hourly: 'Hourly',
+} as const;

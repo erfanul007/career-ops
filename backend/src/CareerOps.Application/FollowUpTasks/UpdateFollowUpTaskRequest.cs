@@ -1,8 +1,12 @@
-using CareerOps.Domain.FollowUpTasks;
-using CareerOps.Domain.JobLeads;
+using CareerOps.Domain.Common;
 
 namespace CareerOps.Application.FollowUpTasks;
 
-public sealed record UpdateFollowUpTaskRequest(
-    string Title, string? Description, RelatedEntityType RelatedEntityType, int? RelatedEntityId,
-    DateTime DueAtUtc, FollowUpStatus Status, Priority Priority);
+public record UpdateFollowUpTaskRequest(
+    string Title,
+    string? Description,
+    DateTime DueAtUtc,
+    Priority Priority,
+    int? JobId,
+    int? JobActivityId
+);

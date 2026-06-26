@@ -441,24 +441,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getUpdateCompanyMutationOptions(options), queryClient);
     }
-    export type deleteCompanyResponse204 = {
+    export type deleteCompanyResponse200 = {
   data: void
-  status: 204
+  status: 200
 }
 
-export type deleteCompanyResponse404 = {
-  data: void
-  status: 404
-}
-
-export type deleteCompanyResponseSuccess = (deleteCompanyResponse204) & {
+export type deleteCompanyResponseSuccess = (deleteCompanyResponse200) & {
   headers: Headers;
 };
-export type deleteCompanyResponseError = (deleteCompanyResponse404) & {
-  headers: Headers;
-};
+;
 
-export type deleteCompanyResponse = (deleteCompanyResponseSuccess | deleteCompanyResponseError)
+export type deleteCompanyResponse = (deleteCompanyResponseSuccess)
 
 export const getDeleteCompanyUrl = (id: number,) => {
 
@@ -482,7 +475,7 @@ export const deleteCompany = async (id: number, options?: RequestInit): Promise<
 
 
 
-export const getDeleteCompanyMutationOptions = <TError = void,
+export const getDeleteCompanyMutationOptions = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCompany>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof apiClient>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteCompany>>, TError,{id: number}, TContext> => {
 
@@ -511,9 +504,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteCompanyMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCompany>>>
 
-    export type DeleteCompanyMutationError = void
+    export type DeleteCompanyMutationError = unknown
 
-    export const useDeleteCompany = <TError = void,
+    export const useDeleteCompany = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCompany>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof apiClient>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteCompany>>,

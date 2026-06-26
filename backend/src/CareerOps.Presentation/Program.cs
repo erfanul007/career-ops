@@ -20,6 +20,8 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
+// Enums as readable strings for HTTP endpoints (both request binding and response serialization).
+builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("db", tags: ["db"]);
 
@@ -54,13 +56,9 @@ app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = _ => false }
 app.MapHealthChecks("/health/db", new HealthCheckOptions { Predicate = c => c.Tags.Contains("db") }).ExcludeFromDescription();
 
 app.MapGroup("/api/settings").WithTags("Settings").MapSettings();
+app.MapGroup("/api/jobs").WithTags("Jobs").MapJobs();
 app.MapGroup("/api/companies").WithTags("Companies").MapCompanies();
-app.MapGroup("/api/job-leads").WithTags("JobLeads").MapJobLeads();
-app.MapGroup("/api/job-leads").WithTags("Applications").MapConvertToApplication();
-app.MapGroup("/api/resume-variants").WithTags("ResumeVariants").MapResumeVariants();
-app.MapGroup("/api/applications").WithTags("Applications").MapApplications();
 app.MapGroup("/api/follow-up-tasks").WithTags("FollowUpTasks").MapFollowUpTasks();
-app.MapGroup("/api/interviews").WithTags("Interviews").MapInterviews();
 app.MapGroup("/api/dashboard").WithTags("Dashboard").MapDashboard();
 
 app.MapMcp("/mcp");

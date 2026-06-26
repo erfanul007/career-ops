@@ -24,9 +24,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  CreateFollowUpTaskRequest,
   FollowUpTaskDto,
-  HttpValidationProblemDetails,
+  ListFollowUpTasksParams,
   UpdateFollowUpTaskRequest
 } from '../model';
 
@@ -52,29 +51,36 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   return result;
 };
 
-export type getFollowUpTasksResponse200 = {
+export type listFollowUpTasksResponse200 = {
   data: FollowUpTaskDto[]
   status: 200
 }
 
-export type getFollowUpTasksResponseSuccess = (getFollowUpTasksResponse200) & {
+export type listFollowUpTasksResponseSuccess = (listFollowUpTasksResponse200) & {
   headers: Headers;
 };
 ;
 
-export type getFollowUpTasksResponse = (getFollowUpTasksResponseSuccess)
+export type listFollowUpTasksResponse = (listFollowUpTasksResponseSuccess)
 
-export const getGetFollowUpTasksUrl = () => {
+export const getListFollowUpTasksUrl = (params?: ListFollowUpTasksParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/follow-up-tasks`
+  return stringifiedParams.length > 0 ? `/api/follow-up-tasks?${stringifiedParams}` : `/api/follow-up-tasks`
 }
 
-export const getFollowUpTasks = async ( options?: RequestInit): Promise<getFollowUpTasksResponse> => {
+export const listFollowUpTasks = async (params?: ListFollowUpTasksParams, options?: RequestInit): Promise<listFollowUpTasksResponse> => {
 
-  return apiClient<getFollowUpTasksResponse>(getGetFollowUpTasksUrl(),
+  return apiClient<listFollowUpTasksResponse>(getListFollowUpTasksUrl(params),
   {
     ...options,
     method: 'GET'
@@ -87,367 +93,66 @@ export const getFollowUpTasks = async ( options?: RequestInit): Promise<getFollo
 
 
 
-export const getGetFollowUpTasksQueryKey = () => {
+export const getListFollowUpTasksQueryKey = (params?: ListFollowUpTasksParams,) => {
     return [
-    `/api/follow-up-tasks`
+    `/api/follow-up-tasks`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetFollowUpTasksQueryOptions = <TData = Awaited<ReturnType<typeof getFollowUpTasks>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFollowUpTasks>>, TError, TData>>, request?: SecondParameter<typeof apiClient>}
+export const getListFollowUpTasksQueryOptions = <TData = Awaited<ReturnType<typeof listFollowUpTasks>>, TError = unknown>(params?: ListFollowUpTasksParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFollowUpTasks>>, TError, TData>>, request?: SecondParameter<typeof apiClient>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetFollowUpTasksQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListFollowUpTasksQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFollowUpTasks>>> = ({ signal }) => getFollowUpTasks({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listFollowUpTasks>>> = ({ signal }) => listFollowUpTasks(params, { signal, ...requestOptions });
 
 
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFollowUpTasks>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listFollowUpTasks>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export type GetFollowUpTasksQueryResult = NonNullable<Awaited<ReturnType<typeof getFollowUpTasks>>>
-export type GetFollowUpTasksQueryError = unknown
+export type ListFollowUpTasksQueryResult = NonNullable<Awaited<ReturnType<typeof listFollowUpTasks>>>
+export type ListFollowUpTasksQueryError = unknown
 
 
-export function useGetFollowUpTasks<TData = Awaited<ReturnType<typeof getFollowUpTasks>>, TError = unknown>(
-  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFollowUpTasks>>, TError, TData>> & Pick<
+export function useListFollowUpTasks<TData = Awaited<ReturnType<typeof listFollowUpTasks>>, TError = unknown>(
+ params: undefined |  ListFollowUpTasksParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFollowUpTasks>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getFollowUpTasks>>,
+          Awaited<ReturnType<typeof listFollowUpTasks>>,
           TError,
-          Awaited<ReturnType<typeof getFollowUpTasks>>
+          Awaited<ReturnType<typeof listFollowUpTasks>>
         > , 'initialData'
       >, request?: SecondParameter<typeof apiClient>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetFollowUpTasks<TData = Awaited<ReturnType<typeof getFollowUpTasks>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFollowUpTasks>>, TError, TData>> & Pick<
+export function useListFollowUpTasks<TData = Awaited<ReturnType<typeof listFollowUpTasks>>, TError = unknown>(
+ params?: ListFollowUpTasksParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFollowUpTasks>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getFollowUpTasks>>,
+          Awaited<ReturnType<typeof listFollowUpTasks>>,
           TError,
-          Awaited<ReturnType<typeof getFollowUpTasks>>
+          Awaited<ReturnType<typeof listFollowUpTasks>>
         > , 'initialData'
       >, request?: SecondParameter<typeof apiClient>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetFollowUpTasks<TData = Awaited<ReturnType<typeof getFollowUpTasks>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFollowUpTasks>>, TError, TData>>, request?: SecondParameter<typeof apiClient>}
+export function useListFollowUpTasks<TData = Awaited<ReturnType<typeof listFollowUpTasks>>, TError = unknown>(
+ params?: ListFollowUpTasksParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFollowUpTasks>>, TError, TData>>, request?: SecondParameter<typeof apiClient>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
-export function useGetFollowUpTasks<TData = Awaited<ReturnType<typeof getFollowUpTasks>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFollowUpTasks>>, TError, TData>>, request?: SecondParameter<typeof apiClient>}
+export function useListFollowUpTasks<TData = Awaited<ReturnType<typeof listFollowUpTasks>>, TError = unknown>(
+ params?: ListFollowUpTasksParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listFollowUpTasks>>, TError, TData>>, request?: SecondParameter<typeof apiClient>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getGetFollowUpTasksQueryOptions(options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
-
-
-
-
-export type createFollowUpTaskResponse201 = {
-  data: FollowUpTaskDto
-  status: 201
-}
-
-export type createFollowUpTaskResponse400 = {
-  data: HttpValidationProblemDetails
-  status: 400
-}
-
-export type createFollowUpTaskResponseSuccess = (createFollowUpTaskResponse201) & {
-  headers: Headers;
-};
-export type createFollowUpTaskResponseError = (createFollowUpTaskResponse400) & {
-  headers: Headers;
-};
-
-export type createFollowUpTaskResponse = (createFollowUpTaskResponseSuccess | createFollowUpTaskResponseError)
-
-export const getCreateFollowUpTaskUrl = () => {
-
-
-
-
-  return `/api/follow-up-tasks`
-}
-
-export const createFollowUpTask = async (createFollowUpTaskRequest: CreateFollowUpTaskRequest, options?: RequestInit): Promise<createFollowUpTaskResponse> => {
-
-  return apiClient<createFollowUpTaskResponse>(getCreateFollowUpTaskUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(createFollowUpTaskRequest)
-  }
-);}
-
-
-
-
-export const getCreateFollowUpTaskMutationOptions = <TError = HttpValidationProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFollowUpTask>>, TError,{data: CreateFollowUpTaskRequest}, TContext>, request?: SecondParameter<typeof apiClient>}
-): UseMutationOptions<Awaited<ReturnType<typeof createFollowUpTask>>, TError,{data: CreateFollowUpTaskRequest}, TContext> => {
-
-const mutationKey = ['createFollowUpTask'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createFollowUpTask>>, {data: CreateFollowUpTaskRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  createFollowUpTask(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CreateFollowUpTaskMutationResult = NonNullable<Awaited<ReturnType<typeof createFollowUpTask>>>
-    export type CreateFollowUpTaskMutationBody = CreateFollowUpTaskRequest
-    export type CreateFollowUpTaskMutationError = HttpValidationProblemDetails
-
-    export const useCreateFollowUpTask = <TError = HttpValidationProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFollowUpTask>>, TError,{data: CreateFollowUpTaskRequest}, TContext>, request?: SecondParameter<typeof apiClient>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof createFollowUpTask>>,
-        TError,
-        {data: CreateFollowUpTaskRequest},
-        TContext
-      > => {
-      return useMutation(getCreateFollowUpTaskMutationOptions(options), queryClient);
-    }
-    export type getDueFollowUpTasksResponse200 = {
-  data: FollowUpTaskDto[]
-  status: 200
-}
-
-export type getDueFollowUpTasksResponseSuccess = (getDueFollowUpTasksResponse200) & {
-  headers: Headers;
-};
-;
-
-export type getDueFollowUpTasksResponse = (getDueFollowUpTasksResponseSuccess)
-
-export const getGetDueFollowUpTasksUrl = () => {
-
-
-
-
-  return `/api/follow-up-tasks/due`
-}
-
-export const getDueFollowUpTasks = async ( options?: RequestInit): Promise<getDueFollowUpTasksResponse> => {
-
-  return apiClient<getDueFollowUpTasksResponse>(getGetDueFollowUpTasksUrl(),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetDueFollowUpTasksQueryKey = () => {
-    return [
-    `/api/follow-up-tasks/due`
-    ] as const;
-    }
-
-
-export const getGetDueFollowUpTasksQueryOptions = <TData = Awaited<ReturnType<typeof getDueFollowUpTasks>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDueFollowUpTasks>>, TError, TData>>, request?: SecondParameter<typeof apiClient>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getGetDueFollowUpTasksQueryKey();
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDueFollowUpTasks>>> = ({ signal }) => getDueFollowUpTasks({ signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDueFollowUpTasks>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetDueFollowUpTasksQueryResult = NonNullable<Awaited<ReturnType<typeof getDueFollowUpTasks>>>
-export type GetDueFollowUpTasksQueryError = unknown
-
-
-export function useGetDueFollowUpTasks<TData = Awaited<ReturnType<typeof getDueFollowUpTasks>>, TError = unknown>(
-  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDueFollowUpTasks>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getDueFollowUpTasks>>,
-          TError,
-          Awaited<ReturnType<typeof getDueFollowUpTasks>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof apiClient>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetDueFollowUpTasks<TData = Awaited<ReturnType<typeof getDueFollowUpTasks>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDueFollowUpTasks>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getDueFollowUpTasks>>,
-          TError,
-          Awaited<ReturnType<typeof getDueFollowUpTasks>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof apiClient>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetDueFollowUpTasks<TData = Awaited<ReturnType<typeof getDueFollowUpTasks>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDueFollowUpTasks>>, TError, TData>>, request?: SecondParameter<typeof apiClient>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-
-export function useGetDueFollowUpTasks<TData = Awaited<ReturnType<typeof getDueFollowUpTasks>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDueFollowUpTasks>>, TError, TData>>, request?: SecondParameter<typeof apiClient>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-  const queryOptions = getGetDueFollowUpTasksQueryOptions(options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
-
-
-
-
-export type getFollowUpTaskResponse200 = {
-  data: FollowUpTaskDto
-  status: 200
-}
-
-export type getFollowUpTaskResponse404 = {
-  data: void
-  status: 404
-}
-
-export type getFollowUpTaskResponseSuccess = (getFollowUpTaskResponse200) & {
-  headers: Headers;
-};
-export type getFollowUpTaskResponseError = (getFollowUpTaskResponse404) & {
-  headers: Headers;
-};
-
-export type getFollowUpTaskResponse = (getFollowUpTaskResponseSuccess | getFollowUpTaskResponseError)
-
-export const getGetFollowUpTaskUrl = (id: number,) => {
-
-
-
-
-  return `/api/follow-up-tasks/${id}`
-}
-
-export const getFollowUpTask = async (id: number, options?: RequestInit): Promise<getFollowUpTaskResponse> => {
-
-  return apiClient<getFollowUpTaskResponse>(getGetFollowUpTaskUrl(id),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetFollowUpTaskQueryKey = (id: number,) => {
-    return [
-    `/api/follow-up-tasks/${id}`
-    ] as const;
-    }
-
-
-export const getGetFollowUpTaskQueryOptions = <TData = Awaited<ReturnType<typeof getFollowUpTask>>, TError = void>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFollowUpTask>>, TError, TData>>, request?: SecondParameter<typeof apiClient>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getGetFollowUpTaskQueryKey(id);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFollowUpTask>>> = ({ signal }) => getFollowUpTask(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFollowUpTask>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetFollowUpTaskQueryResult = NonNullable<Awaited<ReturnType<typeof getFollowUpTask>>>
-export type GetFollowUpTaskQueryError = void
-
-
-export function useGetFollowUpTask<TData = Awaited<ReturnType<typeof getFollowUpTask>>, TError = void>(
- id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFollowUpTask>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getFollowUpTask>>,
-          TError,
-          Awaited<ReturnType<typeof getFollowUpTask>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof apiClient>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetFollowUpTask<TData = Awaited<ReturnType<typeof getFollowUpTask>>, TError = void>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFollowUpTask>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getFollowUpTask>>,
-          TError,
-          Awaited<ReturnType<typeof getFollowUpTask>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof apiClient>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetFollowUpTask<TData = Awaited<ReturnType<typeof getFollowUpTask>>, TError = void>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFollowUpTask>>, TError, TData>>, request?: SecondParameter<typeof apiClient>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-
-export function useGetFollowUpTask<TData = Awaited<ReturnType<typeof getFollowUpTask>>, TError = void>(
- id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFollowUpTask>>, TError, TData>>, request?: SecondParameter<typeof apiClient>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-  const queryOptions = getGetFollowUpTaskQueryOptions(id,options)
+  const queryOptions = getListFollowUpTasksQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -460,28 +165,16 @@ export function useGetFollowUpTask<TData = Awaited<ReturnType<typeof getFollowUp
 
 
 export type updateFollowUpTaskResponse200 = {
-  data: FollowUpTaskDto
-  status: 200
-}
-
-export type updateFollowUpTaskResponse400 = {
-  data: HttpValidationProblemDetails
-  status: 400
-}
-
-export type updateFollowUpTaskResponse404 = {
   data: void
-  status: 404
+  status: 200
 }
 
 export type updateFollowUpTaskResponseSuccess = (updateFollowUpTaskResponse200) & {
   headers: Headers;
 };
-export type updateFollowUpTaskResponseError = (updateFollowUpTaskResponse400 | updateFollowUpTaskResponse404) & {
-  headers: Headers;
-};
+;
 
-export type updateFollowUpTaskResponse = (updateFollowUpTaskResponseSuccess | updateFollowUpTaskResponseError)
+export type updateFollowUpTaskResponse = (updateFollowUpTaskResponseSuccess)
 
 export const getUpdateFollowUpTaskUrl = (id: number,) => {
 
@@ -506,7 +199,7 @@ export const updateFollowUpTask = async (id: number,
 
 
 
-export const getUpdateFollowUpTaskMutationOptions = <TError = HttpValidationProblemDetails | void,
+export const getUpdateFollowUpTaskMutationOptions = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFollowUpTask>>, TError,{id: number;data: UpdateFollowUpTaskRequest}, TContext>, request?: SecondParameter<typeof apiClient>}
 ): UseMutationOptions<Awaited<ReturnType<typeof updateFollowUpTask>>, TError,{id: number;data: UpdateFollowUpTaskRequest}, TContext> => {
 
@@ -535,9 +228,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type UpdateFollowUpTaskMutationResult = NonNullable<Awaited<ReturnType<typeof updateFollowUpTask>>>
     export type UpdateFollowUpTaskMutationBody = UpdateFollowUpTaskRequest
-    export type UpdateFollowUpTaskMutationError = HttpValidationProblemDetails | void
+    export type UpdateFollowUpTaskMutationError = unknown
 
-    export const useUpdateFollowUpTask = <TError = HttpValidationProblemDetails | void,
+    export const useUpdateFollowUpTask = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFollowUpTask>>, TError,{id: number;data: UpdateFollowUpTaskRequest}, TContext>, request?: SecondParameter<typeof apiClient>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof updateFollowUpTask>>,
@@ -547,106 +240,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getUpdateFollowUpTaskMutationOptions(options), queryClient);
     }
-    export type deleteFollowUpTaskResponse204 = {
-  data: void
-  status: 204
-}
-
-export type deleteFollowUpTaskResponse404 = {
-  data: void
-  status: 404
-}
-
-export type deleteFollowUpTaskResponseSuccess = (deleteFollowUpTaskResponse204) & {
-  headers: Headers;
-};
-export type deleteFollowUpTaskResponseError = (deleteFollowUpTaskResponse404) & {
-  headers: Headers;
-};
-
-export type deleteFollowUpTaskResponse = (deleteFollowUpTaskResponseSuccess | deleteFollowUpTaskResponseError)
-
-export const getDeleteFollowUpTaskUrl = (id: number,) => {
-
-
-
-
-  return `/api/follow-up-tasks/${id}`
-}
-
-export const deleteFollowUpTask = async (id: number, options?: RequestInit): Promise<deleteFollowUpTaskResponse> => {
-
-  return apiClient<deleteFollowUpTaskResponse>(getDeleteFollowUpTaskUrl(id),
-  {
-    ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
-
-
-export const getDeleteFollowUpTaskMutationOptions = <TError = void,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteFollowUpTask>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof apiClient>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteFollowUpTask>>, TError,{id: number}, TContext> => {
-
-const mutationKey = ['deleteFollowUpTask'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteFollowUpTask>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
-
-          return  deleteFollowUpTask(id,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteFollowUpTaskMutationResult = NonNullable<Awaited<ReturnType<typeof deleteFollowUpTask>>>
-
-    export type DeleteFollowUpTaskMutationError = void
-
-    export const useDeleteFollowUpTask = <TError = void,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteFollowUpTask>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof apiClient>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof deleteFollowUpTask>>,
-        TError,
-        {id: number},
-        TContext
-      > => {
-      return useMutation(getDeleteFollowUpTaskMutationOptions(options), queryClient);
-    }
     export type completeFollowUpTaskResponse200 = {
-  data: FollowUpTaskDto
-  status: 200
-}
-
-export type completeFollowUpTaskResponse404 = {
   data: void
-  status: 404
+  status: 200
 }
 
 export type completeFollowUpTaskResponseSuccess = (completeFollowUpTaskResponse200) & {
   headers: Headers;
 };
-export type completeFollowUpTaskResponseError = (completeFollowUpTaskResponse404) & {
-  headers: Headers;
-};
+;
 
-export type completeFollowUpTaskResponse = (completeFollowUpTaskResponseSuccess | completeFollowUpTaskResponseError)
+export type completeFollowUpTaskResponse = (completeFollowUpTaskResponseSuccess)
 
 export const getCompleteFollowUpTaskUrl = (id: number,) => {
 
@@ -670,7 +274,7 @@ export const completeFollowUpTask = async (id: number, options?: RequestInit): P
 
 
 
-export const getCompleteFollowUpTaskMutationOptions = <TError = void,
+export const getCompleteFollowUpTaskMutationOptions = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeFollowUpTask>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof apiClient>}
 ): UseMutationOptions<Awaited<ReturnType<typeof completeFollowUpTask>>, TError,{id: number}, TContext> => {
 
@@ -699,9 +303,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CompleteFollowUpTaskMutationResult = NonNullable<Awaited<ReturnType<typeof completeFollowUpTask>>>
 
-    export type CompleteFollowUpTaskMutationError = void
+    export type CompleteFollowUpTaskMutationError = unknown
 
-    export const useCompleteFollowUpTask = <TError = void,
+    export const useCompleteFollowUpTask = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeFollowUpTask>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof apiClient>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof completeFollowUpTask>>,
@@ -712,23 +316,16 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getCompleteFollowUpTaskMutationOptions(options), queryClient);
     }
     export type skipFollowUpTaskResponse200 = {
-  data: FollowUpTaskDto
-  status: 200
-}
-
-export type skipFollowUpTaskResponse404 = {
   data: void
-  status: 404
+  status: 200
 }
 
 export type skipFollowUpTaskResponseSuccess = (skipFollowUpTaskResponse200) & {
   headers: Headers;
 };
-export type skipFollowUpTaskResponseError = (skipFollowUpTaskResponse404) & {
-  headers: Headers;
-};
+;
 
-export type skipFollowUpTaskResponse = (skipFollowUpTaskResponseSuccess | skipFollowUpTaskResponseError)
+export type skipFollowUpTaskResponse = (skipFollowUpTaskResponseSuccess)
 
 export const getSkipFollowUpTaskUrl = (id: number,) => {
 
@@ -752,7 +349,7 @@ export const skipFollowUpTask = async (id: number, options?: RequestInit): Promi
 
 
 
-export const getSkipFollowUpTaskMutationOptions = <TError = void,
+export const getSkipFollowUpTaskMutationOptions = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof skipFollowUpTask>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof apiClient>}
 ): UseMutationOptions<Awaited<ReturnType<typeof skipFollowUpTask>>, TError,{id: number}, TContext> => {
 
@@ -781,9 +378,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type SkipFollowUpTaskMutationResult = NonNullable<Awaited<ReturnType<typeof skipFollowUpTask>>>
 
-    export type SkipFollowUpTaskMutationError = void
+    export type SkipFollowUpTaskMutationError = unknown
 
-    export const useSkipFollowUpTask = <TError = void,
+    export const useSkipFollowUpTask = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof skipFollowUpTask>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof apiClient>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof skipFollowUpTask>>,

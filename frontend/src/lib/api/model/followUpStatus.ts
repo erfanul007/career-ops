@@ -5,4 +5,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type FollowUpStatus = number;
+export type FollowUpStatus = typeof FollowUpStatus[keyof typeof FollowUpStatus];
+
+
+export const FollowUpStatus = {
+  Pending: 'Pending',
+  Completed: 'Completed',
+  Skipped: 'Skipped',
+} as const;

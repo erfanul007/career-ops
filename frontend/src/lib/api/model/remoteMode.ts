@@ -5,4 +5,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type RemoteMode = number;
+export type RemoteMode = typeof RemoteMode[keyof typeof RemoteMode];
+
+
+export const RemoteMode = {
+  OnSite: 'OnSite',
+  Hybrid: 'Hybrid',
+  Remote: 'Remote',
+} as const;

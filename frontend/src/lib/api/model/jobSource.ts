@@ -5,4 +5,20 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type JobSource = number;
+export type JobSource = typeof JobSource[keyof typeof JobSource];
+
+
+export const JobSource = {
+  LinkedIn: 'LinkedIn',
+  Indeed: 'Indeed',
+  Referral: 'Referral',
+  CompanySite: 'CompanySite',
+  Recruiter: 'Recruiter',
+  Other: 'Other',
+  Glassdoor: 'Glassdoor',
+  Wellfound: 'Wellfound',
+  Otta: 'Otta',
+  StepStone: 'StepStone',
+  Bdjobs: 'Bdjobs',
+  Monster: 'Monster',
+} as const;

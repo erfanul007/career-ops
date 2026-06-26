@@ -7,172 +7,64 @@
 import * as zod from 'zod';
 
 
-export const getFollowUpTasksResponseIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
-export const getFollowUpTasksResponseRelatedEntityIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
+export const listFollowUpTasksQueryJobIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
 
 
-export const GetFollowUpTasksResponseItem = zod.object({
-  "id": zod.union([zod.number(),zod.stringFormat('int32', getFollowUpTasksResponseIdRegExpTwo)]),
+export const ListFollowUpTasksQueryParams = zod.object({
+  "status": zod.enum(['Pending', 'Completed', 'Skipped']).optional(),
+  "jobId": zod.union([zod.number(),zod.stringFormat('int32', listFollowUpTasksQueryJobIdRegExpTwo)]).optional(),
+  "due": zod.string().optional()
+})
+
+export const listFollowUpTasksResponseIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
+export const listFollowUpTasksResponseJobIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
+export const listFollowUpTasksResponseJobActivityIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
+
+
+export const ListFollowUpTasksResponseItem = zod.object({
+  "id": zod.union([zod.number(),zod.stringFormat('int32', listFollowUpTasksResponseIdRegExpTwo)]),
+  "jobId": zod.union([zod.number(),zod.stringFormat('int32', listFollowUpTasksResponseJobIdRegExpTwo)]).nullable(),
+  "jobTitle": zod.string().nullable(),
+  "jobActivityId": zod.union([zod.number(),zod.stringFormat('int32', listFollowUpTasksResponseJobActivityIdRegExpTwo)]).nullable(),
+  "jobActivityLabel": zod.string().nullable(),
   "title": zod.string(),
   "description": zod.string().nullable(),
-  "relatedEntityType": zod.number(),
-  "relatedEntityId": zod.union([zod.number(),zod.stringFormat('int32', getFollowUpTasksResponseRelatedEntityIdRegExpTwo)]).nullable(),
   "dueAtUtc": zod.iso.datetime({"offset":true}),
-  "status": zod.number(),
-  "priority": zod.number(),
+  "status": zod.enum(['Pending', 'Completed', 'Skipped']),
+  "priority": zod.enum(['Low', 'Medium', 'High']),
   "createdAtUtc": zod.iso.datetime({"offset":true}),
   "updatedAtUtc": zod.iso.datetime({"offset":true})
 })
-export const GetFollowUpTasksResponse = zod.array(GetFollowUpTasksResponseItem)
-
-export const createFollowUpTaskBodyRelatedEntityIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
-
-
-export const CreateFollowUpTaskBody = zod.object({
-  "title": zod.string(),
-  "description": zod.string().nullable(),
-  "relatedEntityType": zod.number(),
-  "relatedEntityId": zod.union([zod.number(),zod.stringFormat('int32', createFollowUpTaskBodyRelatedEntityIdRegExpTwo)]).nullable(),
-  "dueAtUtc": zod.iso.datetime({"offset":true}),
-  "status": zod.number(),
-  "priority": zod.number()
-})
-
-export const createFollowUpTaskResponseIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
-export const createFollowUpTaskResponseRelatedEntityIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
-
-
-export const CreateFollowUpTaskResponse = zod.object({
-  "id": zod.union([zod.number(),zod.stringFormat('int32', createFollowUpTaskResponseIdRegExpTwo)]),
-  "title": zod.string(),
-  "description": zod.string().nullable(),
-  "relatedEntityType": zod.number(),
-  "relatedEntityId": zod.union([zod.number(),zod.stringFormat('int32', createFollowUpTaskResponseRelatedEntityIdRegExpTwo)]).nullable(),
-  "dueAtUtc": zod.iso.datetime({"offset":true}),
-  "status": zod.number(),
-  "priority": zod.number(),
-  "createdAtUtc": zod.iso.datetime({"offset":true}),
-  "updatedAtUtc": zod.iso.datetime({"offset":true})
-})
-
-export const getDueFollowUpTasksResponseIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
-export const getDueFollowUpTasksResponseRelatedEntityIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
-
-
-export const GetDueFollowUpTasksResponseItem = zod.object({
-  "id": zod.union([zod.number(),zod.stringFormat('int32', getDueFollowUpTasksResponseIdRegExpTwo)]),
-  "title": zod.string(),
-  "description": zod.string().nullable(),
-  "relatedEntityType": zod.number(),
-  "relatedEntityId": zod.union([zod.number(),zod.stringFormat('int32', getDueFollowUpTasksResponseRelatedEntityIdRegExpTwo)]).nullable(),
-  "dueAtUtc": zod.iso.datetime({"offset":true}),
-  "status": zod.number(),
-  "priority": zod.number(),
-  "createdAtUtc": zod.iso.datetime({"offset":true}),
-  "updatedAtUtc": zod.iso.datetime({"offset":true})
-})
-export const GetDueFollowUpTasksResponse = zod.array(GetDueFollowUpTasksResponseItem)
-
-export const GetFollowUpTaskParams = zod.object({
-  "id": zod.number()
-})
-
-export const getFollowUpTaskResponseIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
-export const getFollowUpTaskResponseRelatedEntityIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
-
-
-export const GetFollowUpTaskResponse = zod.object({
-  "id": zod.union([zod.number(),zod.stringFormat('int32', getFollowUpTaskResponseIdRegExpTwo)]),
-  "title": zod.string(),
-  "description": zod.string().nullable(),
-  "relatedEntityType": zod.number(),
-  "relatedEntityId": zod.union([zod.number(),zod.stringFormat('int32', getFollowUpTaskResponseRelatedEntityIdRegExpTwo)]).nullable(),
-  "dueAtUtc": zod.iso.datetime({"offset":true}),
-  "status": zod.number(),
-  "priority": zod.number(),
-  "createdAtUtc": zod.iso.datetime({"offset":true}),
-  "updatedAtUtc": zod.iso.datetime({"offset":true})
-})
+export const ListFollowUpTasksResponse = zod.array(ListFollowUpTasksResponseItem)
 
 export const UpdateFollowUpTaskParams = zod.object({
   "id": zod.number()
 })
 
-export const updateFollowUpTaskBodyRelatedEntityIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
+export const updateFollowUpTaskBodyJobIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
+export const updateFollowUpTaskBodyJobActivityIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
 
 
 export const UpdateFollowUpTaskBody = zod.object({
   "title": zod.string(),
   "description": zod.string().nullable(),
-  "relatedEntityType": zod.number(),
-  "relatedEntityId": zod.union([zod.number(),zod.stringFormat('int32', updateFollowUpTaskBodyRelatedEntityIdRegExpTwo)]).nullable(),
   "dueAtUtc": zod.iso.datetime({"offset":true}),
-  "status": zod.number(),
-  "priority": zod.number()
+  "priority": zod.enum(['Low', 'Medium', 'High']),
+  "jobId": zod.union([zod.number(),zod.stringFormat('int32', updateFollowUpTaskBodyJobIdRegExpTwo)]).nullable(),
+  "jobActivityId": zod.union([zod.number(),zod.stringFormat('int32', updateFollowUpTaskBodyJobActivityIdRegExpTwo)]).nullable()
 })
 
-export const updateFollowUpTaskResponseIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
-export const updateFollowUpTaskResponseRelatedEntityIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
-
-
-export const UpdateFollowUpTaskResponse = zod.object({
-  "id": zod.union([zod.number(),zod.stringFormat('int32', updateFollowUpTaskResponseIdRegExpTwo)]),
-  "title": zod.string(),
-  "description": zod.string().nullable(),
-  "relatedEntityType": zod.number(),
-  "relatedEntityId": zod.union([zod.number(),zod.stringFormat('int32', updateFollowUpTaskResponseRelatedEntityIdRegExpTwo)]).nullable(),
-  "dueAtUtc": zod.iso.datetime({"offset":true}),
-  "status": zod.number(),
-  "priority": zod.number(),
-  "createdAtUtc": zod.iso.datetime({"offset":true}),
-  "updatedAtUtc": zod.iso.datetime({"offset":true})
-})
-
-export const DeleteFollowUpTaskParams = zod.object({
-  "id": zod.number()
-})
-
-export const DeleteFollowUpTaskResponse = zod.void()
+export const UpdateFollowUpTaskResponse = zod.unknown()
 
 export const CompleteFollowUpTaskParams = zod.object({
   "id": zod.number()
 })
 
-export const completeFollowUpTaskResponseIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
-export const completeFollowUpTaskResponseRelatedEntityIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
-
-
-export const CompleteFollowUpTaskResponse = zod.object({
-  "id": zod.union([zod.number(),zod.stringFormat('int32', completeFollowUpTaskResponseIdRegExpTwo)]),
-  "title": zod.string(),
-  "description": zod.string().nullable(),
-  "relatedEntityType": zod.number(),
-  "relatedEntityId": zod.union([zod.number(),zod.stringFormat('int32', completeFollowUpTaskResponseRelatedEntityIdRegExpTwo)]).nullable(),
-  "dueAtUtc": zod.iso.datetime({"offset":true}),
-  "status": zod.number(),
-  "priority": zod.number(),
-  "createdAtUtc": zod.iso.datetime({"offset":true}),
-  "updatedAtUtc": zod.iso.datetime({"offset":true})
-})
+export const CompleteFollowUpTaskResponse = zod.unknown()
 
 export const SkipFollowUpTaskParams = zod.object({
   "id": zod.number()
 })
 
-export const skipFollowUpTaskResponseIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
-export const skipFollowUpTaskResponseRelatedEntityIdRegExpTwo = new RegExp('^-?(?:0|[1-9]\\d*)$');
-
-
-export const SkipFollowUpTaskResponse = zod.object({
-  "id": zod.union([zod.number(),zod.stringFormat('int32', skipFollowUpTaskResponseIdRegExpTwo)]),
-  "title": zod.string(),
-  "description": zod.string().nullable(),
-  "relatedEntityType": zod.number(),
-  "relatedEntityId": zod.union([zod.number(),zod.stringFormat('int32', skipFollowUpTaskResponseRelatedEntityIdRegExpTwo)]).nullable(),
-  "dueAtUtc": zod.iso.datetime({"offset":true}),
-  "status": zod.number(),
-  "priority": zod.number(),
-  "createdAtUtc": zod.iso.datetime({"offset":true}),
-  "updatedAtUtc": zod.iso.datetime({"offset":true})
-})
+export const SkipFollowUpTaskResponse = zod.unknown()
 

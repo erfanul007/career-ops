@@ -7,6 +7,22 @@ namespace CareerOps.Application.Companies;
 
 public sealed class CompanyService(IAppDbContext db)
 {
+    public async Task<CompanyDto> FindOrCreateByNameAsync(string name, CancellationToken ct = default)
+    {
+        var normalized = name.Trim().ToLowerInvariant();
+        var existing = await db.Companies
+            .FirstOrDefaultAsync(c => c.Name.ToLower() == normalized, ct);
+        if (existing is not null) return existing.Adapt<CompanyDto>();
+
+        var company = new Company { Name = name.Trim() };
+        db.Companies.Add(company);
+        await db.SaveChangesAsync(ct);
+        return company.Adapt<CompanyDto>();
+    }
+
+    public async Task<bool> HasJobsAsync(int companyId, CancellationToken ct = default)
+        => await db.Jobs.AnyAsync(j => j.CompanyId == companyId, ct);
+
     public async Task<IReadOnlyList<CompanyDto>> ListAsync(CancellationToken ct = default)
     {
         var companies = await db.Companies.OrderBy(c => c.Name).ToListAsync(ct);

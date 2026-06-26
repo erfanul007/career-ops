@@ -1,11 +1,23 @@
-import type { ReactNode } from "react";
-import { Label } from "@/components/ui/label";
+import type { ReactNode } from 'react';
 
-export function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; children: ReactNode }) {
+export function Field({
+  label,
+  htmlFor,
+  error,
+  children,
+}: {
+  label: string;
+  htmlFor?: string;
+  error?: string;
+  children: ReactNode;
+}) {
   return (
-    <div className="space-y-1.5">
-      <Label htmlFor={htmlFor}>{label}</Label>
+    <div className="space-y-1">
+      <label htmlFor={htmlFor} className="text-sm font-medium leading-none">
+        {label}
+      </label>
       {children}
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }

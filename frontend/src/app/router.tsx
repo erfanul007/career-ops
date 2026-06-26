@@ -1,28 +1,23 @@
-import { createBrowserRouter, RouterProvider, Navigate } from "react-router";
-import { AppLayout } from "@/components/AppLayout";
-import DashboardPage from "@/pages/DashboardPage";
-import CompaniesPage from "@/pages/CompaniesPage";
-import JobLeadsPage from "@/pages/JobLeadsPage";
-import ApplicationsPage from "@/pages/ApplicationsPage";
-import ResumeVariantsPage from "@/pages/ResumeVariantsPage";
-import SettingsProfilePage from "@/pages/SettingsProfilePage";
-import TasksPage from "@/pages/TasksPage";
-import InterviewsPage from "@/pages/InterviewsPage";
+import { createBrowserRouter, RouterProvider } from 'react-router';
+import { AppLayout } from '@/components/AppLayout';
+import DashboardPage from '@/pages/DashboardPage';
+import JobsPage from '@/pages/JobsPage';
+import JobDetailPage from '@/pages/JobDetailPage';
+import CompaniesPage from '@/pages/CompaniesPage';
+import TasksPage from '@/pages/TasksPage';
+import SettingsProfilePage from '@/pages/SettingsProfilePage';
 
 const router = createBrowserRouter([
   {
-    path: "/",
+    path: '/',
     element: <AppLayout />,
     children: [
-      { index: true, element: <Navigate to="/dashboard" replace /> },
-      { path: "dashboard", element: <DashboardPage /> },
-      { path: "job-leads", element: <JobLeadsPage /> },
-      { path: "applications", element: <ApplicationsPage /> },
-      { path: "interviews", element: <InterviewsPage /> },
-      { path: "companies", element: <CompaniesPage /> },
-      { path: "resume-variants", element: <ResumeVariantsPage /> },
-      { path: "tasks", element: <TasksPage /> },
-      { path: "settings/profile", element: <SettingsProfilePage /> },
+      { index: true, element: <DashboardPage /> },
+      { path: 'jobs', element: <JobsPage /> },
+      { path: 'jobs/:id', element: <JobDetailPage /> },
+      { path: 'companies', element: <CompaniesPage /> },
+      { path: 'tasks', element: <TasksPage /> },
+      { path: 'settings/profile', element: <SettingsProfilePage /> },
     ],
   },
 ]);

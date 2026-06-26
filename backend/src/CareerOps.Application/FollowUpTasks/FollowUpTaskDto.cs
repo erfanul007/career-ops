@@ -1,8 +1,19 @@
+using CareerOps.Domain.Common;
 using CareerOps.Domain.FollowUpTasks;
-using CareerOps.Domain.JobLeads;
 
 namespace CareerOps.Application.FollowUpTasks;
 
-public sealed record FollowUpTaskDto(
-    int Id, string Title, string? Description, RelatedEntityType RelatedEntityType, int? RelatedEntityId,
-    DateTime DueAtUtc, FollowUpStatus Status, Priority Priority, DateTime CreatedAtUtc, DateTime UpdatedAtUtc);
+public record FollowUpTaskDto(
+    int Id,
+    int? JobId,
+    string? JobTitle,
+    int? JobActivityId,
+    string? JobActivityLabel,
+    string Title,
+    string? Description,
+    DateTime DueAtUtc,
+    FollowUpStatus Status,
+    Priority Priority,
+    DateTime CreatedAtUtc,
+    DateTime UpdatedAtUtc
+);

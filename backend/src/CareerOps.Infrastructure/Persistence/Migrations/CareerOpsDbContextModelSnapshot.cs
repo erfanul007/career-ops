@@ -22,96 +22,6 @@ namespace CareerOps.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("CareerOps.Domain.Applications.Application", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("AppliedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("applied_at_utc");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at_utc");
-
-                    b.Property<int>("CurrentStage")
-                        .HasColumnType("integer")
-                        .HasColumnName("current_stage");
-
-                    b.Property<decimal?>("ExpectedSalary")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("expected_salary");
-
-                    b.Property<string>("ExpectedSalaryCurrency")
-                        .HasMaxLength(3)
-                        .HasColumnType("character varying(3)")
-                        .HasColumnName("expected_salary_currency");
-
-                    b.Property<int>("JobLeadId")
-                        .HasColumnType("integer")
-                        .HasColumnName("job_lead_id");
-
-                    b.Property<DateTime?>("NextActionAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("next_action_at_utc");
-
-                    b.Property<string>("NextStep")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("next_step");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)")
-                        .HasColumnName("notes");
-
-                    b.Property<string>("NoticePeriod")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("notice_period");
-
-                    b.Property<string>("RejectionReason")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)")
-                        .HasColumnName("rejection_reason");
-
-                    b.Property<int>("ResumeVariantId")
-                        .HasColumnType("integer")
-                        .HasColumnName("resume_variant_id");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer")
-                        .HasColumnName("status");
-
-                    b.Property<DateTime>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at_utc");
-
-                    b.HasKey("Id")
-                        .HasName("pk_applications");
-
-                    b.HasIndex("CurrentStage")
-                        .HasDatabaseName("ix_applications_current_stage");
-
-                    b.HasIndex("JobLeadId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_applications_job_lead_id");
-
-                    b.HasIndex("ResumeVariantId")
-                        .HasDatabaseName("ix_applications_resume_variant_id");
-
-                    b.HasIndex("Status")
-                        .HasDatabaseName("ix_applications_status");
-
-                    b.ToTable("applications", (string)null);
-                });
-
             modelBuilder.Entity("CareerOps.Domain.Companies.Company", b =>
                 {
                     b.Property<int>("Id")
@@ -202,17 +112,17 @@ namespace CareerOps.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("due_at_utc");
 
+                    b.Property<int?>("JobActivityId")
+                        .HasColumnType("integer")
+                        .HasColumnName("job_activity_id");
+
+                    b.Property<int?>("JobId")
+                        .HasColumnType("integer")
+                        .HasColumnName("job_id");
+
                     b.Property<int>("Priority")
                         .HasColumnType("integer")
                         .HasColumnName("priority");
-
-                    b.Property<int?>("RelatedEntityId")
-                        .HasColumnType("integer")
-                        .HasColumnName("related_entity_id");
-
-                    b.Property<int>("RelatedEntityType")
-                        .HasColumnType("integer")
-                        .HasColumnName("related_entity_type");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer")
@@ -231,16 +141,22 @@ namespace CareerOps.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_follow_up_tasks");
 
-                    b.HasIndex("RelatedEntityType", "RelatedEntityId")
-                        .HasDatabaseName("ix_follow_up_tasks_related_entity_type_related_entity_id");
+                    b.HasIndex("DueAtUtc")
+                        .HasDatabaseName("ix_follow_up_tasks_due_at_utc");
 
-                    b.HasIndex("Status", "DueAtUtc")
-                        .HasDatabaseName("ix_follow_up_tasks_status_due_at_utc");
+                    b.HasIndex("JobActivityId")
+                        .HasDatabaseName("ix_follow_up_tasks_job_activity_id");
+
+                    b.HasIndex("JobId")
+                        .HasDatabaseName("ix_follow_up_tasks_job_id");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_follow_up_tasks_status");
 
                     b.ToTable("follow_up_tasks", (string)null);
                 });
 
-            modelBuilder.Entity("CareerOps.Domain.Interviews.Interview", b =>
+            modelBuilder.Entity("CareerOps.Domain.Jobs.Job", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -249,102 +165,27 @@ namespace CareerOps.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("ApplicationId")
-                        .HasColumnType("integer")
-                        .HasColumnName("application_id");
-
-                    b.Property<DateTime>("CreatedAtUtc")
+                    b.Property<DateTime?>("AppliedAtUtc")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at_utc");
+                        .HasColumnName("applied_at_utc");
 
-                    b.Property<int?>("DurationMinutes")
-                        .HasColumnType("integer")
-                        .HasColumnName("duration_minutes");
-
-                    b.Property<string>("Feedback")
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)")
-                        .HasColumnName("feedback");
-
-                    b.Property<DateTime?>("FollowUpAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("follow_up_at_utc");
-
-                    b.Property<bool>("FollowUpRequired")
-                        .HasColumnType("boolean")
-                        .HasColumnName("follow_up_required");
-
-                    b.Property<string>("InterviewerName")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("interviewer_name");
-
-                    b.Property<string>("InterviewerRole")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("interviewer_role");
-
-                    b.Property<string>("MeetingUrl")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)")
-                        .HasColumnName("meeting_url");
-
-                    b.Property<int>("Outcome")
-                        .HasColumnType("integer")
-                        .HasColumnName("outcome");
-
-                    b.Property<string>("PrepNotes")
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)")
-                        .HasColumnName("prep_notes");
-
-                    b.Property<int>("RoundType")
-                        .HasColumnType("integer")
-                        .HasColumnName("round_type");
-
-                    b.Property<DateTime>("ScheduledAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("scheduled_at_utc");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer")
-                        .HasColumnName("status");
-
-                    b.Property<DateTime>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at_utc");
-
-                    b.HasKey("Id")
-                        .HasName("pk_interviews");
-
-                    b.HasIndex("ApplicationId")
-                        .HasDatabaseName("ix_interviews_application_id");
-
-                    b.HasIndex("ScheduledAtUtc")
-                        .HasDatabaseName("ix_interviews_scheduled_at_utc");
-
-                    b.HasIndex("Status")
-                        .HasDatabaseName("ix_interviews_status");
-
-                    b.ToTable("interviews", (string)null);
-                });
-
-            modelBuilder.Entity("CareerOps.Domain.JobLeads.JobLead", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AiSummary")
-                        .HasColumnType("text")
-                        .HasColumnName("ai_summary");
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("city");
 
                     b.Property<int>("CompanyId")
                         .HasColumnType("integer")
                         .HasColumnName("company_id");
+
+                    b.Property<string>("Country")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("country");
+
+                    b.Property<string>("CoverLetterNotes")
+                        .HasColumnType("text")
+                        .HasColumnName("cover_letter_notes");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -366,14 +207,14 @@ namespace CareerOps.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("job_description");
 
-                    b.Property<string>("Location")
+                    b.Property<DateTime?>("LastContactedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_contacted_at_utc");
+
+                    b.Property<string>("LocationText")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
-                        .HasColumnName("location");
-
-                    b.Property<string>("MissingKeywords")
-                        .HasColumnType("text")
-                        .HasColumnName("missing_keywords");
+                        .HasColumnName("location_text");
 
                     b.Property<DateTime?>("NextActionAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -383,17 +224,49 @@ namespace CareerOps.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("notes");
 
+                    b.Property<string>("OfferCurrency")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("offer_currency");
+
+                    b.Property<DateTime?>("OfferDeadlineAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("offer_deadline_at_utc");
+
+                    b.Property<string>("OfferNotes")
+                        .HasColumnType("text")
+                        .HasColumnName("offer_notes");
+
+                    b.Property<decimal?>("OfferSalary")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("offer_salary");
+
                     b.Property<int>("Priority")
                         .HasColumnType("integer")
                         .HasColumnName("priority");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("text")
+                        .HasColumnName("rejection_reason");
 
                     b.Property<int>("RemoteMode")
                         .HasColumnType("integer")
                         .HasColumnName("remote_mode");
 
+                    b.Property<string>("ResumeAngle")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("resume_angle");
+
+                    b.Property<string>("ResumeLabel")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("resume_label");
+
                     b.Property<string>("SalaryCurrency")
-                        .HasMaxLength(3)
-                        .HasColumnType("character varying(3)")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
                         .HasColumnName("salary_currency");
 
                     b.Property<decimal?>("SalaryMax")
@@ -415,18 +288,13 @@ namespace CareerOps.Infrastructure.Persistence.Migrations
                         .HasColumnName("source");
 
                     b.Property<string>("SourceUrl")
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
                         .HasColumnName("source_url");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer")
                         .HasColumnName("status");
-
-                    b.Property<string>("SuggestedResumeAngle")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)")
-                        .HasColumnName("suggested_resume_angle");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -439,21 +307,101 @@ namespace CareerOps.Infrastructure.Persistence.Migrations
                         .HasColumnName("updated_at_utc");
 
                     b.HasKey("Id")
-                        .HasName("pk_job_leads");
+                        .HasName("pk_jobs");
 
                     b.HasIndex("CompanyId")
-                        .HasDatabaseName("ix_job_leads_company_id");
-
-                    b.HasIndex("Priority")
-                        .HasDatabaseName("ix_job_leads_priority");
+                        .HasDatabaseName("ix_jobs_company_id");
 
                     b.HasIndex("Status")
-                        .HasDatabaseName("ix_job_leads_status");
+                        .HasDatabaseName("ix_jobs_status");
 
-                    b.ToTable("job_leads", (string)null);
+                    b.ToTable("jobs", (string)null);
                 });
 
-            modelBuilder.Entity("CareerOps.Domain.ResumeVariants.ResumeVariant", b =>
+            modelBuilder.Entity("CareerOps.Domain.Jobs.JobActivity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContactName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("contact_name");
+
+                    b.Property<string>("ContactRole")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("contact_role");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<int?>("DurationMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("duration_minutes");
+
+                    b.Property<string>("Feedback")
+                        .HasColumnType("text")
+                        .HasColumnName("feedback");
+
+                    b.Property<int>("JobId")
+                        .HasColumnType("integer")
+                        .HasColumnName("job_id");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("label");
+
+                    b.Property<string>("MeetingUrl")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("meeting_url");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("integer")
+                        .HasColumnName("outcome");
+
+                    b.Property<string>("PrepNotes")
+                        .HasColumnType("text")
+                        .HasColumnName("prep_notes");
+
+                    b.Property<DateTime?>("ScheduledAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("scheduled_at_utc");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer")
+                        .HasColumnName("type");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.HasKey("Id")
+                        .HasName("pk_job_activities");
+
+                    b.HasIndex("JobId")
+                        .HasDatabaseName("ix_job_activities_job_id");
+
+                    b.ToTable("job_activities", (string)null);
+                });
+
+            modelBuilder.Entity("CareerOps.Domain.Jobs.JobAttachment", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -466,42 +414,142 @@ namespace CareerOps.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at_utc");
 
-                    b.Property<bool>("IsDefault")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_default");
+                    b.Property<string>("FileName")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("file_name");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("name");
+                    b.Property<int>("JobId")
+                        .HasColumnType("integer")
+                        .HasColumnName("job_id");
 
                     b.Property<string>("Notes")
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)")
+                        .HasColumnType("text")
                         .HasColumnName("notes");
 
-                    b.Property<string>("Summary")
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)")
-                        .HasColumnName("summary");
+                    b.Property<string>("StoragePath")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("storage_path");
 
-                    b.Property<string>("TargetRole")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("target_role");
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("title");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer")
+                        .HasColumnName("type");
 
                     b.Property<DateTime>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at_utc");
 
+                    b.Property<string>("Url")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("url");
+
                     b.HasKey("Id")
-                        .HasName("pk_resume_variants");
+                        .HasName("pk_job_attachments");
 
-                    b.HasIndex("IsDefault")
-                        .HasDatabaseName("ix_resume_variants_is_default");
+                    b.HasIndex("JobId")
+                        .HasDatabaseName("ix_job_attachments_job_id");
 
-                    b.ToTable("resume_variants", (string)null);
+                    b.ToTable("job_attachments", (string)null);
+                });
+
+            modelBuilder.Entity("CareerOps.Domain.Jobs.JobProperty", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<int>("JobId")
+                        .HasColumnType("integer")
+                        .HasColumnName("job_id");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("key");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<string>("Value")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("value");
+
+                    b.Property<int>("ValueType")
+                        .HasColumnType("integer")
+                        .HasColumnName("value_type");
+
+                    b.HasKey("Id")
+                        .HasName("pk_job_properties");
+
+                    b.HasIndex("JobId", "Key")
+                        .IsUnique()
+                        .HasDatabaseName("ix_job_properties_job_id_key");
+
+                    b.ToTable("job_properties", (string)null);
+                });
+
+            modelBuilder.Entity("CareerOps.Domain.Jobs.JobTransition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Actor")
+                        .HasColumnType("integer")
+                        .HasColumnName("actor");
+
+                    b.Property<DateTime>("ChangedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("changed_at_utc");
+
+                    b.Property<int?>("FromStatus")
+                        .HasColumnType("integer")
+                        .HasColumnName("from_status");
+
+                    b.Property<int>("JobId")
+                        .HasColumnType("integer")
+                        .HasColumnName("job_id");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("notes");
+
+                    b.Property<int>("ToStatus")
+                        .HasColumnType("integer")
+                        .HasColumnName("to_status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_job_transitions");
+
+                    b.HasIndex("ChangedAtUtc")
+                        .HasDatabaseName("ix_job_transitions_changed_at_utc");
+
+                    b.HasIndex("JobId")
+                        .HasDatabaseName("ix_job_transitions_job_id");
+
+                    b.ToTable("job_transitions", (string)null);
                 });
 
             modelBuilder.Entity("CareerOps.Domain.UserProfiles.UserProfile", b =>
@@ -581,49 +629,101 @@ namespace CareerOps.Infrastructure.Persistence.Migrations
                     b.ToTable("user_profiles", (string)null);
                 });
 
-            modelBuilder.Entity("CareerOps.Domain.Applications.Application", b =>
+            modelBuilder.Entity("CareerOps.Domain.FollowUpTasks.FollowUpTask", b =>
                 {
-                    b.HasOne("CareerOps.Domain.JobLeads.JobLead", "JobLead")
-                        .WithMany()
-                        .HasForeignKey("JobLeadId")
+                    b.HasOne("CareerOps.Domain.Jobs.JobActivity", "JobActivity")
+                        .WithMany("FollowUps")
+                        .HasForeignKey("JobActivityId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_follow_up_tasks_job_activities_job_activity_id");
+
+                    b.HasOne("CareerOps.Domain.Jobs.Job", "Job")
+                        .WithMany("FollowUps")
+                        .HasForeignKey("JobId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_applications_job_leads_job_lead_id");
+                        .HasConstraintName("fk_follow_up_tasks_jobs_job_id");
 
-                    b.HasOne("CareerOps.Domain.ResumeVariants.ResumeVariant", "ResumeVariant")
-                        .WithMany()
-                        .HasForeignKey("ResumeVariantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_applications_resume_variants_resume_variant_id");
+                    b.Navigation("Job");
 
-                    b.Navigation("JobLead");
-
-                    b.Navigation("ResumeVariant");
+                    b.Navigation("JobActivity");
                 });
 
-            modelBuilder.Entity("CareerOps.Domain.Interviews.Interview", b =>
-                {
-                    b.HasOne("CareerOps.Domain.Applications.Application", "Application")
-                        .WithMany()
-                        .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_interviews_applications_application_id");
-
-                    b.Navigation("Application");
-                });
-
-            modelBuilder.Entity("CareerOps.Domain.JobLeads.JobLead", b =>
+            modelBuilder.Entity("CareerOps.Domain.Jobs.Job", b =>
                 {
                     b.HasOne("CareerOps.Domain.Companies.Company", "Company")
                         .WithMany()
                         .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("fk_job_leads_companies_company_id");
+                        .HasConstraintName("fk_jobs_companies_company_id");
 
                     b.Navigation("Company");
+                });
+
+            modelBuilder.Entity("CareerOps.Domain.Jobs.JobActivity", b =>
+                {
+                    b.HasOne("CareerOps.Domain.Jobs.Job", "Job")
+                        .WithMany("Activities")
+                        .HasForeignKey("JobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_job_activities_jobs_job_id");
+
+                    b.Navigation("Job");
+                });
+
+            modelBuilder.Entity("CareerOps.Domain.Jobs.JobAttachment", b =>
+                {
+                    b.HasOne("CareerOps.Domain.Jobs.Job", "Job")
+                        .WithMany("Attachments")
+                        .HasForeignKey("JobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_job_attachments_jobs_job_id");
+
+                    b.Navigation("Job");
+                });
+
+            modelBuilder.Entity("CareerOps.Domain.Jobs.JobProperty", b =>
+                {
+                    b.HasOne("CareerOps.Domain.Jobs.Job", "Job")
+                        .WithMany("Properties")
+                        .HasForeignKey("JobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_job_properties_jobs_job_id");
+
+                    b.Navigation("Job");
+                });
+
+            modelBuilder.Entity("CareerOps.Domain.Jobs.JobTransition", b =>
+                {
+                    b.HasOne("CareerOps.Domain.Jobs.Job", "Job")
+                        .WithMany("Transitions")
+                        .HasForeignKey("JobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_job_transitions_jobs_job_id");
+
+                    b.Navigation("Job");
+                });
+
+            modelBuilder.Entity("CareerOps.Domain.Jobs.Job", b =>
+                {
+                    b.Navigation("Activities");
+
+                    b.Navigation("Attachments");
+
+                    b.Navigation("FollowUps");
+
+                    b.Navigation("Properties");
+
+                    b.Navigation("Transitions");
+                });
+
+            modelBuilder.Entity("CareerOps.Domain.Jobs.JobActivity", b =>
+                {
+                    b.Navigation("FollowUps");
                 });
 #pragma warning restore 612, 618
         }

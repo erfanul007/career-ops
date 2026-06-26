@@ -4,23 +4,23 @@
  * CareerOps.Presentation | v1
  * OpenAPI spec version: 1.0.0
  */
-import type { ApplicationDto } from './applicationDto';
-import type { DeadlineCountdown } from './deadlineCountdown';
-import type { FollowUpTaskDto } from './followUpTaskDto';
-import type { InterviewDto } from './interviewDto';
-import type { JobLeadDto } from './jobLeadDto';
-import type { StageCount } from './stageCount';
-import type { StatusCount } from './statusCount';
+import type { DashboardSummaryDtoActiveJobsByStatus } from './dashboardSummaryDtoActiveJobsByStatus';
+import type { OfferDeadlineDto } from './offerDeadlineDto';
+import type { StaleJobDto } from './staleJobDto';
+import type { UpcomingActivityDto } from './upcomingActivityDto';
 
 export interface DashboardSummaryDto {
+  activeJobsByStatus: DashboardSummaryDtoActiveJobsByStatus;
   /** @pattern ^-?(?:0|[1-9]\d*)$ */
-  activeApplicationCount: number | string;
-  leadsByStatus: StatusCount[];
-  applicationsByStage: StageCount[];
-  followUpsDue: FollowUpTaskDto[];
-  overdueFollowUps: FollowUpTaskDto[];
-  upcomingInterviews: InterviewDto[];
-  highPriorityLeads: JobLeadDto[];
-  staleApplications: ApplicationDto[];
-  searchDeadline: null | DeadlineCountdown;
+  followUpsDueToday: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  overdueFollowUps: number | string;
+  upcomingActivities: UpcomingActivityDto[];
+  staleJobs: StaleJobDto[];
+  offerDeadlines: OfferDeadlineDto[];
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)$
+     */
+  daysUntilSearchDeadline: number | string | null;
 }

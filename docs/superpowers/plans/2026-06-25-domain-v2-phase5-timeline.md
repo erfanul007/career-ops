@@ -19,17 +19,15 @@
 ## File Structure
 
 ### Create
-- `backend/src/CareerOps.Application/Jobs/JobTimelineService.cs`
-- `backend/src/CareerOps.Application/Jobs/JobTimelineDto.cs`
 - `frontend/src/features/jobs/drawer/TimelineTab.tsx`
 
 ### Modify
-- `backend/src/CareerOps.Presentation/Endpoints/JobEndpoints.cs` — wire `GET /api/jobs/{id}/timeline`
-- `backend/src/CareerOps.Application/DependencyInjection.cs` — register `JobTimelineService`
-- `frontend/src/features/jobs/JobDetailDrawer.tsx` — wire Timeline tab
+- `frontend/src/features/jobs/JobDetailContent.tsx` — add Timeline tab (also wires it into `JobDetailPage`)
 - `frontend/src/features/jobs/JobsBoard.tsx` — empty state
 - `frontend/src/features/jobs/BoardColumn.tsx` — loading skeleton
 - `frontend/src/pages/JobsPage.tsx` — error state
+
+> **Note:** Backend timeline service (`JobTimelineService.cs`, `JobTimelineDto.cs`), endpoint (`GET /api/jobs/{id}/timeline` in `JobEndpoints.cs`), and DI registration (`DependencyInjection.cs`) were all implemented in Phase 3 Task 22. The orval client was regenerated in Phase 3 Task 23. Task 39 verifies these are in place before building the frontend tab.
 
 ---
 
@@ -41,11 +39,14 @@ The timeline backend (`JobTimelineService`, `JobTimelineDto`, `GET /api/jobs/{id
 
 - [ ] **Step 1: Confirm hook exists**
 
+**Prerequisite:** Phase 3 Task 23 (gen-client) must have completed. If `frontend/src/lib/api/jobs/jobs.ts` does not exist, complete Phase 3 Task 23 before continuing.
+
 Open `frontend/src/lib/api/jobs/jobs.ts` and verify `useGetApiJobsIdTimeline` is exported.
 
-If the timeline endpoint was missed during Phase 3 gen-client:
+If the hook is missing (timeline endpoint was added after gen-client ran):
 ```
-just api   # start API
+just up        # ensure Docker DB is running
+just api       # start API — wait for: Now listening on: http://localhost:8080
 just gen-client
 ```
 
@@ -62,7 +63,7 @@ git commit -m "chore(frontend): ensure timeline hook in orval client"
 
 **Files:**
 - Create: `frontend/src/features/jobs/drawer/TimelineTab.tsx`
-- Modify: `frontend/src/features/jobs/JobDetailDrawer.tsx`
+- Modify: `frontend/src/features/jobs/JobDetailContent.tsx`
 
 - [ ] **Step 1: Create TimelineTab**
 
@@ -148,21 +149,23 @@ export function TimelineTab({ jobId }: Props) {
 }
 ```
 
-- [ ] **Step 2: Wire TimelineTab into JobDetailDrawer**
+- [ ] **Step 2: Wire TimelineTab into JobDetailContent**
 
-In `JobDetailDrawer.tsx`:
+The tabs for drawer + full page live in `JobDetailContent.tsx` (Phase 4 Task 38). Add Timeline there so both experiences get it.
+
+In `frontend/src/features/jobs/JobDetailContent.tsx`:
 
 1. Add import:
 ```tsx
 import { TimelineTab } from './drawer/TimelineTab';
 ```
 
-2. Add Timeline trigger to TabsList (after Overview):
+2. Add trigger to TabsList (after Properties):
 ```tsx
 <TabsTrigger value="timeline">Timeline</TabsTrigger>
 ```
 
-3. Add TabsContent:
+3. Add TabsContent (after Properties content):
 ```tsx
 <TabsContent value="timeline"><TimelineTab jobId={job.id} /></TabsContent>
 ```
@@ -171,8 +174,8 @@ import { TimelineTab } from './drawer/TimelineTab';
 
 ```bash
 git add frontend/src/features/jobs/drawer/TimelineTab.tsx
-git add frontend/src/features/jobs/JobDetailDrawer.tsx
-git commit -m "feat(frontend): Timeline tab in job detail drawer"
+git add frontend/src/features/jobs/JobDetailContent.tsx
+git commit -m "feat(frontend): Timeline tab in job detail (drawer + detail page)"
 ```
 
 ---
@@ -197,22 +200,54 @@ In `BoardColumn.tsx`, add inside the droppable div when `jobs.length === 0`:
 
 - [ ] **Step 2: Add board-level empty state**
 
-In `JobsBoard.tsx`, after filtering by status, if total `jobs.length === 0`:
+In `JobsBoard.tsx`, add an early-return guard before the `boardColumns` const so an empty job list shows a placeholder instead of an empty scrollable row. Replace the `return groupBy === 'status' ? ...` block with:
 
 ```tsx
-{jobs.length === 0 ? (
-  <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-2">
-    <p className="text-sm">No jobs found.</p>
-    <p className="text-xs">Add a job to get started.</p>
+// Add before the boardColumns const:
+if (jobs.length === 0) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-2">
+      <p className="text-sm">No jobs found.</p>
+      <p className="text-xs">Add a job to get started.</p>
+    </div>
+  );
+}
+
+const boardColumns = (
+  <div className="space-y-2">
+    {groupBy === 'status' && (
+      <div className="flex justify-end">
+        <Button variant="ghost" size="sm" onClick={() => setShowClosed(v => !v)} className="text-xs">
+          {showClosed ? 'Hide closed' : 'Show closed'}
+        </Button>
+      </div>
+    )}
+    <div className="flex gap-3 overflow-x-auto pb-4">
+      {visibleGroups.map(group => (
+        <BoardColumn key={group.key} label={group.label} jobs={group.jobs} onJobClick={onJobClick} />
+      ))}
+    </div>
   </div>
-) : (
-  <div className="flex gap-3 overflow-x-auto pb-4">
-    {/* columns */}
-  </div>
-)}
+);
+
+return groupBy === 'status' ? (
+  <DndContext
+    sensors={sensors}
+    collisionDetection={closestCenter}
+    onDragStart={handleDragStart}
+    onDragEnd={handleDragEnd}
+  >
+    {boardColumns}
+    <DragOverlay>
+      {activeJob && <JobCard job={activeJob} onClick={() => {}} isDragging />}
+    </DragOverlay>
+  </DndContext>
+) : boardColumns;
 ```
 
 - [ ] **Step 3: Add error state to JobsPage**
+
+> **Note:** If Task 35's error/loading handling is already in `JobsPage.tsx`, verify the `isError` branch exists and skip this step — it's a no-op.
 
 In `JobsPage.tsx`, destructure `isError` from `useGetApiJobs`:
 
@@ -292,17 +327,17 @@ This checklist was run against the spec after writing the plan:
 - [x] JobProperty unique index (Phase 2, Task 5)
 - [x] EF cascade rules (Phase 2, Task 5 — CASCADE vs SET NULL)
 - [x] TransitionActor System=2 (Phase 2, Task 2 — enum pinned)
-- [x] FollowUpTask FK invariant: activity requires job (Phase 2, Task 11)
-- [x] 23 MCP tools (Phase 3, Tasks 19–20 — 13 in JobTools + 4 FollowUp + 2 Company + 1 Dashboard + 3 Profile = 23 ✓)
+- [x] FollowUpTask FK invariant: activity requires job (Phase 2, Tasks 3 and 5)
+- [x] 23 MCP tools (Phase 3, Tasks 19–20 — 13 in JobTools + 4 FollowUp + 2 Company + 1 Dashboard + 2 Profile + 1 Diagnostics = 23 ✓)
 - [x] API ~28–30 endpoints (Phase 3, Tasks 16–17)
-- [x] `just gen-client` after Phase 3 (Phase 3, Task 22)
+- [x] `just gen-client` after Phase 3 (Phase 3, Task 23)
 - [x] Status dropdown before DnD (Phase 4, Task 26 before Task 36)
 - [x] Optimistic update + rollback (Phase 4, Task 36)
 - [x] Same-column DnD = no-op (Phase 4, Task 36)
 - [x] Closed columns toggle (Phase 4, Task 28)
 - [x] Properties collapsed / "Agent Notes" label (Phase 4, Task 34)
 - [x] No file upload (Phase 4, Task 34 — metadata only)
-- [x] Timeline endpoint (Phase 3, Task 22 — backend; Phase 5, Task 39 verifies client)
+- [x] Timeline endpoint (Phase 3, Task 22 — backend; Phase 5, Task 39 verifies client; Phase 5, Task 40 wires tab into `JobDetailContent`)
 - [x] DB wipe + V1 migrations deleted (Phase 2, Task 1)
 - [x] Delete V1 tests (Phase 2, Task 1 + Phase 3, Task 15)
 
@@ -311,6 +346,6 @@ This checklist was run against the spec after writing the plan:
 - FollowUpTools: `list_follow_ups`, `add_follow_up`, `complete_follow_up`, `skip_follow_up` = **4**
 - CompanyTools: `list_companies`, `upsert_company` = **2**
 - DashboardTools: `get_dashboard_summary` = **1**
-- ProfileTools: `get_user_profile`, `update_user_profile` = **2** (keep existing)
+- ProfileTools: `get_user_profile`, `update_user_profile` = **2**
 - DiagnosticsTools: `ping` = **1**
-- **Total: 23** ✓
+- **Total: 13 + 4 + 2 + 1 + 2 + 1 = 23** ✓
