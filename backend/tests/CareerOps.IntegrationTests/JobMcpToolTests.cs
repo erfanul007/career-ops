@@ -8,7 +8,6 @@ using CareerOps.Domain.FollowUpTasks;
 using CareerOps.Domain.Jobs;
 using CareerOps.Infrastructure.Persistence;
 using CareerOps.Presentation.Mcp;
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -30,7 +29,7 @@ public sealed class JobMcpToolTests(ApiFactory factory) : IClassFixture<ApiFacto
         // MCP HTTP transport requires Accept: application/json, text/event-stream.
         // A plain POST without that header returns 406 — confirming MCP is mounted.
         var res = await _client.PostAsync("/mcp", null);
-        ((int)res.StatusCode).Should().BeOneOf(200, 406);
+        Assert.Contains((int)res.StatusCode, new[] { 200, 406 });
     }
 
     // Drives the MCP handler itself (transition_job has no actor parameter — it hardcodes
@@ -69,7 +68,7 @@ public sealed class JobMcpToolTests(ApiFactory factory) : IClassFixture<ApiFacto
         await tools.transition_job(job.Id, JobStatus.Applied, null);
 
         var timeline = await new JobTimelineService(db).GetTimelineAsync(job.Id);
-        timeline.Should().Contain(e => e.Actor == "Agent" && e.Title.Contains("Applied"));
+        Assert.Contains(timeline, e => e.Actor == "Agent" && e.Title.Contains("Applied"));
     }
 
     [Fact]
@@ -88,8 +87,8 @@ public sealed class JobMcpToolTests(ApiFactory factory) : IClassFixture<ApiFacto
         var tools = new FollowUpTools(new FollowUpTaskService(db, clock));
         var ok = await tools.delete_follow_up(task.Id);
 
-        ok.Should().BeTrue();
-        (await db.FollowUpTasks.FindAsync(task.Id)).Should().BeNull();
+        Assert.True(ok);
+        Assert.Null(await db.FollowUpTasks.FindAsync(task.Id));
     }
 
     [Fact]
@@ -118,7 +117,7 @@ public sealed class JobMcpToolTests(ApiFactory factory) : IClassFixture<ApiFacto
 
         var ok = await tools.delete_job_activity(job.Id, activity.Id);
 
-        ok.Should().BeTrue();
-        (await db.JobActivities.FindAsync(activity.Id)).Should().BeNull();
+        Assert.True(ok);
+        Assert.Null(await db.JobActivities.FindAsync(activity.Id));
     }
 }

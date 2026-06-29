@@ -3,7 +3,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useJobs } from '@/lib/api/jobs/hooks';
 import { JobsBoard } from '@/features/jobs/JobsBoard';
 import { JobsTable } from '@/features/jobs/JobsTable';
-import { JobFilterBar, DEFAULT_FILTERS, type JobFilters } from '@/features/jobs/JobFilterBar';
+import { JobFilterBar } from '@/features/jobs/JobFilterBar';
+import { DEFAULT_FILTERS, type JobFilters } from '@/features/jobs/jobFilters';
 import { JobQuickAdd } from '@/features/jobs/JobQuickAdd';
 import { JobDetailDrawer } from '@/features/jobs/JobDetailDrawer';
 import type { JobDto, ListJobsParams } from '@/lib/api/model';
@@ -19,9 +20,9 @@ export default function JobsPage() {
   };
 
   const { data: jobsData, isLoading, isError } = useJobs(params);
-  const jobs: JobDto[] = jobsData ?? [];
 
   const filtered = useMemo(() => {
+    const jobs: JobDto[] = jobsData ?? [];
     if (!filters.search) return jobs;
     const s = filters.search.toLowerCase();
     return jobs.filter(j =>
@@ -30,7 +31,7 @@ export default function JobsPage() {
       j.sourceUrl?.toLowerCase().includes(s) ||
       j.notes?.toLowerCase().includes(s)
     );
-  }, [jobs, filters.search]);
+  }, [jobsData, filters.search]);
 
   return (
     <div className="flex flex-col gap-4 p-4">

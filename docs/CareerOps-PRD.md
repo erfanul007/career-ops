@@ -222,9 +222,6 @@ careerops/
     compose/
       docker-compose.yml
 
-  scripts/
-    wait-for-db.sh
-
   .env.example
   .gitignore
   CLAUDE.md
@@ -315,7 +312,6 @@ Use:
 * Swagger/OpenAPI
 * Mapster or manual mapping
 * xUnit
-* FluentAssertions
 * Testcontainers for integration tests, later
 
 Do not use MediatR in the baseline unless it clearly helps. Simple application services are enough.

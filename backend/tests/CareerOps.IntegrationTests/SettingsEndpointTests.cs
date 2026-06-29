@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using FluentAssertions;
 
 namespace CareerOps.IntegrationTests;
 
@@ -13,8 +12,8 @@ public class SettingsEndpointTests(ApiFactory factory) : IClassFixture<ApiFactor
 
         var response = await client.PutAsJsonAsync("/api/settings/profile", new { fullName = "" });
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync();
-        body.ToLowerInvariant().Should().Contain("fullname");
+        Assert.Contains("fullname", body.ToLowerInvariant());
     }
 }

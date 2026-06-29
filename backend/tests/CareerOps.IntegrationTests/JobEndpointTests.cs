@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using FluentAssertions;
 using Xunit;
 
 namespace CareerOps.IntegrationTests;
@@ -13,9 +12,9 @@ public sealed class JobEndpointTests(ApiFactory factory) : IClassFixture<ApiFact
     public async Task Jobs_routes_published_in_openapi()
     {
         var doc = await _client.GetStringAsync("/openapi/v1.json");
-        doc.Should().Contain("/api/jobs");
-        doc.Should().Contain("/api/jobs/{id}/transition");
-        doc.Should().Contain("/api/jobs/{id}/timeline");
+        Assert.Contains("/api/jobs", doc);
+        Assert.Contains("/api/jobs/{id}/transition", doc);
+        Assert.Contains("/api/jobs/{id}/timeline", doc);
     }
 
     [Fact]
@@ -33,8 +32,8 @@ public sealed class JobEndpointTests(ApiFactory factory) : IClassFixture<ApiFact
             salaryPeriod = "Annual"
         });
 
-        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await res.Content.ReadAsStringAsync()).ToLowerInvariant().Should().Contain("title");
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+        Assert.Contains("title", (await res.Content.ReadAsStringAsync()).ToLowerInvariant());
     }
 
     [Fact]
@@ -51,7 +50,7 @@ public sealed class JobEndpointTests(ApiFactory factory) : IClassFixture<ApiFact
             salaryPeriod = "Annual"
         });
 
-        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
     }
 
     [Fact]
@@ -68,7 +67,7 @@ public sealed class JobEndpointTests(ApiFactory factory) : IClassFixture<ApiFact
             salaryPeriod = "Annual"
         });
 
-        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
     }
 
     [Fact]
@@ -82,7 +81,7 @@ public sealed class JobEndpointTests(ApiFactory factory) : IClassFixture<ApiFact
             status = "Planned"
         });
 
-        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await res.Content.ReadAsStringAsync()).ToLowerInvariant().Should().Contain("label");
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+        Assert.Contains("label", (await res.Content.ReadAsStringAsync()).ToLowerInvariant());
     }
 }

@@ -1,5 +1,4 @@
 using System.Net;
-using FluentAssertions;
 
 namespace CareerOps.IntegrationTests;
 
@@ -10,7 +9,7 @@ public class HealthEndpointTests(ApiFactory factory) : IClassFixture<ApiFactory>
     {
         var client = factory.CreateClient();
         var response = await client.GetAsync("/health");
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        (await response.Content.ReadAsStringAsync()).Should().Contain("Healthy");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Healthy", await response.Content.ReadAsStringAsync());
     }
 }

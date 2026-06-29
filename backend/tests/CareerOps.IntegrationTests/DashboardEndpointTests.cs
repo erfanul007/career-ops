@@ -1,5 +1,3 @@
-using FluentAssertions;
-
 namespace CareerOps.IntegrationTests;
 
 // The "Testing" environment has no database, so this asserts the route is published
@@ -12,6 +10,6 @@ public class DashboardEndpointTests(ApiFactory factory) : IClassFixture<ApiFacto
     public async Task Summary_endpoint_is_published_in_openapi()
     {
         var doc = await _client.GetStringAsync("/openapi/v1.json");
-        doc.Should().Contain("/api/dashboard/summary");
+        Assert.Contains("/api/dashboard/summary", doc);
     }
 }

@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using FluentAssertions;
 using Xunit;
 
 namespace CareerOps.IntegrationTests;
@@ -20,8 +19,8 @@ public class FollowUpTaskEndpointTests(ApiFactory factory) : IClassFixture<ApiFa
             priority = "Medium"
         });
 
-        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await res.Content.ReadAsStringAsync()).ToLowerInvariant().Should().Contain("title");
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+        Assert.Contains("title", (await res.Content.ReadAsStringAsync()).ToLowerInvariant());
     }
 
     [Fact]
@@ -35,8 +34,8 @@ public class FollowUpTaskEndpointTests(ApiFactory factory) : IClassFixture<ApiFa
             priority = "Medium"
         });
 
-        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await res.Content.ReadAsStringAsync()).ToLowerInvariant().Should().Contain("title");
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+        Assert.Contains("title", (await res.Content.ReadAsStringAsync()).ToLowerInvariant());
     }
 
     [Fact]
@@ -51,7 +50,7 @@ public class FollowUpTaskEndpointTests(ApiFactory factory) : IClassFixture<ApiFa
             jobActivityId = 5
         });
 
-        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await res.Content.ReadAsStringAsync()).ToLowerInvariant().Should().Contain("jobid");
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+        Assert.Contains("jobid", (await res.Content.ReadAsStringAsync()).ToLowerInvariant());
     }
 }

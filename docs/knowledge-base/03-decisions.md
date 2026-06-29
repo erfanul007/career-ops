@@ -740,3 +740,40 @@ only by adding a new dated entry here — never silently. All entries below are 
   operation. Accepted — the curated set covers the real agent workflows; widening toward parity is
   explicitly rejected (re-introduces the churn V2 removed).
 
+### D54 — Disable `react-refresh/only-export-components` for vendored shadcn `ui/**`
+- **Date:** 2026-06-29
+- **Decision:** Add an ESLint override turning off `react-refresh/only-export-components` for
+  `src/components/ui/**`. Vendored shadcn primitives (`badge`, `button`, `sidebar`, `tabs`, …)
+  export `cva` variant builders next to their components by design. Our own feature code still
+  obeys the rule: the Jobs filter model (`JobFilters`, `DEFAULT_FILTERS`, `GroupBy` re-export)
+  moved out of `JobFilterBar.tsx` into `src/features/jobs/jobFilters.ts`.
+- **Why:** The rule's value (Vite fast-refresh) does not justify rewriting generated files on every
+  shadcn update; the variant exports are intrinsic to those primitives. Keeping the rule on
+  everywhere else preserves fast-refresh for code we author.
+- **Rejected:** Splitting each primitive's variants into a sibling `*-variants.ts` file — churns
+  vendored files and diverges from upstream shadcn output for no runtime gain.
+- **Counterargument / risk:** Fast-refresh is silently weaker inside `ui/**` (edits there may force
+  a full reload). Accepted — those files change rarely and are not where iterative UI work happens.
+
+### D55 — Drop FluentAssertions; use native xUnit `Assert`
+- **Date:** 2026-06-29
+- **Decision:** Remove the `FluentAssertions` package and all `.Should()` usage from the test suite.
+  Assert with the built-in xUnit `Assert` API (`Assert.Equal`, `Assert.Contains`, `Assert.True`,
+  `Assert.Null`). Removed the central `PackageVersion`, the test-project `PackageReference`, and the
+  PRD §10.1 stack entry. The 28 call sites across the 7 `CareerOps.IntegrationTests` files were
+  converted in place.
+- **Why:** FluentAssertions 8.x moved to a commercial licence; the default .NET 10 / xUnit assertions
+  cover everything this suite needs. Fewer deps, no licence exposure (relevant under our regulated
+  ISO 27001 posture).
+- **Mapping used:** `Should().Be(x)` → `Assert.Equal(x, actual)`; `Should().Contain(s)` (string) →
+  `Assert.Contains(s, actual)`; `Should().Contain(pred)` (collection) → `Assert.Contains(coll, pred)`;
+  `Should().BeTrue()` → `Assert.True`; `Should().BeNull()` → `Assert.Null`; `Should().BeOneOf(a, b)` →
+  `Assert.Contains(actual, new[] { a, b })`.
+- **Rejected:** Shouldly / AwesomeAssertions (another fluent dep — contradicts "use default .NET 10
+  capabilities"); pinning FluentAssertions ≤7 on the old licence (lingering licence/maintenance risk).
+- **Not rewritten:** historical execution plans under `docs/superpowers/plans/` still show
+  FluentAssertions — they are dated records of past work and are left as-is per the no-rewriting-history
+  convention.
+- **Counterargument / risk:** xUnit assertion messages are terser than FluentAssertions' on failure.
+  Accepted — minor; this is an integration suite, not a sprawling unit surface.
+

@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using FluentAssertions;
 
 namespace CareerOps.IntegrationTests;
 
@@ -13,8 +12,8 @@ public class CompanyEndpointTests(ApiFactory factory) : IClassFixture<ApiFactory
 
         var response = await client.PostAsJsonAsync("/api/companies", new { name = "" });
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync();
-        body.ToLowerInvariant().Should().Contain("name");
+        Assert.Contains("name", body.ToLowerInvariant());
     }
 }
