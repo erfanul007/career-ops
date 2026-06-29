@@ -4,6 +4,7 @@ using CareerOps.Domain.Companies;
 using CareerOps.Domain.FollowUpTasks;
 using CareerOps.Domain.Jobs;
 using CareerOps.Infrastructure.Persistence;
+using CareerOps.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Xunit;
@@ -33,7 +34,7 @@ public sealed class FollowUpTaskServiceTests
         var dbName = nameof(Create_StandaloneTask_NoJobId);
         var clock = new FixedClock(new DateTime(2026, 6, 25, 10, 0, 0, DateTimeKind.Utc));
         await using var db = Db(dbName, clock);
-        var svc = new FollowUpTaskService(db, clock);
+        var svc = new FollowUpTaskService(new FollowUpTaskRepository(db), new JobActivityRepository(db), db, clock);
 
         var dto = await svc.CreateAsync(new CreateFollowUpTaskRequest("Call recruiter", null, clock.UtcNow.AddDays(3), Priority.Low, null, null));
 
@@ -47,7 +48,7 @@ public sealed class FollowUpTaskServiceTests
         var dbName = nameof(Create_WithActivityButNoJob_Throws);
         var clock = new FixedClock(new DateTime(2026, 6, 25, 10, 0, 0, DateTimeKind.Utc));
         await using var db = Db(dbName, clock);
-        var svc = new FollowUpTaskService(db, clock);
+        var svc = new FollowUpTaskService(new FollowUpTaskRepository(db), new JobActivityRepository(db), db, clock);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             svc.CreateAsync(new CreateFollowUpTaskRequest("Test", null, clock.UtcNow.AddDays(1), Priority.Low, JobId: null, JobActivityId: 99)));
@@ -59,7 +60,7 @@ public sealed class FollowUpTaskServiceTests
         var dbName = nameof(Complete_SetsStatusCompleted);
         var clock = new FixedClock(new DateTime(2026, 6, 25, 10, 0, 0, DateTimeKind.Utc));
         await using var db = Db(dbName, clock);
-        var svc = new FollowUpTaskService(db, clock);
+        var svc = new FollowUpTaskService(new FollowUpTaskRepository(db), new JobActivityRepository(db), db, clock);
         var dto = await svc.CreateAsync(new CreateFollowUpTaskRequest("Test", null, clock.UtcNow.AddDays(1), Priority.Low, null, null));
 
         await svc.CompleteAsync(dto.Id);
@@ -91,7 +92,7 @@ public sealed class FollowUpTaskServiceTests
         await using var db = Db(dbName, clock);
         var (_, activityId) = await SeedJobWithActivity(db);
         var (otherJobId, _) = await SeedJobWithActivity(db, jobTitle: "Other");
-        var svc = new FollowUpTaskService(db, clock);
+        var svc = new FollowUpTaskService(new FollowUpTaskRepository(db), new JobActivityRepository(db), db, clock);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             svc.CreateAsync(new CreateFollowUpTaskRequest("Thank you", null, clock.UtcNow.AddDays(1), Priority.Low, JobId: otherJobId, JobActivityId: activityId)));
@@ -104,7 +105,7 @@ public sealed class FollowUpTaskServiceTests
         var clock = new FixedClock(new DateTime(2026, 6, 25, 10, 0, 0, DateTimeKind.Utc));
         await using var db = Db(dbName, clock);
         var (jobId, activityId) = await SeedJobWithActivity(db);
-        var svc = new FollowUpTaskService(db, clock);
+        var svc = new FollowUpTaskService(new FollowUpTaskRepository(db), new JobActivityRepository(db), db, clock);
 
         var dto = await svc.CreateAsync(new CreateFollowUpTaskRequest("Thank you", null, clock.UtcNow.AddDays(1), Priority.Low, JobId: jobId, JobActivityId: activityId));
 
@@ -119,7 +120,7 @@ public sealed class FollowUpTaskServiceTests
         var clock = new FixedClock(new DateTime(2026, 6, 25, 10, 0, 0, DateTimeKind.Utc));
         await using var db = Db(dbName, clock);
         var (jobId, _) = await SeedJobWithActivity(db);
-        var svc = new FollowUpTaskService(db, clock);
+        var svc = new FollowUpTaskService(new FollowUpTaskRepository(db), new JobActivityRepository(db), db, clock);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             svc.CreateAsync(new CreateFollowUpTaskRequest("Thank you", null, clock.UtcNow.AddDays(1), Priority.Low, JobId: jobId, JobActivityId: 99999)));
@@ -131,7 +132,7 @@ public sealed class FollowUpTaskServiceTests
         var dbName = nameof(Delete_RemovesTask_AndReportsMissing);
         var clock = new FixedClock(new DateTime(2026, 6, 25, 10, 0, 0, DateTimeKind.Utc));
         await using var db = Db(dbName, clock);
-        var svc = new FollowUpTaskService(db, clock);
+        var svc = new FollowUpTaskService(new FollowUpTaskRepository(db), new JobActivityRepository(db), db, clock);
         var dto = await svc.CreateAsync(new CreateFollowUpTaskRequest("Test", null, clock.UtcNow.AddDays(1), Priority.Low, null, null));
 
         Assert.True(await svc.DeleteAsync(dto.Id));
@@ -139,5 +140,22 @@ public sealed class FollowUpTaskServiceTests
 
         await using var db2 = Db(dbName, clock);
         Assert.Null(await db2.FollowUpTasks.FindAsync(dto.Id));
+    }
+
+    [Fact]
+    public async Task ListAll_PartitionsByDueWindow()
+    {
+        var dbName = nameof(ListAll_PartitionsByDueWindow);
+        var clock = new FixedClock(new DateTime(2026, 6, 25, 10, 0, 0, DateTimeKind.Utc));
+        await using var db = Db(dbName, clock);
+        var svc = new FollowUpTaskService(new FollowUpTaskRepository(db), new JobActivityRepository(db), db, clock);
+
+        await svc.CreateAsync(new CreateFollowUpTaskRequest("today", null, new DateTime(2026, 6, 25, 15, 0, 0, DateTimeKind.Utc), Priority.Medium, null, null));
+        await svc.CreateAsync(new CreateFollowUpTaskRequest("overdue", null, new DateTime(2026, 6, 24, 9, 0, 0, DateTimeKind.Utc), Priority.Medium, null, null));
+        await svc.CreateAsync(new CreateFollowUpTaskRequest("future", null, new DateTime(2026, 6, 26, 9, 0, 0, DateTimeKind.Utc), Priority.Medium, null, null));
+
+        Assert.Equal("today", Assert.Single(await svc.ListAllAsync(due: "today")).Title);
+        Assert.Equal("overdue", Assert.Single(await svc.ListAllAsync(due: "overdue")).Title);
+        Assert.Equal(3, (await svc.ListAllAsync()).Count);
     }
 }

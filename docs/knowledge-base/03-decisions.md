@@ -777,3 +777,57 @@ only by adding a new dated entry here — never silently. All entries below are 
 - **Counterargument / risk:** xUnit assertion messages are terser than FluentAssertions' on failure.
   Accepted — minor; this is an integration suite, not a sprawling unit surface.
 
+---
+
+### D56 — Per-aggregate repositories + `IUnitOfWork`; Application has zero EF Core dependency (supersedes D3 and the "no repositories" clause of D18)
+- **Date:** 2026-06-29
+- **Decision:** The Application layer no longer depends on EF Core. `IAppDbContext` (which exposed
+  `DbSet<T>` and `CanConnectAsync`) is **deleted**. Application services now depend only on
+  **aggregate/use-case repository interfaces** plus a one-method `IUnitOfWork` (`SaveChangesAsync`),
+  all defined in Application and EF-free. Infrastructure owns every EF concern — `DbContext`,
+  `Include`/`ThenInclude`, query composition, tracking, `FirstOrDefaultAsync`/`ToListAsync` — inside
+  `CareerOps.Infrastructure.Persistence.Repositories`. `CareerOpsDbContext` implements `IUnitOfWork`
+  (it keeps its concrete `DbSet<T>` properties for repositories and test seeding, but no longer
+  implements an Application interface). The `Microsoft.EntityFrameworkCore` package reference is
+  removed from `CareerOps.Application.csproj`.
+- **Repository interfaces added (Application):** `ICompanyRepository`, `IUserProfileRepository`,
+  `IFollowUpTaskRepository` (+ `FollowUpTaskFilter`), `IJobRepository` (reuses the existing
+  `ListJobsQuery` as its filter), `IJobActivityRepository`, `IJobAttachmentRepository`,
+  `IJobPropertyRepository`, plus two read models — `IJobTimelineReadRepository` (+ `JobTimelineData`)
+  and `IDashboardReadRepository`. They are aggregate/use-case specific, never a generic
+  `IRepository<T>`, and expose only the methods existing services actually call. `JobTransition`
+  writes go through the `Job` aggregate root navigations (`job.Transitions.Add(...)`,
+  `job.FollowUps.Add(...)`) rather than a transition repository; the dashboard/timeline reads are the
+  only places that materialize cross-entity projections, hence the two dedicated read repositories.
+- **Why:** Enforces a strict Clean Architecture boundary — Application depends on abstractions, not on
+  EF Core. D3's own escape hatch ("revisit only if a query becomes genuinely complex") is met:
+  `JobService.ListJobsAsync` carries a 16-clause dynamic filter and `DashboardService` composes five
+  cross-entity aggregates. The codebase is well past the personal-use baseline (Domain V2, full MCP,
+  polished dashboard), so the YAGNI guard D3/D18 imposed no longer applies. Query shape now lives in
+  one layer; services read like use cases.
+- **Supersedes:** **D3** ("Direct EF Core, no generic repositories" — Application used `IAppDbContext`
+  directly) in full, and the **"No repositories … until a slice needs them"** clause of **D18**. The
+  rest of D18 (pragmatic/tactical DDD, aggregates as consistency boundaries, no MediatR/CQRS, no
+  domain-event infrastructure) **stands**. D5/D16 (enum/PK rules) and D2 (Mapster, still
+  Application-side entity↔DTO mapping) are unaffected.
+- **Rejected:** Generic `IRepository<T>` / Specification pattern (PRD §11.3/§19.1 push-back stands —
+  these repos stay aggregate-specific); MediatR/CQRS and AutoMapper (no need, more ceremony);
+  repositories that call `SaveChanges` internally (one `IUnitOfWork.SaveChangesAsync` per service
+  operation keeps the unit-of-work boundary explicit); leaving `CanConnectAsync` in Application (the
+  DB-reachability health check is an Infrastructure/Presentation concern — `DatabaseHealthCheck` now
+  injects `CareerOpsDbContext` and calls `Database.CanConnectAsync` directly).
+- **Counterargument / risk:** More types and one more layer of indirection than direct `IAppDbContext`
+  access — exactly the ceremony D3/D18 set out to avoid. Accepted: the EF-free Application boundary is
+  the explicit goal, the complex-query escape hatch is genuinely triggered, and the surface is kept
+  minimal (no generic repo, fewest methods, read models only where projections are needed).
+- **Behaviour preserved (refactor, not rewrite):** No change to API contracts, MCP tools, frontend,
+  DTO shapes, migrations, or enum values. Query shapes, null/exception behaviour, and audit stamping
+  (`CareerOpsDbContext.SaveChangesAsync` via `IClock`) are identical. Unit tests construct services
+  with the real Infrastructure repositories over EF InMemory. Verified: `just verify` green —
+  backend build + **72 tests** (56 unit + 16 integration), frontend typecheck + build + lint clean;
+  greps confirm no `IAppDbContext`, `DbSet<`, `IQueryable`, or `Microsoft.EntityFrameworkCore` remain
+  in `CareerOps.Application`.
+- **Deferred cleanup:** the now-unused `Microsoft.EntityFrameworkCore` `<PackageVersion>` entry stays
+  in `Directory.Packages.props` (harmless under central package management; other projects pull EF
+  Core transitively via Relational/Npgsql/InMemory).
+

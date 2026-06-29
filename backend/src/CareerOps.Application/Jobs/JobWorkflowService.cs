@@ -2,11 +2,10 @@ using CareerOps.Application.Common;
 using CareerOps.Domain.Common;
 using CareerOps.Domain.FollowUpTasks;
 using CareerOps.Domain.Jobs;
-using Microsoft.EntityFrameworkCore;
 
 namespace CareerOps.Application.Jobs;
 
-public sealed class JobWorkflowService(IAppDbContext db, IClock clock)
+public sealed class JobWorkflowService(IJobRepository jobs, IUnitOfWork uow, IClock clock)
 {
     public async Task<TransitionResult> TransitionJobAsync(
         int jobId,
@@ -15,7 +14,7 @@ public sealed class JobWorkflowService(IAppDbContext db, IClock clock)
         TransitionActor actor,
         CancellationToken ct = default)
     {
-        var job = await db.Jobs.FindAsync([jobId], ct)
+        var job = await jobs.FindByIdAsync(jobId, ct)
             ?? throw new KeyNotFoundException($"Job {jobId} not found");
 
         if (job.Status == toStatus)
@@ -27,9 +26,8 @@ public sealed class JobWorkflowService(IAppDbContext db, IClock clock)
         if (toStatus == JobStatus.Applied && job.AppliedAtUtc is null)
             job.AppliedAtUtc = clock.UtcNow;
 
-        db.JobTransitions.Add(new JobTransition
+        job.Transitions.Add(new JobTransition
         {
-            JobId = jobId,
             FromStatus = fromStatus,
             ToStatus = toStatus,
             ChangedAtUtc = clock.UtcNow,
@@ -41,9 +39,8 @@ public sealed class JobWorkflowService(IAppDbContext db, IClock clock)
 
         if (toStatus == JobStatus.Applied)
         {
-            db.FollowUpTasks.Add(new FollowUpTask
+            job.FollowUps.Add(new FollowUpTask
             {
-                JobId = jobId,
                 Title = "Check application status",
                 DueAtUtc = clock.UtcNow.AddDays(7),
                 Status = FollowUpStatus.Pending,
@@ -59,7 +56,7 @@ public sealed class JobWorkflowService(IAppDbContext db, IClock clock)
         else if (toStatus == JobStatus.Ghosted)
             suggestion = "Send a final follow-up email";
 
-        await db.SaveChangesAsync(ct);
+        await uow.SaveChangesAsync(ct);
         return new TransitionResult(toStatus, suggestion);
     }
 }

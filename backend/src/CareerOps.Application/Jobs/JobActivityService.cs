@@ -1,17 +1,22 @@
 using CareerOps.Application.Common;
+using CareerOps.Application.FollowUpTasks;
 using CareerOps.Domain.Common;
 using CareerOps.Domain.FollowUpTasks;
 using CareerOps.Domain.Jobs;
 using Mapster;
-using Microsoft.EntityFrameworkCore;
 
 namespace CareerOps.Application.Jobs;
 
-public sealed class JobActivityService(IAppDbContext db, IClock clock)
+public sealed class JobActivityService(
+    IJobActivityRepository activities,
+    IJobRepository jobs,
+    IFollowUpTaskRepository followUps,
+    IUnitOfWork uow,
+    IClock clock)
 {
     public async Task<JobActivityDto?> AddActivityAsync(int jobId, CreateActivityRequest req, CancellationToken ct = default)
     {
-        if (!await db.Jobs.AnyAsync(j => j.Id == jobId, ct)) return null;
+        if (!await jobs.ExistsAsync(jobId, ct)) return null;
         var activity = new JobActivity
         {
             JobId = jobId,
@@ -27,14 +32,14 @@ public sealed class JobActivityService(IAppDbContext db, IClock clock)
             PrepNotes = req.PrepNotes,
             Notes = req.Notes
         };
-        db.JobActivities.Add(activity);
-        await db.SaveChangesAsync(ct);
+        activities.Add(activity);
+        await uow.SaveChangesAsync(ct);
         return activity.Adapt<JobActivityDto>();
     }
 
     public async Task<JobActivityDto?> UpdateActivityAsync(int jobId, int activityId, UpdateActivityRequest req, CancellationToken ct = default)
     {
-        var activity = await db.JobActivities.FirstOrDefaultAsync(a => a.Id == activityId && a.JobId == jobId, ct);
+        var activity = await activities.FindForJobAsync(jobId, activityId, ct);
         if (activity is null) return null;
         activity.Label = req.Label;
         activity.Type = req.Type;
@@ -46,7 +51,7 @@ public sealed class JobActivityService(IAppDbContext db, IClock clock)
         activity.MeetingUrl = req.MeetingUrl;
         activity.PrepNotes = req.PrepNotes;
         activity.Notes = req.Notes;
-        await db.SaveChangesAsync(ct);
+        await uow.SaveChangesAsync(ct);
         return activity.Adapt<JobActivityDto>();
     }
 
@@ -56,7 +61,7 @@ public sealed class JobActivityService(IAppDbContext db, IClock clock)
         CompleteActivityRequest req,
         CancellationToken ct = default)
     {
-        var activity = await db.JobActivities.FirstOrDefaultAsync(a => a.Id == activityId && a.JobId == jobId, ct);
+        var activity = await activities.FindForJobAsync(jobId, activityId, ct);
         if (activity is null) return (null, null);
 
         activity.Status = JobActivityStatus.Completed;
@@ -66,7 +71,7 @@ public sealed class JobActivityService(IAppDbContext db, IClock clock)
 
         if (req.CreateFollowUp)
         {
-            db.FollowUpTasks.Add(new FollowUpTask
+            followUps.Add(new FollowUpTask
             {
                 JobId = activity.JobId,
                 JobActivityId = activity.Id,
@@ -77,24 +82,22 @@ public sealed class JobActivityService(IAppDbContext db, IClock clock)
             });
         }
 
-        await db.SaveChangesAsync(ct);
+        await uow.SaveChangesAsync(ct);
         return (activity.Adapt<JobActivityDto>(), "Great — log your notes while fresh");
     }
 
     public async Task<bool> DeleteActivityAsync(int jobId, int activityId, CancellationToken ct = default)
     {
-        var activity = await db.JobActivities.FirstOrDefaultAsync(a => a.Id == activityId && a.JobId == jobId, ct);
+        var activity = await activities.FindForJobAsync(jobId, activityId, ct);
         if (activity is null) return false;
 
         // Nullify the activity link on follow-ups; preserve the Job link
-        var linked = await db.FollowUpTasks
-            .Where(f => f.JobActivityId == activityId)
-            .ToListAsync(ct);
+        var linked = await followUps.ListByActivityAsync(activityId, ct);
         foreach (var f in linked)
             f.JobActivityId = null;
 
-        db.JobActivities.Remove(activity);
-        await db.SaveChangesAsync(ct);
+        activities.Remove(activity);
+        await uow.SaveChangesAsync(ct);
         return true;
     }
 }

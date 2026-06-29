@@ -7,6 +7,7 @@ using CareerOps.Domain.Common;
 using CareerOps.Domain.FollowUpTasks;
 using CareerOps.Domain.Jobs;
 using CareerOps.Infrastructure.Persistence;
+using CareerOps.Infrastructure.Persistence.Repositories;
 using CareerOps.Presentation.Mcp;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
@@ -61,13 +62,13 @@ public sealed class JobMcpToolTests(ApiFactory factory) : IClassFixture<ApiFacto
         await db.SaveChangesAsync();
 
         var tools = new JobTools(
-            new JobService(db, clock, new CompanyService(db)),
-            new JobWorkflowService(db, clock),
-            new JobActivityService(db, clock));
+            new JobService(new JobRepository(db), new JobAttachmentRepository(db), new JobPropertyRepository(db), db, clock, new CompanyService(new CompanyRepository(db), db)),
+            new JobWorkflowService(new JobRepository(db), db, clock),
+            new JobActivityService(new JobActivityRepository(db), new JobRepository(db), new FollowUpTaskRepository(db), db, clock));
 
         await tools.transition_job(job.Id, JobStatus.Applied, null);
 
-        var timeline = await new JobTimelineService(db).GetTimelineAsync(job.Id);
+        var timeline = await new JobTimelineService(new JobTimelineReadRepository(db)).GetTimelineAsync(job.Id);
         Assert.Contains(timeline, e => e.Actor == "Agent" && e.Title.Contains("Applied"));
     }
 
@@ -84,7 +85,7 @@ public sealed class JobMcpToolTests(ApiFactory factory) : IClassFixture<ApiFacto
         db.FollowUpTasks.Add(task);
         await db.SaveChangesAsync();
 
-        var tools = new FollowUpTools(new FollowUpTaskService(db, clock));
+        var tools = new FollowUpTools(new FollowUpTaskService(new FollowUpTaskRepository(db), new JobActivityRepository(db), db, clock));
         var ok = await tools.delete_follow_up(task.Id);
 
         Assert.True(ok);
@@ -111,9 +112,9 @@ public sealed class JobMcpToolTests(ApiFactory factory) : IClassFixture<ApiFacto
         await db.SaveChangesAsync();
 
         var tools = new JobTools(
-            new JobService(db, clock, new CompanyService(db)),
-            new JobWorkflowService(db, clock),
-            new JobActivityService(db, clock));
+            new JobService(new JobRepository(db), new JobAttachmentRepository(db), new JobPropertyRepository(db), db, clock, new CompanyService(new CompanyRepository(db), db)),
+            new JobWorkflowService(new JobRepository(db), db, clock),
+            new JobActivityService(new JobActivityRepository(db), new JobRepository(db), new FollowUpTaskRepository(db), db, clock));
 
         var ok = await tools.delete_job_activity(job.Id, activity.Id);
 

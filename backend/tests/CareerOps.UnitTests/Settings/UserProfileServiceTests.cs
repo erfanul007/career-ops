@@ -1,6 +1,7 @@
 using CareerOps.Application.Common;
 using CareerOps.Application.Settings;
 using CareerOps.Infrastructure.Persistence;
+using CareerOps.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace CareerOps.UnitTests.Settings;
@@ -21,7 +22,7 @@ public class UserProfileServiceTests
     public async Task GetAsync_creates_singleton_when_missing()
     {
         await using var db = NewDb();
-        var svc = new UserProfileService(db);
+        var svc = new UserProfileService(new UserProfileRepository(db), db);
 
         var dto = await svc.GetAsync();
 
@@ -33,7 +34,7 @@ public class UserProfileServiceTests
     public async Task UpdateAsync_then_GetAsync_returns_saved_values()
     {
         await using var db = NewDb();
-        var svc = new UserProfileService(db);
+        var svc = new UserProfileService(new UserProfileRepository(db), db);
 
         await svc.UpdateAsync(new UpdateUserProfileRequest(
             FullName: "Ada Lovelace", Email: null, Phone: null,

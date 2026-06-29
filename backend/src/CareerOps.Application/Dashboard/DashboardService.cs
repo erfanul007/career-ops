@@ -1,11 +1,13 @@
 using CareerOps.Application.Common;
-using CareerOps.Domain.FollowUpTasks;
+using CareerOps.Application.Settings;
 using CareerOps.Domain.Jobs;
-using Microsoft.EntityFrameworkCore;
 
 namespace CareerOps.Application.Dashboard;
 
-public sealed class DashboardService(IAppDbContext db, IClock clock)
+public sealed class DashboardService(
+    IDashboardReadRepository dashboard,
+    IUserProfileRepository profiles,
+    IClock clock)
 {
     private static readonly JobStatus[] ActiveStatuses =
     [
@@ -19,10 +21,7 @@ public sealed class DashboardService(IAppDbContext db, IClock clock)
         var staleThreshold = now.AddDays(-7);
         var sevenDaysAhead = now.AddDays(7);
 
-        var activeJobs = await db.Jobs
-            .Include(j => j.Company)
-            .Where(j => ActiveStatuses.Contains(j.Status))
-            .ToListAsync(ct);
+        var activeJobs = await dashboard.ListActiveJobsWithCompanyAsync(ActiveStatuses, ct);
 
         var activeByStatus = activeJobs
             .GroupBy(j => j.Status)
@@ -36,26 +35,13 @@ public sealed class DashboardService(IAppDbContext db, IClock clock)
             .ToList();
 
         var todayEnd = now.Date.AddDays(1);
-        var dueToday = await db.FollowUpTasks
-            .CountAsync(f => f.Status == FollowUpStatus.Pending && f.DueAtUtc >= now.Date && f.DueAtUtc < todayEnd, ct);
-        var overdue = await db.FollowUpTasks
-            .CountAsync(f => f.Status == FollowUpStatus.Pending && f.DueAtUtc < now.Date, ct);
+        var dueToday = await dashboard.CountPendingFollowUpsDueBetweenAsync(now.Date, todayEnd, ct);
+        var overdue = await dashboard.CountPendingFollowUpsOverdueAsync(now.Date, ct);
 
-        var upcoming = await db.JobActivities
-            .Include(a => a.Job).ThenInclude(j => j!.Company)
-            .Where(a => a.Status == JobActivityStatus.Scheduled && a.ScheduledAtUtc >= now && a.ScheduledAtUtc <= sevenDaysAhead)
-            .OrderBy(a => a.ScheduledAtUtc)
-            .Select(a => new UpcomingActivityDto(a.JobId, a.Job!.Title, a.Job.Company!.Name, a.Id, a.Label, a.ScheduledAtUtc!.Value))
-            .ToListAsync(ct);
+        var upcoming = await dashboard.ListUpcomingActivitiesAsync(now, sevenDaysAhead, ct);
+        var offerDeadlines = await dashboard.ListOfferDeadlinesAsync(now, ct);
 
-        var offerDeadlines = await db.Jobs
-            .Include(j => j.Company)
-            .Where(j => j.Status == JobStatus.Offered && j.OfferDeadlineAtUtc.HasValue && j.OfferDeadlineAtUtc > now)
-            .OrderBy(j => j.OfferDeadlineAtUtc)
-            .Select(j => new OfferDeadlineDto(j.Id, j.Title, j.Company!.Name, j.OfferDeadlineAtUtc!.Value))
-            .ToListAsync(ct);
-
-        var profile = await db.UserProfiles.FirstOrDefaultAsync(ct);
+        var profile = await profiles.GetAsync(ct);
         int? daysUntilDeadline = profile?.SearchDeadlineUtc.HasValue == true
             ? (int?)(profile.SearchDeadlineUtc!.Value - now).TotalDays
             : null;

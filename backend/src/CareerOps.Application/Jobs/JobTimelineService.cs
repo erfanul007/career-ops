@@ -1,21 +1,13 @@
-using CareerOps.Application.Common;
-using CareerOps.Domain.Jobs;
-using Microsoft.EntityFrameworkCore;
-
 namespace CareerOps.Application.Jobs;
 
-public sealed class JobTimelineService(IAppDbContext db)
+public sealed class JobTimelineService(IJobTimelineReadRepository timeline)
 {
     public async Task<List<TimelineEventDto>> GetTimelineAsync(int jobId, CancellationToken ct = default)
     {
+        var data = await timeline.GetTimelineDataAsync(jobId, ct);
         var events = new List<TimelineEventDto>();
 
-        var transitions = await db.JobTransitions
-            .Where(t => t.JobId == jobId)
-            .OrderByDescending(t => t.ChangedAtUtc)
-            .ToListAsync(ct);
-
-        foreach (var t in transitions)
+        foreach (var t in data.Transitions)
         {
             var title = t.FromStatus.HasValue
                 ? $"{t.FromStatus} → {t.ToStatus}"
@@ -24,24 +16,14 @@ public sealed class JobTimelineService(IAppDbContext db)
                 t.Id, TimelineEventKind.Transition, t.ChangedAtUtc, title, t.Notes, t.Actor.ToString()));
         }
 
-        var activities = await db.JobActivities
-            .Where(a => a.JobId == jobId)
-            .OrderByDescending(a => a.ScheduledAtUtc ?? a.CreatedAtUtc)
-            .ToListAsync(ct);
-
-        foreach (var a in activities)
+        foreach (var a in data.Activities)
         {
             var ts = a.ScheduledAtUtc ?? a.CreatedAtUtc;
             events.Add(new TimelineEventDto(
                 a.Id, TimelineEventKind.Activity, ts, $"{a.Type}: {a.Label}", $"{a.Status} · {a.Outcome}", null));
         }
 
-        var followUps = await db.FollowUpTasks
-            .Where(f => f.JobId == jobId)
-            .OrderByDescending(f => f.DueAtUtc)
-            .ToListAsync(ct);
-
-        foreach (var f in followUps)
+        foreach (var f in data.FollowUps)
         {
             events.Add(new TimelineEventDto(
                 f.Id, TimelineEventKind.FollowUp, f.DueAtUtc, f.Title, f.Status.ToString(), null));

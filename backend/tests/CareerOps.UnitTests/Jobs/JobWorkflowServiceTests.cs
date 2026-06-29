@@ -3,6 +3,7 @@ using CareerOps.Domain.Common;
 using CareerOps.Domain.FollowUpTasks;
 using CareerOps.Domain.Jobs;
 using CareerOps.Infrastructure.Persistence;
+using CareerOps.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Xunit;
@@ -56,7 +57,7 @@ public sealed class JobWorkflowServiceTests
         await using var db = Db(dbName, clock);
         var job = await SeedJob(db);
 
-        var svc = new JobWorkflowService(db, clock);
+        var svc = new JobWorkflowService(new JobRepository(db), db, clock);
         await svc.TransitionJobAsync(job.Id, JobStatus.Applied, null, TransitionActor.User);
 
         await using var db2 = Db(dbName, clock);
@@ -76,7 +77,7 @@ public sealed class JobWorkflowServiceTests
         job.AppliedAtUtc = original;
         await db.SaveChangesAsync();
 
-        var svc = new JobWorkflowService(db, clock);
+        var svc = new JobWorkflowService(new JobRepository(db), db, clock);
         await svc.TransitionJobAsync(job.Id, JobStatus.Applied, null, TransitionActor.User);
 
         await using var db2 = Db(dbName, clock);
@@ -93,7 +94,7 @@ public sealed class JobWorkflowServiceTests
         await using var db = Db(dbName, clock);
         var job = await SeedJob(db);
 
-        var svc = new JobWorkflowService(db, clock);
+        var svc = new JobWorkflowService(new JobRepository(db), db, clock);
         await svc.TransitionJobAsync(job.Id, JobStatus.Applied, null, TransitionActor.User);
 
         await using var db2 = Db(dbName, clock);
@@ -111,7 +112,7 @@ public sealed class JobWorkflowServiceTests
         await using var db = Db(dbName, clock);
         var job = await SeedJob(db, JobStatus.Interested);
 
-        var svc = new JobWorkflowService(db, clock);
+        var svc = new JobWorkflowService(new JobRepository(db), db, clock);
         await svc.TransitionJobAsync(job.Id, JobStatus.Applied, "applying now", TransitionActor.User);
 
         await using var db2 = Db(dbName, clock);
@@ -131,7 +132,7 @@ public sealed class JobWorkflowServiceTests
         await using var db = Db(dbName, clock);
         var job = await SeedJob(db, JobStatus.Applied);
 
-        var svc = new JobWorkflowService(db, clock);
+        var svc = new JobWorkflowService(new JobRepository(db), db, clock);
         var result = await svc.TransitionJobAsync(job.Id, JobStatus.Applied, null, TransitionActor.User);
 
         await using var db2 = Db(dbName, clock);
@@ -148,7 +149,7 @@ public sealed class JobWorkflowServiceTests
         await using var db = Db(dbName, clock);
         var job = await SeedJob(db, JobStatus.Applied);
 
-        var svc = new JobWorkflowService(db, clock);
+        var svc = new JobWorkflowService(new JobRepository(db), db, clock);
         await svc.TransitionJobAsync(job.Id, JobStatus.Applied, null, TransitionActor.User);
 
         await using var db2 = Db(dbName, clock);
@@ -164,7 +165,7 @@ public sealed class JobWorkflowServiceTests
         await using var db = Db(dbName, clock);
         var job = await SeedJob(db);
 
-        var svc = new JobWorkflowService(db, clock);
+        var svc = new JobWorkflowService(new JobRepository(db), db, clock);
         var result = await svc.TransitionJobAsync(job.Id, JobStatus.Interviewing, null, TransitionActor.Agent);
 
         Assert.NotNull(result.Suggestion);
@@ -178,7 +179,7 @@ public sealed class JobWorkflowServiceTests
         await using var db = Db(dbName, clock);
         var job = await SeedJob(db);
 
-        var svc = new JobWorkflowService(db, clock);
+        var svc = new JobWorkflowService(new JobRepository(db), db, clock);
         await svc.TransitionJobAsync(job.Id, JobStatus.Applied, null, TransitionActor.Agent);
 
         await using var db2 = Db(dbName, clock);

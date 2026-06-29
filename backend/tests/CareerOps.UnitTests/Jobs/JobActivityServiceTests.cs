@@ -3,6 +3,7 @@ using CareerOps.Domain.Common;
 using CareerOps.Domain.FollowUpTasks;
 using CareerOps.Domain.Jobs;
 using CareerOps.Infrastructure.Persistence;
+using CareerOps.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Xunit;
@@ -49,7 +50,7 @@ public sealed class JobActivityServiceTests
         db.JobActivities.Add(activity);
         await db.SaveChangesAsync();
 
-        var svc = new JobActivityService(db, clock);
+        var svc = new JobActivityService(new JobActivityRepository(db), new JobRepository(db), new FollowUpTaskRepository(db), db, clock);
         await svc.CompleteActivityAsync(job.Id, activity.Id, new CompleteActivityRequest(JobActivityOutcome.Passed, "Good", "Notes", false));
 
         await using var db2 = Db(dbName, clock);
@@ -70,7 +71,7 @@ public sealed class JobActivityServiceTests
         db.JobActivities.Add(activity);
         await db.SaveChangesAsync();
 
-        var svc = new JobActivityService(db, clock);
+        var svc = new JobActivityService(new JobActivityRepository(db), new JobRepository(db), new FollowUpTaskRepository(db), db, clock);
         await svc.CompleteActivityAsync(job.Id, activity.Id, new CompleteActivityRequest(JobActivityOutcome.Passed, null, null, CreateFollowUp: true));
 
         await using var db2 = Db(dbName, clock);
@@ -93,7 +94,7 @@ public sealed class JobActivityServiceTests
         db.FollowUpTasks.Add(followUp);
         await db.SaveChangesAsync();
 
-        var svc = new JobActivityService(db, clock);
+        var svc = new JobActivityService(new JobActivityRepository(db), new JobRepository(db), new FollowUpTaskRepository(db), db, clock);
         await svc.DeleteActivityAsync(job.Id, activity.Id);
 
         await using var db2 = Db(dbName, clock);

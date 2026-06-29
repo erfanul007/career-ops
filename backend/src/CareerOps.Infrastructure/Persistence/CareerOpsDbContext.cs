@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace CareerOps.Infrastructure.Persistence;
 
 public sealed class CareerOpsDbContext(DbContextOptions<CareerOpsDbContext> options, IClock clock)
-    : DbContext(options), IAppDbContext
+    : DbContext(options), IUnitOfWork
 {
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
     public DbSet<Company> Companies => Set<Company>();
@@ -19,9 +19,6 @@ public sealed class CareerOpsDbContext(DbContextOptions<CareerOpsDbContext> opti
     public DbSet<JobProperty> JobProperties => Set<JobProperty>();
     public DbSet<JobAttachment> JobAttachments => Set<JobAttachment>();
     public DbSet<FollowUpTask> FollowUpTasks => Set<FollowUpTask>();
-
-    public Task<bool> CanConnectAsync(CancellationToken ct = default)
-        => Database.CanConnectAsync(ct);
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => modelBuilder.ApplyConfigurationsFromAssembly(typeof(CareerOpsDbContext).Assembly);

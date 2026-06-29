@@ -2,6 +2,7 @@ using CareerOps.Application.Common;
 using CareerOps.Application.Companies;
 using CareerOps.Domain.Companies;
 using CareerOps.Infrastructure.Persistence;
+using CareerOps.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace CareerOps.UnitTests.Companies;
@@ -28,7 +29,7 @@ public class CompanyServiceTests
     public async Task CreateAsync_persists_and_sets_audit()
     {
         await using var db = NewDb();
-        var svc = new CompanyService(db);
+        var svc = new CompanyService(new CompanyRepository(db), db);
 
         var dto = await svc.CreateAsync(NewCompany());
 
@@ -41,7 +42,7 @@ public class CompanyServiceTests
     public async Task UpdateAsync_changes_fields()
     {
         await using var db = NewDb();
-        var svc = new CompanyService(db);
+        var svc = new CompanyService(new CompanyRepository(db), db);
         var created = await svc.CreateAsync(NewCompany());
 
         var updated = await svc.UpdateAsync(created.Id, new UpdateCompanyRequest(
@@ -59,7 +60,7 @@ public class CompanyServiceTests
     public async Task UpdateAsync_returns_null_when_missing()
     {
         await using var db = NewDb();
-        var svc = new CompanyService(db);
+        var svc = new CompanyService(new CompanyRepository(db), db);
 
         var updated = await svc.UpdateAsync(999, new UpdateCompanyRequest(
             "X", null, null, null, null,
@@ -72,7 +73,7 @@ public class CompanyServiceTests
     public async Task DeleteAsync_removes_and_reports()
     {
         await using var db = NewDb();
-        var svc = new CompanyService(db);
+        var svc = new CompanyService(new CompanyRepository(db), db);
         var created = await svc.CreateAsync(NewCompany());
 
         Assert.True(await svc.DeleteAsync(created.Id));
@@ -84,7 +85,7 @@ public class CompanyServiceTests
     public async Task FindOrCreate_is_case_and_whitespace_insensitive()
     {
         await using var db = NewDb();
-        var svc = new CompanyService(db);
+        var svc = new CompanyService(new CompanyRepository(db), db);
 
         var first = await svc.FindOrCreateByNameAsync("Acme");
         var again = await svc.FindOrCreateByNameAsync("  acme  ");
@@ -99,7 +100,7 @@ public class CompanyServiceTests
         await using var db = NewDb();
         db.Companies.Add(new Company { Name = "Acme " }); // simulate a legacy row with a trailing space
         await db.SaveChangesAsync();
-        var svc = new CompanyService(db);
+        var svc = new CompanyService(new CompanyRepository(db), db);
 
         var found = await svc.FindOrCreateByNameAsync("acme");
 
