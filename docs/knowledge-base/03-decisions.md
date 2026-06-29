@@ -722,3 +722,21 @@ only by adding a new dated entry here — never silently. All entries below are 
   /settings/ai|AI__Provider` now returns only dated decision-log entries and explicitly
   superseded/negating context (e.g. the "Phase 7 … is dropped" banner).
 
+### D53 — V2 MCP is a curated, workflow-oriented tool set over the Job aggregate (supersedes D49 parity)
+- **Date:** 2026-06-29
+- **Decision:** After Domain V2 unified `JobLead`/`Application`/`Interview` into the **Job aggregate**,
+  the MCP server exposes a **curated, workflow-oriented** surface of **25 tools** built around the Job
+  aggregate, follow-ups, companies, dashboard, profile, and a diagnostic — **not** the old
+  seven-resource "full REST parity" set. The MCP README enumerates the live tools.
+- **Why:** The V2 model has one job aggregate, not seven resources; "full REST parity" (D49) and the
+  "MCP = REST parity" framing (D51) no longer describe the surface. Agents drive workflows
+  (transition, activities, follow-ups), not CRUD over a wide resource matrix.
+- **Supersedes:** D49 (44 tools / full parity / hard-delete parity) and the *parity wording* of D51.
+  The no-in-solution-AI core of D51 (all AI lives in external agents via MCP, D44) still stands.
+- **Cleanup deletes added this pass:** `delete_follow_up` and `delete_job_activity` (the only
+  deletes agents need for self-correction); `delete_company` is deliberately excluded (company
+  delete is already blocked while jobs exist).
+- **Counterargument / risk:** REST and MCP are no longer 1:1, so an agent cannot reach every REST
+  operation. Accepted — the curated set covers the real agent workflows; widening toward parity is
+  explicitly rejected (re-introduces the churn V2 removed).
+

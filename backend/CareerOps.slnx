@@ -1,7 +1,6 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/CareerOps.Application/CareerOps.Application.csproj" />
-    <Project Path="src/CareerOps.Contracts/CareerOps.Contracts.csproj" />
     <Project Path="src/CareerOps.Domain/CareerOps.Domain.csproj" />
     <Project Path="src/CareerOps.Infrastructure/CareerOps.Infrastructure.csproj" />
     <Project Path="src/CareerOps.Presentation/CareerOps.Presentation.csproj" />

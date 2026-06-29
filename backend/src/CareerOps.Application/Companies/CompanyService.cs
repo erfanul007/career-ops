@@ -11,7 +11,7 @@ public sealed class CompanyService(IAppDbContext db)
     {
         var normalized = name.Trim().ToLowerInvariant();
         var existing = await db.Companies
-            .FirstOrDefaultAsync(c => c.Name.ToLower() == normalized, ct);
+            .FirstOrDefaultAsync(c => c.Name.Trim().ToLower() == normalized, ct);
         if (existing is not null) return existing.Adapt<CompanyDto>();
 
         var company = new Company { Name = name.Trim() };

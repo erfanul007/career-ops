@@ -1,9 +1,8 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useGetJob } from '@/lib/api/jobs/jobs';
+import { useJob } from '@/lib/api/jobs/hooks';
 import { JobStatusDropdown } from './JobStatusDropdown';
 import { JobDetailContent } from './JobDetailContent';
-import type { JobDetailDto } from '@/lib/api/model';
 
 interface Props {
   jobId: number | null;
@@ -11,10 +10,7 @@ interface Props {
 }
 
 export function JobDetailDrawer({ jobId, onClose }: Props) {
-  const { data: response, isLoading } = useGetJob(jobId ?? 0, {
-    query: { enabled: jobId !== null },
-  });
-  const job = response?.data as unknown as JobDetailDto | undefined;
+  const { data: job, isLoading } = useJob(jobId);
 
   return (
     <Sheet open={jobId !== null} onOpenChange={open => !open && onClose()}>

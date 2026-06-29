@@ -33,4 +33,8 @@ public sealed class FollowUpTools(FollowUpTaskService svc)
     [McpServerTool, Description("Skip (dismiss) a follow-up task.")]
     public async Task<bool> skip_follow_up([Description("Follow-up task ID")] int taskId)
         => await svc.SkipAsync(taskId);
+
+    [McpServerTool, Description("Delete a follow-up task permanently.")]
+    public async Task<bool> delete_follow_up([Description("Follow-up task ID")] int taskId)
+        => await svc.DeleteAsync(taskId);
 }

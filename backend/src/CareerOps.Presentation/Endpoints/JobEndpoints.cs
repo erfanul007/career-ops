@@ -140,9 +140,16 @@ public static class JobEndpoints
         // Job-scoped follow-up creation
         jobs.MapPost("/{id:int}/follow-ups", async (int id, CreateFollowUpTaskRequest req, FollowUpTaskService svc) =>
         {
-            var reqWithJob = req with { JobId = id };
-            var task = await svc.CreateAsync(reqWithJob);
-            return TypedResults.Created($"/api/follow-up-tasks/{task.Id}", task);
+            try
+            {
+                var reqWithJob = req with { JobId = id };
+                var task = await svc.CreateAsync(reqWithJob);
+                return Results.Created($"/api/follow-up-tasks/{task.Id}", task);
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
+            }
         })
         .WithName("CreateJobFollowUp")
         .AddEndpointFilter<ValidationFilter<CreateFollowUpTaskRequest>>();

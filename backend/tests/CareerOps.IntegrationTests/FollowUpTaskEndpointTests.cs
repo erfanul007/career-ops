@@ -38,4 +38,20 @@ public class FollowUpTaskEndpointTests(ApiFactory factory) : IClassFixture<ApiFa
         res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await res.Content.ReadAsStringAsync()).ToLowerInvariant().Should().Contain("title");
     }
+
+    [Fact]
+    public async Task UpdateFollowUp_ActivityWithoutJob_Returns400()
+    {
+        // JobActivityId set without JobId is rejected (validation rule) before any DB lookup.
+        var res = await _client.PutAsJsonAsync("/api/follow-up-tasks/1", new
+        {
+            title = "Test",
+            dueAtUtc = "2026-06-20T00:00:00Z",
+            priority = "Medium",
+            jobActivityId = 5
+        });
+
+        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await res.Content.ReadAsStringAsync()).ToLowerInvariant().Should().Contain("jobid");
+    }
 }

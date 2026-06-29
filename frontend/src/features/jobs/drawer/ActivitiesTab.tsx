@@ -40,7 +40,6 @@ export function ActivitiesTab({ job }: Props) {
         <div key={a.id as number} className="border rounded-md p-3 space-y-1">
           {editing === (a.id as number) ? (
             <ActivityForm
-              jobId={jobId}
               activity={a}
               onSave={async vals => update.mutate({ id: jobId, activityId: a.id as number, data: {
                 label: vals.label,
@@ -90,7 +89,6 @@ export function ActivitiesTab({ job }: Props) {
       {adding ? (
         <div className="border rounded-md p-3">
           <ActivityForm
-            jobId={jobId}
             onSave={async vals => add.mutate({ id: jobId, data: {
               label: vals.label,
               type: vals.type,

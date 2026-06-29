@@ -24,7 +24,6 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 interface Props {
-  jobId: number;
   activity?: JobActivityDto;
   onSave: (values: FormValues) => Promise<void>;
   onCancel: () => void;

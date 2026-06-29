@@ -9,8 +9,7 @@ public sealed class FollowUpTaskService(IAppDbContext db, IClock clock)
 {
     public async Task<FollowUpTaskDto> CreateAsync(CreateFollowUpTaskRequest req, CancellationToken ct = default)
     {
-        if (req.JobActivityId.HasValue && !req.JobId.HasValue)
-            throw new ArgumentException("JobId must be set when JobActivityId is set");
+        await ValidateActivityLink(req.JobId, req.JobActivityId, ct);
 
         var task = new FollowUpTask
         {
@@ -29,8 +28,7 @@ public sealed class FollowUpTaskService(IAppDbContext db, IClock clock)
 
     public async Task<FollowUpTaskDto?> UpdateAsync(int id, UpdateFollowUpTaskRequest req, CancellationToken ct = default)
     {
-        if (req.JobActivityId.HasValue && !req.JobId.HasValue)
-            throw new ArgumentException("JobId must be set when JobActivityId is set");
+        await ValidateActivityLink(req.JobId, req.JobActivityId, ct);
 
         var task = await db.FollowUpTasks.FindAsync([id], ct);
         if (task is null) return null;
@@ -125,6 +123,19 @@ public sealed class FollowUpTaskService(IAppDbContext db, IClock clock)
             q = q.Where(f => f.DueAtUtc < clock.UtcNow.Date);
         }
         return (await q.OrderBy(f => f.DueAtUtc).ToListAsync(ct)).Adapt<List<FollowUpTaskDto>>();
+    }
+
+    private async Task ValidateActivityLink(int? jobId, int? jobActivityId, CancellationToken ct)
+    {
+        if (!jobActivityId.HasValue) return;
+        if (!jobId.HasValue)
+            throw new ArgumentException("JobId must be set when JobActivityId is set");
+
+        var activity = await db.JobActivities.FirstOrDefaultAsync(a => a.Id == jobActivityId.Value, ct);
+        if (activity is null)
+            throw new ArgumentException($"Job activity {jobActivityId.Value} not found");
+        if (activity.JobId != jobId.Value)
+            throw new ArgumentException("Job activity does not belong to the specified job");
     }
 
     private async Task<FollowUpTaskDto> LoadDto(int id, CancellationToken ct)

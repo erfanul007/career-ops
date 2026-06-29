@@ -179,6 +179,12 @@ public sealed class JobTools(JobService jobSvc, JobWorkflowService workflowSvc, 
         return new { activity, suggestion };
     }
 
+    [McpServerTool, Description("Delete a job activity. Linked follow-ups keep their job link; only the activity link is cleared.")]
+    public async Task<bool> delete_job_activity(
+        [Description("Job ID")] int jobId,
+        [Description("Activity ID")] int activityId)
+        => await activitySvc.DeleteActivityAsync(jobId, activityId);
+
     [McpServerTool, Description("Create or update a job attachment (metadata only — no file upload). Omit attachmentId to create; provide it to update.")]
     public async Task<object?> upsert_job_attachment(
         [Description("Job ID")] int jobId,

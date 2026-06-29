@@ -70,4 +70,19 @@ public sealed class JobEndpointTests(ApiFactory factory) : IClassFixture<ApiFact
 
         res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    [Fact]
+    public async Task UpdateActivity_BlankLabel_Returns400()
+    {
+        // Validation runs in the endpoint filter before any DB lookup, so no live DB is needed.
+        var res = await _client.PutAsJsonAsync("/api/jobs/1/activities/1", new
+        {
+            label = "",
+            type = "Interview",
+            status = "Planned"
+        });
+
+        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await res.Content.ReadAsStringAsync()).ToLowerInvariant().Should().Contain("label");
+    }
 }

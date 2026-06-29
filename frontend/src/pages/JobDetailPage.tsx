@@ -1,16 +1,14 @@
 import { useParams, Link } from 'react-router';
-import { useGetJob } from '@/lib/api/jobs/jobs';
+import { useJob } from '@/lib/api/jobs/hooks';
 import { JobDetailContent } from '@/features/jobs/JobDetailContent';
 import { JobStatusDropdown } from '@/features/jobs/JobStatusDropdown';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
-import type { JobDetailDto } from '@/lib/api/model';
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
   const jobId = Number(id);
-  const { data: response, isLoading, isError } = useGetJob(jobId);
-  const job = response?.data as unknown as JobDetailDto | undefined;
+  const { data: job, isLoading, isError } = useJob(jobId);
 
   if (isLoading) {
     return (

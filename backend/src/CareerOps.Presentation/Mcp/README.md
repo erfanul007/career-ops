@@ -28,35 +28,36 @@ Register the MCP server in Claude Code by adding the entry in `.mcp.json` at the
 ## Transport & Safety
 
 - **Transport:** HTTP (localhost, no authentication).
-- **Parity:** The MCP server exposes the same mutations as the REST API, both unauthenticated. If the API is ever deployed publicly, both REST and MCP require authentication (future concern, not introduced here). See D44 (agent-native AI; no in-app provider) and D47 (HTTP hosting over `ModelContextProtocol.AspNetCore`).
-- **Logging:** stdout is normal application logging (not a JSON-RPC channel anymore).
-- **Audit stamping:** All writes are `IClock`-stamped and audit-traceable. Hard deletes are safe: the service layer cascade-cleans (FK children delete automatically; loose-reference rows like `FollowUpTask` are cleaned in the same operation, D35). Archive/status changes are still the UI preference (D12).
+- **Surface:** A **curated, workflow-oriented** tool set over the **Job aggregate** (plus follow-ups, companies, dashboard, profile, and a diagnostic). This is **not** full REST parity — tools cover the real agent workflows (D53). If the API is ever deployed publicly, both REST and MCP would require authentication (future concern, not introduced here). See D44 (agent-native AI; no in-app provider) and D47 (HTTP hosting over `ModelContextProtocol.AspNetCore`).
+- **Logging:** stdout is normal application logging.
+- **Audit stamping:** All writes are `IClock`-stamped and audit-traceable. The available deletes (`delete_job_activity`, `delete_follow_up`, attachment/property removal) are safe: the service layer cleans loose references in the same operation — deleting an activity nulls the activity link on its follow-ups while preserving the job link (D35). Archive/status changes remain the UI preference (D12).
 - **Enum I/O:** Tool I/O uses string names for enums (e.g., `"Applied"`, `"Interviewing"`) via `JsonStringEnumConverter`.
 
 ## Tools
 
-**Total: 44 tools** — full REST parity across all 7 resources + dashboard + a diagnostic, **including hard deletes** (D49). The service layer handles cascade/cleanup on delete (D35); the MCP tools are thin delegations. Tool names are snake_case; enum fields use string names.
+**Total: 25 tools** — a curated, workflow-oriented surface over the Job aggregate, plus follow-ups, companies, dashboard, profile, and a diagnostic (D53). Tool names are snake_case; enum fields use string names.
 
 ### Dashboard (1)
-- `get_dashboard_summary` — active app count, leads by status, applications by stage, due/overdue follow-ups, upcoming interviews, high-priority leads, stale apps, search-deadline countdown.
+- `get_dashboard_summary` — active jobs by status, follow-ups due today / overdue, upcoming activities, stale jobs, offer deadlines.
 
-### Company (5)
-- `list_companies`, `get_company`, `create_company`, `update_company`, `delete_company`.
+### Job (14)
+- `list_jobs` — list with filters (statuses, source, remote mode, employment type, countries, company search, priority, free-text across title/company/sourceUrl/notes).
+- `get_job` — full detail including activities, follow-ups, properties, and attachments.
+- `create_job` — provide `companyId` **or** `companyName` (find-or-create); status defaults to `Discovered`.
+- `update_job` — patch job fields (does **not** change status — use `transition_job`).
+- `transition_job` — move to a new status; actor recorded as `Agent`.
+- `archive_job` — shorthand transition to `Archived`.
+- `add_job_activity`, `update_job_activity`, `complete_job_activity`, `delete_job_activity` — manage activities (interviews, screenings, etc.).
+- `upsert_job_attachment`, `remove_job_attachment` — attachment metadata (no file upload).
+- `upsert_job_property`, `remove_job_property` — key-value metadata (idempotent by key).
 
-### JobLead (5)
-- `list_job_leads`, `get_job_lead`, `create_job_lead` (find-or-create company by name), `update_job_lead`, `delete_job_lead` (cascades to its application + interviews, cleans loose follow-ups).
+### FollowUpTask (5)
+- `list_follow_ups` — filter by `due` (`today`/`overdue`/`all`), status, or jobId.
+- `add_follow_up` — optionally link to a job or job activity.
+- `complete_follow_up`, `skip_follow_up`, `delete_follow_up`.
 
-### ResumeVariant (6)
-- `list_resume_variants`, `get_resume_variant`, `create_resume_variant`, `update_resume_variant`, `delete_resume_variant` (blocked if referenced by an application), `make_resume_variant_default`.
-
-### Application (9)
-- `list_applications`, `get_application`, `convert_to_application`, `change_application_stage`, `mark_application_rejected`, `mark_application_offer`, `mark_application_ghosted`, `update_application`, `delete_application`.
-
-### Interview (7)
-- `list_interviews`, `list_upcoming_interviews`, `get_interview`, `create_interview`, `update_interview`, `mark_interview_completed`, `delete_interview`.
-
-### FollowUpTask (8)
-- `list_follow_ups`, `list_due_follow_ups`, `get_follow_up`, `create_follow_up`, `update_follow_up`, `complete_follow_up`, `skip_follow_up`, `delete_follow_up`.
+### Company (2)
+- `list_companies`, `upsert_company` — find-or-create a company by name (trim/case-insensitive).
 
 ### UserProfile (2)
 - `get_user_profile`, `update_user_profile`.
@@ -75,18 +76,18 @@ Register the MCP server in Claude Code by adding the entry in `.mcp.json` at the
 
 ## Architecture
 
-The MCP server is implemented using **`ModelContextProtocol.AspNetCore`** (matches SDK 1.4.0):
+The MCP server is implemented using **`ModelContextProtocol.AspNetCore`**:
 
-- `Program.cs` registers the MCP server with `builder.Services.AddMcpServer().WithHttpTransport().WithToolsFromAssembly(typeof(Program).Assembly, serializerOptions)` and maps it via `app.MapMcp("/mcp")`.
-- Tools are stateless, attribute-decorated (`[McpServerTool]`) methods in files under this folder.
-- Each tool injects the Application services (e.g., `DashboardService`, `JobLeadService`) and `CancellationToken` via ASP.NET Core DI (resolved per HTTP request).
-- Enum fields in request/response DTOs are serialized as string names, configured via `JsonStringEnumConverter` on the MCP server's `JsonSerializerOptions`.
+- `Program.cs` registers the MCP server with `builder.Services.AddMcpServer().WithHttpTransport().WithToolsFromAssembly(...)` and maps it via `app.MapMcp("/mcp")`.
+- Tools are attribute-decorated (`[McpServerTool]`) methods grouped by `[McpServerToolType]` classes in this folder (`JobTools`, `FollowUpTools`, `CompanyTools`, `DashboardTools`, `ProfileTools`, `DiagnosticsTools`).
+- Each tool injects the Application services (e.g., `JobService`, `JobWorkflowService`, `JobActivityService`, `DashboardService`) via ASP.NET Core DI (resolved per HTTP request).
+- Enum fields are serialized as string names via `JsonStringEnumConverter` on the MCP server's `JsonSerializerOptions`.
 
 ## Related Decisions
 
-- **D35** — Delete behavior: cascade-clean + archive-first UI (loose-reference cleanup in service layer, no orphans).
+- **D35** — Delete behavior: cascade-clean + archive-first UI (loose-reference cleanup in the service layer, no orphans).
 - **D44** — Agent-native AI via MCP; no in-app AI provider.
 - **D45** — MCP tools = reads + curated writes; string-enum I/O; `IClock` audit stamping.
-- **D47** — MCP server hosted over HTTP in `CareerOps.Presentation` (supersedes D45's stdio-only transport). Separate `CareerOps.Mcp` console removed.
+- **D47** — MCP server hosted over HTTP in `CareerOps.Presentation`.
 - **D48** — `CareerOps.Api` renamed to `CareerOps.Presentation` (Clean Architecture presentation layer).
-- **D49** — MCP reaches **full REST parity, including hard deletes** (~20 new tools; 44 total; safe because services cascade-clean).
+- **D53** — V2 MCP is a curated, workflow-oriented tool set over the Job aggregate (25 tools); supersedes D49's full-REST-parity stance.

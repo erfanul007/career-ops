@@ -15,8 +15,15 @@ public static class FollowUpTaskEndpoints
 
         tasks.MapPut("/{id:int}", async (int id, UpdateFollowUpTaskRequest req, FollowUpTaskService svc) =>
         {
-            var task = await svc.UpdateAsync(id, req);
-            return task is null ? Results.NotFound() : Results.Ok(task);
+            try
+            {
+                var task = await svc.UpdateAsync(id, req);
+                return task is null ? Results.NotFound() : Results.Ok(task);
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
+            }
         })
         .WithName("UpdateFollowUpTask")
         .AddEndpointFilter<ValidationFilter<UpdateFollowUpTaskRequest>>();
@@ -32,6 +39,12 @@ public static class FollowUpTaskEndpoints
             var ok = await svc.SkipAsync(id);
             return ok ? Results.NoContent() : Results.NotFound();
         }).WithName("SkipFollowUpTask");
+
+        tasks.MapDelete("/{id:int}", async (int id, FollowUpTaskService svc) =>
+        {
+            var ok = await svc.DeleteAsync(id);
+            return ok ? Results.NoContent() : Results.NotFound();
+        }).WithName("DeleteFollowUpTask");
 
         return tasks;
     }

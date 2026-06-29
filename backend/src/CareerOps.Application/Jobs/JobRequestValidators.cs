@@ -45,3 +45,52 @@ public sealed class CreateActivityRequestValidator : AbstractValidator<CreateAct
         RuleFor(x => x.MeetingUrl).MaximumLength(2000).When(x => x.MeetingUrl is not null);
     }
 }
+
+public sealed class UpdateActivityRequestValidator : AbstractValidator<UpdateActivityRequest>
+{
+    public UpdateActivityRequestValidator()
+    {
+        RuleFor(x => x.Label).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.Type).IsInEnum();
+        RuleFor(x => x.MeetingUrl).MaximumLength(2000).When(x => x.MeetingUrl is not null);
+    }
+}
+
+public sealed class CompleteActivityRequestValidator : AbstractValidator<CompleteActivityRequest>
+{
+    public CompleteActivityRequestValidator()
+    {
+        RuleFor(x => x.Outcome).IsInEnum();
+    }
+}
+
+public sealed class AddAttachmentRequestValidator : AbstractValidator<AddAttachmentRequest>
+{
+    public AddAttachmentRequestValidator()
+    {
+        RuleFor(x => x.Type).IsInEnum();
+        RuleFor(x => x.Title).NotEmpty().MaximumLength(300);
+        RuleFor(x => x.FileName).MaximumLength(500).When(x => x.FileName is not null);
+        RuleFor(x => x.Url).MaximumLength(2000).When(x => x.Url is not null);
+    }
+}
+
+public sealed class UpdateAttachmentRequestValidator : AbstractValidator<UpdateAttachmentRequest>
+{
+    public UpdateAttachmentRequestValidator()
+    {
+        RuleFor(x => x.Type).IsInEnum();
+        RuleFor(x => x.Title).NotEmpty().MaximumLength(300);
+        RuleFor(x => x.FileName).MaximumLength(500).When(x => x.FileName is not null);
+        RuleFor(x => x.Url).MaximumLength(2000).When(x => x.Url is not null);
+    }
+}
+
+public sealed class UpsertPropertyRequestValidator : AbstractValidator<UpsertPropertyRequest>
+{
+    public UpsertPropertyRequestValidator()
+    {
+        RuleFor(x => x.ValueType).IsInEnum();
+        RuleFor(x => x.Value).MaximumLength(4000).When(x => x.Value is not null);
+    }
+}

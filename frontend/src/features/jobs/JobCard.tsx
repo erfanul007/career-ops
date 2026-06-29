@@ -53,6 +53,7 @@ export function JobCard({ job, onClick, isDragging }: Props) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={e => e.stopPropagation()}
+            onPointerDown={e => e.stopPropagation()}
             className="text-[10px] font-mono text-muted-foreground hover:text-foreground hover:underline"
           >
             JOB-{job.id}
@@ -88,7 +89,7 @@ export function JobCard({ job, onClick, isDragging }: Props) {
           </p>
         )}
 
-        <div onClick={e => e.stopPropagation()}>
+        <div onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
           <JobStatusDropdown jobId={job.id as number} currentStatus={job.status} />
         </div>
       </CardContent>

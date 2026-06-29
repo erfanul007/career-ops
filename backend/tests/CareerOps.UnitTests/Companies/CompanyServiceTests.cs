@@ -79,4 +79,31 @@ public class CompanyServiceTests
         Assert.False(await svc.DeleteAsync(created.Id));
         Assert.Empty(await svc.ListAsync());
     }
+
+    [Fact]
+    public async Task FindOrCreate_is_case_and_whitespace_insensitive()
+    {
+        await using var db = NewDb();
+        var svc = new CompanyService(db);
+
+        var first = await svc.FindOrCreateByNameAsync("Acme");
+        var again = await svc.FindOrCreateByNameAsync("  acme  ");
+
+        Assert.Equal(first.Id, again.Id);
+        Assert.Single(await svc.ListAsync());
+    }
+
+    [Fact]
+    public async Task FindOrCreate_matches_legacy_untrimmed_stored_name()
+    {
+        await using var db = NewDb();
+        db.Companies.Add(new Company { Name = "Acme " }); // simulate a legacy row with a trailing space
+        await db.SaveChangesAsync();
+        var svc = new CompanyService(db);
+
+        var found = await svc.FindOrCreateByNameAsync("acme");
+
+        Assert.Single(await svc.ListAsync());
+        Assert.Equal("Acme ", (await svc.GetAsync(found.Id))!.Name);
+    }
 }

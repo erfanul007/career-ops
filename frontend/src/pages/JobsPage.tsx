@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { useListJobs } from '@/lib/api/jobs/jobs';
+import { useJobs } from '@/lib/api/jobs/hooks';
 import { JobsBoard } from '@/features/jobs/JobsBoard';
 import { JobsTable } from '@/features/jobs/JobsTable';
 import { JobFilterBar, DEFAULT_FILTERS, type JobFilters } from '@/features/jobs/JobFilterBar';
@@ -18,8 +18,8 @@ export default function JobsPage() {
     ...(filters.companySearch ? { CompanySearch: filters.companySearch } : {}),
   };
 
-  const { data: response, isLoading, isError } = useListJobs(params);
-  const jobs: JobDto[] = (response?.data as unknown as JobDto[] | undefined) ?? [];
+  const { data: jobsData, isLoading, isError } = useJobs(params);
+  const jobs: JobDto[] = jobsData ?? [];
 
   const filtered = useMemo(() => {
     if (!filters.search) return jobs;
