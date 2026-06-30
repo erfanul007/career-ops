@@ -68,13 +68,13 @@ export function JobQuickAdd() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm">+ Add job</Button>
+        <Button>+ Add job</Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Add job</DialogTitle>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <Field label="Company" error={form.formState.errors.companyName?.message}>
             <Input {...form.register('companyName')} placeholder="e.g. Acme Corp" />
           </Field>

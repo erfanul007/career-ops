@@ -44,7 +44,6 @@ export function PropertiesTab({ job }: Props) {
         <Input value={newVal} onChange={e => setNewVal(e.target.value)} placeholder="Value" className="h-7 flex-1" />
         <Button
           size="sm"
-          className="h-7"
           disabled={!newKey}
           onClick={() => upsert.mutate({ id: jobId, key: newKey, data: { value: newVal, valueType: 'Text' } })}
         >

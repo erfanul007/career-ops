@@ -12,7 +12,7 @@ export function Field({
   children: ReactNode;
 }) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       <label htmlFor={htmlFor} className="text-sm font-medium leading-none">
         {label}
       </label>

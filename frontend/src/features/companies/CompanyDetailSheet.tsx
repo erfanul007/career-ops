@@ -5,7 +5,7 @@ import type { CompanyDto } from "@/lib/api/model";
 function Row({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
   return (
-    <div className="grid grid-cols-3 gap-2 py-1 text-sm">
+    <div className="grid grid-cols-3 gap-3 py-1 text-sm">
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="col-span-2 break-words">{value}</dd>
     </div>

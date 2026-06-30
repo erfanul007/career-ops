@@ -40,14 +40,14 @@ export function JobFilterBar({ filters, onChange }: Props) {
         placeholder="Search jobs..."
         value={filters.search}
         onChange={e => onChange({ ...filters, search: e.target.value })}
-        className="h-8 w-52"
+        className="w-52"
       />
 
       <Select
         value={filters.status ?? ''}
         onValueChange={value => onChange({ ...filters, status: value ? value as JobStatus : undefined })}
       >
-        <SelectTrigger className="h-8 w-36">
+        <SelectTrigger className="w-36">
           <SelectValue placeholder="All statuses" />
         </SelectTrigger>
         <SelectContent>
@@ -56,15 +56,16 @@ export function JobFilterBar({ filters, onChange }: Props) {
         </SelectContent>
       </Select>
 
-      <div className="flex items-center gap-1 flex-wrap">
+      <div className="flex flex-wrap items-center gap-2">
         {filters.countries.map(c => (
           <Badge key={c} variant="secondary" className="h-7 gap-1 pr-1">
             {c}
             <Button
-              variant="ghost" size="icon" className="h-4 w-4 p-0"
+              variant="ghost" size="icon-xs"
+              aria-label={`Remove ${c}`}
               onClick={() => onChange({ ...filters, countries: filters.countries.filter(x => x !== c) })}
             >
-              <X className="h-2.5 w-2.5" />
+              <X aria-hidden />
             </Button>
           </Badge>
         ))}
@@ -74,7 +75,7 @@ export function JobFilterBar({ filters, onChange }: Props) {
           onChange={e => setCountryInput(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCountry(countryInput); } }}
           onBlur={() => addCountry(countryInput)}
-          className="h-8 w-32"
+          className="w-32"
         />
       </div>
 
@@ -82,14 +83,14 @@ export function JobFilterBar({ filters, onChange }: Props) {
         placeholder="Company…"
         value={filters.companySearch}
         onChange={e => onChange({ ...filters, companySearch: e.target.value })}
-        className="h-8 w-36"
+        className="w-36"
       />
 
       <Select
         value={filters.groupBy}
         onValueChange={value => onChange({ ...filters, groupBy: value as GroupBy })}
       >
-        <SelectTrigger className="h-8 w-36">
+        <SelectTrigger className="w-36">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
