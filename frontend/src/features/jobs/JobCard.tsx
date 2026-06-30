@@ -6,6 +6,7 @@ import { MapPin, CalendarClock, TriangleAlert } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { JobStatusDropdown } from './JobStatusDropdown';
 import { JobPriorityDropdown } from './JobPriorityDropdown';
+import { JobActionsMenu } from './JobActionsMenu';
 import { isOverdue, formatRelativeDate, formatLocation, getPriorityPresentation } from './jobPresentation';
 import type { JobDto } from '@/lib/api/model';
 import { cn } from '@/lib/utils';
@@ -80,6 +81,14 @@ export function JobCard({ job, onClick, isDragging }: Props) {
       <CardContent className="space-y-1.5 p-3">
         <div className="flex items-start justify-between gap-2">
           <p className="truncate text-xs text-muted-foreground">{job.companyName}</p>
+          <div
+            data-card-interactive
+            onPointerDown={e => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
+            className="-mr-1 -mt-1 shrink-0"
+          >
+            <JobActionsMenu jobId={job.id as number} jobLabel={`JOB-${job.id} — ${job.companyName}`} />
+          </div>
         </div>
 
         <p className="line-clamp-2 text-sm font-medium leading-snug">{job.title}</p>

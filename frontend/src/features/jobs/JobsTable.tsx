@@ -4,6 +4,7 @@ import { ChevronRight, TriangleAlert } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { JobStatusDropdown } from './JobStatusDropdown';
 import { JobPriorityDropdown } from './JobPriorityDropdown';
+import { JobActionsMenu } from './JobActionsMenu';
 import { buildLanes } from './jobGrouping';
 import { useCollapsedLanes } from './useCollapsedLanes';
 import { cn } from '@/lib/utils';
@@ -55,6 +56,9 @@ function JobRow({ job, onJobClick }: { job: JobDto; onJobClick: (id: number) => 
           {formatDate(job.nextActionAtUtc) ?? '—'}
         </span>
       </TableCell>
+      <TableCell onClick={e => e.stopPropagation()} className="w-8">
+        <JobActionsMenu jobId={job.id as number} jobLabel={`JOB-${job.id} — ${job.companyName}`} />
+      </TableCell>
     </TableRow>
   );
 }
@@ -63,7 +67,7 @@ export function JobsTable({ jobs, groupBy, onJobClick }: Props) {
   const { isCollapsed, toggle } = useCollapsedLanes(groupBy);
   const lanes = buildLanes(jobs, groupBy);
   const grouped = groupBy !== 'status';
-  const COLS = 9;
+  const COLS = 10;
 
   return (
     <Table>
@@ -78,6 +82,7 @@ export function JobsTable({ jobs, groupBy, onJobClick }: Props) {
           <TableHead className="text-right">Salary</TableHead>
           <TableHead>Applied</TableHead>
           <TableHead>Next action</TableHead>
+          <TableHead className="w-8" />
         </TableRow>
       </TableHeader>
       <TableBody>

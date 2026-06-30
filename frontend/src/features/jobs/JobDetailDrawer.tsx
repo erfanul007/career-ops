@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { Link } from 'react-router';
-import { ExternalLink, Link2 } from 'lucide-react';
+import { ExternalLink, Link2, Trash2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { useJob } from '@/lib/api/jobs/hooks';
 import { JobStatusDropdown } from './JobStatusDropdown';
 import { JobPriorityDropdown } from './JobPriorityDropdown';
 import { JobDetailContent } from './JobDetailContent';
+import { DeleteJobDialog } from './DeleteJobDialog';
 import { isOverdue, formatRelativeDate, formatShortDate } from './jobPresentation';
 import { cn } from '@/lib/utils';
 
@@ -16,6 +19,7 @@ interface Props {
 
 export function JobDetailDrawer({ jobId, onClose }: Props) {
   const { data: job, isLoading } = useJob(jobId);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   return (
     <Sheet open={jobId !== null} onOpenChange={open => !open && onClose()}>
@@ -60,6 +64,9 @@ export function JobDetailDrawer({ jobId, onClose }: Props) {
                 <div className="flex shrink-0 items-center gap-2">
                   <JobStatusDropdown jobId={job.id as number} currentStatus={job.status} />
                   <JobPriorityDropdown jobId={job.id as number} currentPriority={job.priority} />
+                  <Button variant="ghost" size="icon" aria-label="Delete job" onClick={() => setConfirmDelete(true)}>
+                    <Trash2 aria-hidden className="size-4" />
+                  </Button>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">{job.companyName}</p>
@@ -78,6 +85,15 @@ export function JobDetailDrawer({ jobId, onClose }: Props) {
             <div className="min-h-0 flex-1 overflow-y-auto">
               <JobDetailContent job={job} />
             </div>
+            {job && (
+              <DeleteJobDialog
+                open={confirmDelete}
+                onOpenChange={setConfirmDelete}
+                jobId={job.id as number}
+                jobLabel={`JOB-${job.id} — ${job.companyName}`}
+                onDeleted={onClose}
+              />
+            )}
           </>
         )}
       </SheetContent>
