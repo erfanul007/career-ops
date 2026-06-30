@@ -19,9 +19,10 @@ const STATUSES: JobStatus[] = [
 ];
 
 const GROUP_OPTIONS: { value: GroupBy; label: string }[] = [
-  { value: 'status',  label: 'By Status' },
-  { value: 'country', label: 'By Country' },
-  { value: 'company', label: 'By Company' },
+  { value: 'status',   label: 'By Status' },
+  { value: 'country',  label: 'By Country' },
+  { value: 'company',  label: 'By Company' },
+  { value: 'priority', label: 'By Priority' },
 ];
 
 export function JobFilterBar({ filters, onChange }: Props) {

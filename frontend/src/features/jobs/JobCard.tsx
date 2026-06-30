@@ -5,6 +5,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { MapPin, CalendarClock, TriangleAlert } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { JobStatusDropdown } from './JobStatusDropdown';
+import { JobPriorityDropdown } from './JobPriorityDropdown';
 import { isOverdue, formatRelativeDate, formatLocation, getPriorityPresentation } from './jobPresentation';
 import type { JobDto } from '@/lib/api/model';
 import { cn } from '@/lib/utils';
@@ -79,9 +80,6 @@ export function JobCard({ job, onClick, isDragging }: Props) {
       <CardContent className="space-y-1.5 p-3">
         <div className="flex items-start justify-between gap-2">
           <p className="truncate text-xs text-muted-foreground">{job.companyName}</p>
-          {priority.isHigh && (
-            <span className="shrink-0 text-[10px] font-medium text-destructive">{priority.label}</span>
-          )}
         </div>
 
         <p className="line-clamp-2 text-sm font-medium leading-snug">{job.title}</p>
@@ -121,8 +119,10 @@ export function JobCard({ job, onClick, isDragging }: Props) {
           data-card-interactive
           onPointerDown={e => e.stopPropagation()}
           onClick={e => e.stopPropagation()}
+          className="flex items-center gap-1"
         >
           <JobStatusDropdown jobId={job.id as number} currentStatus={job.status} variant="chip" />
+          <JobPriorityDropdown jobId={job.id as number} currentPriority={job.priority} variant="chip" />
         </div>
       </CardContent>
     </Card>

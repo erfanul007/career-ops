@@ -20,7 +20,10 @@ export function JobCardPreview({ job }: { job: JobDto }) {
       <CardContent className="space-y-1.5 p-3">
         <div className="flex items-start justify-between gap-2">
           <p className="truncate text-xs text-muted-foreground">{job.companyName}</p>
-          {priority.isHigh && <span className="shrink-0 text-[10px] font-medium text-destructive">{priority.label}</span>}
+          <span className="flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground">
+            <span aria-hidden className={cn('size-2 rounded-full', priority.dotClassName)} />
+            {priority.label}
+          </span>
         </div>
         <p className="line-clamp-2 text-sm font-medium leading-snug">{job.title}</p>
         {showMeta && (

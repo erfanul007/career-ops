@@ -64,9 +64,22 @@ describe("JobCard", () => {
   it("clicking inside the status chip region does not open the drawer", () => {
     const onClick = vi.fn();
     renderWithProviders(<JobCard job={baseJob} onClick={onClick} />);
-    const chipRegion = screen.getByRole("combobox").closest("[data-card-interactive]");
+    // Both status and priority chips share the same data-card-interactive wrapper;
+    // use the first combobox (status) to locate it.
+    const chipRegion = screen.getAllByRole("combobox")[0].closest("[data-card-interactive]");
     expect(chipRegion).not.toBeNull();
     fireEvent.click(chipRegion as HTMLElement);
     expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it("shows priority chip for all priority levels", () => {
+    const { rerender } = renderWithProviders(<JobCard job={baseJob} onClick={() => {}} />);
+    expect(screen.getByText("Medium")).toBeInTheDocument();
+
+    rerender(<JobCard job={{ ...baseJob, priority: "High" }} onClick={() => {}} />);
+    expect(screen.getByText("High")).toBeInTheDocument();
+
+    rerender(<JobCard job={{ ...baseJob, priority: "Low" }} onClick={() => {}} />);
+    expect(screen.getByText("Low")).toBeInTheDocument();
   });
 });

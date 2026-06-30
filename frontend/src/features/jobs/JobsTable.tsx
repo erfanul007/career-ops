@@ -1,17 +1,11 @@
 import { Link } from 'react-router';
 import { TriangleAlert } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { JobStatusDropdown } from './JobStatusDropdown';
+import { JobPriorityDropdown } from './JobPriorityDropdown';
 import { cn } from '@/lib/utils';
 import { formatDate, formatSalary } from '@/lib/format';
-import type { JobDto, Priority } from '@/lib/api/model';
-
-const PRIORITY_VARIANT: Record<Priority, 'secondary' | 'outline' | 'destructive'> = {
-  Low: 'outline',
-  Medium: 'secondary',
-  High: 'destructive',
-};
+import type { JobDto } from '@/lib/api/model';
 
 interface Props {
   jobs: JobDto[];
@@ -58,8 +52,8 @@ export function JobsTable({ jobs, onJobClick }: Props) {
               <TableCell onClick={e => e.stopPropagation()}>
                 <JobStatusDropdown jobId={job.id as number} currentStatus={job.status} />
               </TableCell>
-              <TableCell>
-                <Badge variant={PRIORITY_VARIANT[job.priority]}>{job.priority}</Badge>
+              <TableCell onClick={e => e.stopPropagation()}>
+                <JobPriorityDropdown jobId={job.id as number} currentPriority={job.priority} />
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
                 {[job.city, job.country].filter(Boolean).join(', ')}

@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Skeleton } from '@/components/ui/skeleton';
 import { useJob } from '@/lib/api/jobs/hooks';
 import { JobStatusDropdown } from './JobStatusDropdown';
+import { JobPriorityDropdown } from './JobPriorityDropdown';
 import { JobDetailContent } from './JobDetailContent';
 import { isOverdue, formatRelativeDate, formatShortDate } from './jobPresentation';
 import { cn } from '@/lib/utils';
@@ -56,8 +57,9 @@ export function JobDetailDrawer({ jobId, onClose }: Props) {
 
               <div className="flex items-start justify-between gap-3">
                 <SheetTitle className="text-lg leading-snug">{job.title}</SheetTitle>
-                <div className="shrink-0">
+                <div className="flex shrink-0 items-center gap-2">
                   <JobStatusDropdown jobId={job.id as number} currentStatus={job.status} />
+                  <JobPriorityDropdown jobId={job.id as number} currentPriority={job.priority} />
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">{job.companyName}</p>
