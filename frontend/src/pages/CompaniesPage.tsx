@@ -10,6 +10,8 @@ import type { CompanyDto, CreateCompanyRequest } from "@/lib/api/model";
 import { CompaniesTable } from "@/features/companies/CompaniesTable";
 import { CompanyDialog } from "@/features/companies/CompanyDialog";
 import { CompanyDetailSheet } from "@/features/companies/CompanyDetailSheet";
+import { PageShell } from "@/components/layout/PageShell";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function CompaniesPage() {
   const qc = useQueryClient();
@@ -45,14 +47,14 @@ export default function CompaniesPage() {
     invalidate(); toast.success("Company deleted");
   };
 
-  if (isLoading) return <Skeleton className="h-64 w-full" />;
+  if (isLoading) return <PageShell><Skeleton className="h-64 w-full" /></PageShell>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Companies</h1>
-        <Button onClick={() => { setEditing(undefined); setErrors([]); setOpen(true); }}>Add company</Button>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Companies"
+        actions={<Button onClick={() => { setEditing(undefined); setErrors([]); setOpen(true); }}>Add company</Button>}
+      />
       <CompaniesTable
         companies={companies}
         onEdit={(c) => { setDetail(c); setDetailOpen(true); }}
@@ -68,6 +70,6 @@ export default function CompaniesPage() {
         open={open} initial={editing} pending={create.isPending || update.isPending}
         errors={errors} onOpenChange={setOpen} onSubmit={onSubmit}
       />
-    </div>
+    </PageShell>
   );
 }

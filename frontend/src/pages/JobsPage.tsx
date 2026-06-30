@@ -8,6 +8,8 @@ import { DEFAULT_FILTERS, type JobFilters } from '@/features/jobs/jobFilters';
 import { JobQuickAdd } from '@/features/jobs/JobQuickAdd';
 import { JobDetailDrawer } from '@/features/jobs/JobDetailDrawer';
 import type { JobDto, ListJobsParams } from '@/lib/api/model';
+import { PageShell } from '@/components/layout/PageShell';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function JobsPage() {
   const [filters, setFilters] = useState<JobFilters>(DEFAULT_FILTERS);
@@ -34,15 +36,11 @@ export default function JobsPage() {
   }, [jobsData, filters.search]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Jobs</h1>
-        <div className="flex flex-wrap items-center gap-3">
-          <JobFilterBar filters={filters} onChange={setFilters} />
-          <JobQuickAdd />
-        </div>
-      </div>
-
+    <PageShell variant="full">
+      <PageHeader
+        title="Jobs"
+        actions={<><JobFilterBar filters={filters} onChange={setFilters} /><JobQuickAdd /></>}
+      />
       <Tabs defaultValue="board" className="flex min-h-0 flex-1 flex-col">
         <TabsList>
           <TabsTrigger value="board">Board</TabsTrigger>
@@ -61,8 +59,7 @@ export default function JobsPage() {
           <JobsTable jobs={filtered} onJobClick={setSelectedJobId} />
         </TabsContent>
       </Tabs>
-
       <JobDetailDrawer jobId={selectedJobId} onClose={() => setSelectedJobId(null)} />
-    </div>
+    </PageShell>
   );
 }

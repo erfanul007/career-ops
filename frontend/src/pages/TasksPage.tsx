@@ -13,6 +13,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { FollowUpStatus } from '@/lib/api/model';
 import { toast } from 'sonner';
+import { PageShell } from '@/components/layout/PageShell';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 type DueFilter = 'all' | 'today' | 'overdue';
 
@@ -46,32 +48,31 @@ export default function TasksPage() {
   });
 
   return (
-    <div className="p-6 max-w-3xl space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-xl font-semibold">Tasks</h1>
-        <div className="flex gap-2">
-          <Select value={due} onValueChange={v => setDue(v as DueFilter)}>
-            <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="today">Due today</SelectItem>
-              <SelectItem value="overdue">Overdue</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={statusFilter ?? 'all'}
-            onValueChange={v => setStatusFilter(v === 'all' ? undefined : v as FollowUpStatus)}
-          >
-            <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Any status</SelectItem>
-              <SelectItem value="Pending">Pending</SelectItem>
-              <SelectItem value="Completed">Completed</SelectItem>
-              <SelectItem value="Skipped">Skipped</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Tasks"
+        actions={
+          <>
+            <Select value={due} onValueChange={v => setDue(v as DueFilter)}>
+              <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="today">Due today</SelectItem>
+                <SelectItem value="overdue">Overdue</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter ?? "all"} onValueChange={v => setStatusFilter(v === "all" ? undefined : v as FollowUpStatus)}>
+              <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Any status</SelectItem>
+                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Completed">Completed</SelectItem>
+                <SelectItem value="Skipped">Skipped</SelectItem>
+              </SelectContent>
+            </Select>
+          </>
+        }
+      />
 
       {isError && <p className="text-sm text-destructive">Failed to load tasks.</p>}
 
@@ -139,6 +140,6 @@ export default function TasksPage() {
           })}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

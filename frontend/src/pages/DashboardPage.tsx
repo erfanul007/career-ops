@@ -3,6 +3,8 @@ import { useGetDashboardSummary } from '@/lib/api/dashboard/dashboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { JobStatus } from '@/lib/api/model';
+import { PageShell } from '@/components/layout/PageShell';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 const STATUS_ORDER: JobStatus[] = ['Discovered', 'Interested', 'Applied', 'Interviewing', 'Offered'];
 
@@ -12,24 +14,24 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-4">
+      <PageShell>
         <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   if (isError || !summary) {
-    return <div className="p-6 text-sm text-destructive">Failed to load dashboard.</div>;
+    return <PageShell><p className="text-sm text-destructive">Failed to load dashboard.</p></PageShell>;
   }
 
   const byStatus = summary.activeJobsByStatus;
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl">
-      <h1 className="text-xl font-semibold">Dashboard</h1>
+    <PageShell>
+      <PageHeader title="Dashboard" />
 
       <section>
         <h2 className="text-sm font-medium text-muted-foreground mb-3">Active pipeline</h2>
@@ -133,6 +135,6 @@ export default function DashboardPage() {
           </div>
         </section>
       )}
-    </div>
+    </PageShell>
   );
 }

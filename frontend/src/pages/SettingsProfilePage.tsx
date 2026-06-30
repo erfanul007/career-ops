@@ -1,13 +1,15 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { PageShell } from "@/components/layout/PageShell";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { ProfileForm } from "@/features/settings/ProfileForm";
 
 export default function SettingsProfilePage() {
   return (
-    <div className="mx-auto max-w-2xl">
+    <PageShell width="narrow">
+      <PageHeader title="Profile" />
       <Card>
-        <CardHeader><CardTitle>Profile</CardTitle></CardHeader>
         <CardContent><ProfileForm /></CardContent>
       </Card>
-    </div>
+    </PageShell>
   );
 }
