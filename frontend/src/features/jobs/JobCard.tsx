@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, PointerEvent, MouseEvent } from 'react';
 import { Link } from 'react-router';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
@@ -15,6 +15,15 @@ interface Props {
   isDragging?: boolean;
 }
 
+// Interactive controls inside the card (status chip, JOB link) carry
+// data-card-interactive. The card guards its own open/drag/keyboard handlers
+// on this marker so a click or key press on those controls never opens the
+// drawer or starts a drag — robust regardless of event-propagation timing
+// between dnd-kit's pointer sensor and Radix.
+function fromInteractive(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && target.closest('[data-card-interactive]') !== null;
+}
+
 export function JobCard({ job, onClick, isDragging }: Props) {
   const overdue = isOverdue(job.nextActionAtUtc);
   const nextRelative = formatRelativeDate(job.nextActionAtUtc);
@@ -28,7 +37,18 @@ export function JobCard({ job, onClick, isDragging }: Props) {
 
   const style = { transform: transform ? CSS.Translate.toString(transform) : undefined };
 
+  const handlePointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    if (fromInteractive(e.target)) return;
+    listeners?.onPointerDown?.(e);
+  };
+
+  const handleClick = (e: MouseEvent<HTMLDivElement>) => {
+    if (fromInteractive(e.target)) return;
+    onClick();
+  };
+
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (fromInteractive(e.target)) return;
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       onClick();
@@ -41,10 +61,11 @@ export function JobCard({ job, onClick, isDragging }: Props) {
       style={style}
       {...attributes}
       {...listeners}
+      onPointerDown={handlePointerDown}
       role="button"
       tabIndex={0}
       aria-label={`${job.companyName} — ${job.title}`}
-      onClick={onClick}
+      onClick={handleClick}
       onKeyDown={handleKeyDown}
       className={cn(
         'relative cursor-pointer select-none rounded-lg py-0 shadow-sm transition-[box-shadow,background-color] duration-150 ease-out motion-reduce:transition-none',
@@ -86,18 +107,17 @@ export function JobCard({ job, onClick, isDragging }: Props) {
             <span />
           )}
           <Link
+            data-card-interactive
             to={`/jobs/${job.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={e => e.stopPropagation()}
-            onPointerDown={e => e.stopPropagation()}
             className="shrink-0 font-mono text-[10px] text-muted-foreground hover:text-foreground hover:underline"
           >
             JOB-{job.id}
           </Link>
         </div>
 
-        <div onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
+        <div data-card-interactive>
           <JobStatusDropdown jobId={job.id as number} currentStatus={job.status} variant="chip" />
         </div>
       </CardContent>

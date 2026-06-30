@@ -53,4 +53,20 @@ describe("JobCard", () => {
     );
     expect(screen.getByText(/Next/)).toBeInTheDocument();
   });
+
+  it("clicking the JOB link does not open the drawer", () => {
+    const onClick = vi.fn();
+    renderWithProviders(<JobCard job={baseJob} onClick={onClick} />);
+    fireEvent.click(screen.getByRole("link", { name: /JOB-12/ }));
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it("clicking inside the status chip region does not open the drawer", () => {
+    const onClick = vi.fn();
+    renderWithProviders(<JobCard job={baseJob} onClick={onClick} />);
+    const chipRegion = screen.getByRole("combobox").closest("[data-card-interactive]");
+    expect(chipRegion).not.toBeNull();
+    fireEvent.click(chipRegion as HTMLElement);
+    expect(onClick).not.toHaveBeenCalled();
+  });
 });
