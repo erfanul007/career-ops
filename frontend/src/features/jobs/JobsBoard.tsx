@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent, closestCenter, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { useQueryClient } from '@tanstack/react-query';
+import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem,
+} from '@/components/ui/dropdown-menu';
 import { BoardColumn } from './BoardColumn';
 import { JobCardPreview } from './JobCardPreview';
 import { useJobMutations } from './useJobMutations';
@@ -12,6 +16,22 @@ export type GroupBy = 'status' | 'country' | 'company';
 
 const ACTIVE_STATUSES: JobStatus[] = ['Discovered', 'Interested', 'Applied', 'Interviewing', 'Offered'];
 const CLOSED_STATUSES: JobStatus[] = ['Rejected', 'Ghosted', 'Withdrawn', 'Archived'];
+const ALL_STATUSES: JobStatus[] = [...ACTIVE_STATUSES, ...CLOSED_STATUSES];
+const HIDDEN_STORAGE_KEY = 'careerops:jobs:hidden-status-columns';
+
+// Which status columns are hidden. Persisted across reloads; defaults to the
+// closed statuses so the board opens focused on the active pipeline.
+function loadHiddenStatuses(): JobStatus[] {
+  try {
+    const raw = localStorage.getItem(HIDDEN_STORAGE_KEY);
+    if (raw === null) return [...CLOSED_STATUSES];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [...CLOSED_STATUSES];
+    return parsed.filter((s): s is JobStatus => ALL_STATUSES.includes(s as JobStatus));
+  } catch {
+    return [...CLOSED_STATUSES];
+  }
+}
 
 interface Props {
   jobs: JobDto[];
@@ -29,13 +49,13 @@ function groupJobs(jobs: JobDto[], groupBy: GroupBy): { key: string; label: stri
     const keys = [...new Set(jobs.map(j => j.companyName))].sort();
     return keys.map(k => ({ key: k, label: k, jobs: jobs.filter(j => j.companyName === k) }));
   }
-  return [...ACTIVE_STATUSES, ...CLOSED_STATUSES].map(s => ({
+  return ALL_STATUSES.map(s => ({
     key: s, label: s, jobs: jobs.filter(j => j.status === s),
   }));
 }
 
 export function JobsBoard({ jobs, groupBy, listParams, onJobClick }: Props) {
-  const [showClosed, setShowClosed] = useState(false);
+  const [hiddenStatuses, setHiddenStatuses] = useState<JobStatus[]>(loadHiddenStatuses);
   const [activeJob, setActiveJob] = useState<JobDto | null>(null);
   const qc = useQueryClient();
   const { transition } = useJobMutations();
@@ -43,6 +63,14 @@ export function JobsBoard({ jobs, groupBy, listParams, onJobClick }: Props) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
+
+  const toggleStatusColumn = (status: JobStatus) => {
+    setHiddenStatuses(prev => {
+      const next = prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status];
+      try { localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
+      return next;
+    });
+  };
 
   if (jobs.length === 0) {
     return (
@@ -54,8 +82,8 @@ export function JobsBoard({ jobs, groupBy, listParams, onJobClick }: Props) {
   }
 
   const allGroups = groupJobs(jobs, groupBy);
-  const visibleGroups = groupBy === 'status' && !showClosed
-    ? allGroups.filter(g => ACTIVE_STATUSES.includes(g.key as JobStatus))
+  const visibleGroups = groupBy === 'status'
+    ? allGroups.filter(g => !hiddenStatuses.includes(g.key as JobStatus))
     : allGroups;
 
   const handleDragStart = ({ active }: DragStartEvent) => {
@@ -88,21 +116,44 @@ export function JobsBoard({ jobs, groupBy, listParams, onJobClick }: Props) {
     <div className="flex h-full min-h-0 flex-col gap-2">
       {groupBy === 'status' && (
         <div className="flex justify-end">
-          <Button variant="ghost" size="sm" onClick={() => setShowClosed(v => !v)} className="text-xs">
-            {showClosed ? 'Hide closed' : 'Show closed'}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="gap-1 text-xs">
+                Columns
+                <ChevronDown aria-hidden className="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {ALL_STATUSES.map(s => (
+                <DropdownMenuCheckboxItem
+                  key={s}
+                  checked={!hiddenStatuses.includes(s)}
+                  onCheckedChange={() => toggleStatusColumn(s)}
+                  onSelect={e => e.preventDefault()}
+                >
+                  {s}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       )}
       <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-2">
-        {visibleGroups.map(group => (
-          <BoardColumn
-            key={group.key}
-            label={group.label}
-            jobs={group.jobs}
-            onJobClick={onJobClick}
-            isDragActive={isDragActive}
-          />
-        ))}
+        {visibleGroups.length === 0 ? (
+          <p className="m-auto text-sm text-muted-foreground">
+            All status columns are hidden. Use the Columns menu to show some.
+          </p>
+        ) : (
+          visibleGroups.map(group => (
+            <BoardColumn
+              key={group.key}
+              label={group.label}
+              jobs={group.jobs}
+              onJobClick={onJobClick}
+              isDragActive={isDragActive}
+            />
+          ))
+        )}
       </div>
     </div>
   );

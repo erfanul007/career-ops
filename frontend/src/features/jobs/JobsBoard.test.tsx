@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/utils";
 import { JobsBoard } from "./JobsBoard";
@@ -14,6 +14,8 @@ const job = (id: number, status: JobDto["status"]): JobDto => ({
 });
 
 describe("JobsBoard", () => {
+  beforeEach(() => localStorage.clear());
+
   it("renders active status columns with their cards", () => {
     renderWithProviders(
       <JobsBoard jobs={[job(1, "Applied")]} groupBy="status" listParams={{}} onJobClick={() => {}} />,
@@ -25,5 +27,21 @@ describe("JobsBoard", () => {
   it("shows an empty board message when there are no jobs", () => {
     renderWithProviders(<JobsBoard jobs={[]} groupBy="status" listParams={{}} onJobClick={() => {}} />);
     expect(screen.getByText(/No jobs found/i)).toBeInTheDocument();
+  });
+
+  it("hides closed-status columns by default", () => {
+    renderWithProviders(
+      <JobsBoard jobs={[job(1, "Applied"), job(2, "Rejected")]} groupBy="status" listParams={{}} onJobClick={() => {}} />,
+    );
+    expect(screen.getAllByText("Applied").length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText("Rejected")).not.toBeInTheDocument();
+    expect(screen.queryByText("Role 2")).not.toBeInTheDocument();
+  });
+
+  it("offers a Columns menu to toggle status-column visibility", () => {
+    renderWithProviders(
+      <JobsBoard jobs={[job(1, "Applied")]} groupBy="status" listParams={{}} onJobClick={() => {}} />,
+    );
+    expect(screen.getByRole("button", { name: /columns/i })).toBeInTheDocument();
   });
 });
