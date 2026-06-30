@@ -31,5 +31,8 @@ describe("JobDetailDrawer", () => {
     expect(screen.getByText("Senior Backend Engineer")).toBeInTheDocument();
     expect(screen.getByText("Northwind Synthetics")).toBeInTheDocument();
     expect(screen.getByText(/JOB-12/)).toBeInTheDocument();
+    const jobLink = screen.getByRole("link", { name: /JOB-12/ });
+    expect(jobLink).toHaveAttribute("href", "/jobs/12");
+    expect(jobLink).toHaveAttribute("target", "_blank");
   });
 });

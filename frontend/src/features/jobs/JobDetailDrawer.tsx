@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useJob } from '@/lib/api/jobs/hooks';
 import { JobStatusDropdown } from './JobStatusDropdown';
 import { JobDetailContent } from './JobDetailContent';
-import { isOverdue, formatRelativeDate } from './jobPresentation';
+import { isOverdue, formatRelativeDate, formatShortDate } from './jobPresentation';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -69,7 +69,7 @@ export function JobDetailDrawer({ jobId, onClose }: Props) {
                     Next {formatRelativeDate(job.nextActionAtUtc)}
                   </span>
                 )}
-                {job.deadlineAtUtc && <span>Deadline {new Date(job.deadlineAtUtc).toLocaleDateString()}</span>}
+                {job.deadlineAtUtc && <span>Deadline {formatShortDate(job.deadlineAtUtc)}</span>}
               </div>
             </SheetHeader>
 
