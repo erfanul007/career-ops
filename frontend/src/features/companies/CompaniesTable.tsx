@@ -1,11 +1,13 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/EmptyState";
+import { Building2 } from "lucide-react";
 import type { CompanyDto } from "@/lib/api/model";
 
 type Props = { companies: CompanyDto[]; onEdit: (c: CompanyDto) => void; onDelete: (c: CompanyDto) => void };
 
 export function CompaniesTable({ companies, onEdit, onDelete }: Props) {
-  if (companies.length === 0) return <p className="text-muted-foreground">No companies yet.</p>;
+  if (companies.length === 0) return <EmptyState icon={Building2} title="No companies yet" hint="Add a company to start tracking roles." />;
   return (
     <Table>
       <TableHeader>
