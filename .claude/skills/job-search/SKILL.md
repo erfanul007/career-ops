@@ -12,7 +12,13 @@ Find recent, visa-friendly, sub-5-year .NET roles abroad for a Bangladeshi engin
 ## Tooling — pick by task
 - **Logged-in / JS-heavy browsing** (LinkedIn job search + detail panes, Glassdoor) → **chrome-devtools MCP** (`mcp__chrome-devtools__*`), connect-only to Chrome at `:9222`. Flow: `list_pages` → `new_page`/`navigate_page` → `take_snapshot`.
 - **Open-web lookups** (sponsorship history, layoffs/scam, salary floors, Indeed/aggregator cross-checks) → built-in **`WebSearch`** + **`WebFetch`**.
-- **`:9222` down** → run the bootstrap; if Chrome still won't bind, do everything via `WebSearch`/`WebFetch` (ATS post-dates often unreadable → mark `fresh=unknown`, verify before saving).
+- **Fallback** (`WebSearch`/`WebFetch`, logged-out) → only after the Preflight gate below clears it. Guest/ATS post-dates often unreadable → mark `fresh=unknown`, verify before saving.
+
+**Preflight — run BEFORE any LinkedIn/Glassdoor step. Two independent failures, different fixes:**
+1. **chrome-devtools tools loaded?** Confirm `mcp__chrome-devtools__*` is actually available (ToolSearch `select:mcp__chrome-devtools__list_pages`). If ABSENT → the MCP server didn't connect this session and **you cannot load it yourself**. STOP, tell the user, ask them to enable it (`/mcp` approve `chrome-devtools`, or restart `claude --continue` with the CareerOps Chrome open); resume on confirmation. Absent tools ≠ unsupported task — it's a fixable connection failure, NOT a cue to switch modes.
+2. **`:9222` up?** Tools present → probe the port; if down, run the bootstrap below.
+
+**No silent fallback (hard rule).** If the logged-in path (chrome-devtools MCP + `:9222`) is unavailable, NEVER quietly drop to logged-out `WebSearch`/`WebFetch` or a non-session browser (e.g. containerized Playwright — it has no login). Name the gap and **ask permission** first. If the user OKs logged-out mode: tag every saved row `source=guest/logged-out`, treat post-dates as `fresh=unknown`, and queue a logged-in re-run to supersede. Red flag — catching yourself think *"the tool isn't there, I'll just use WebSearch"* IS the silent-fallback failure: STOP and ask.
 
 **Bootstrap `:9222` (PowerShell).** Profile **CareerOps** · user-data-dir `C:\Users\LENOVO\.chrome-mcp-debug` · profile-directory `Profile`.
 1. **Probe** `Invoke-RestMethod http://127.0.0.1:9222/json/version` → answers? use it.
@@ -31,7 +37,7 @@ Find recent, visa-friendly, sub-5-year .NET roles abroad for a Bangladeshi engin
 - `country` — explicit destination (e.g. `Germany`). **If absent, sweep the outbound shortlist** from `bd-work-visa-routes` (Tier-1 first: Ireland, Germany, Netherlands, Finland, Italy, New Zealand). `Bangladesh` still works when passed explicitly.
 - `keywords` (default `C# .NET`). If a country's results are thin, broaden with the applicant's core stack from `applicant-profile` (e.g. `ASP.NET Core`, `EF Core`, `.NET backend`).
 
-## 1. Search (LinkedIn — chrome MCP if `:9222` up, else `WebSearch`/`WebFetch`)
+## 1. Search (LinkedIn — chrome MCP after Preflight clears; logged-out fallback only with user OK)
 Per target country, open (`new_page`) then `take_snapshot`:
 ```
 https://www.linkedin.com/jobs/search/?keywords=<KW>&location=<COUNTRY>&f_TPR=r604800&f_E=2,3,4&f_JT=F&f_WT=3,1&f_F=it,eng,cnsl&f_I=96,4&sortBy=R&distance=25

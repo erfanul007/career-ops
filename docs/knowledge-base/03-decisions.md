@@ -910,3 +910,28 @@ only by adding a new dated entry here — never silently. All entries below are 
 - **Rejected:** keeping semantic green/yellow/red badges (noisy, off-direction); calming the status dots too
   (loses categorical meaning).
 
+### D61 — Pin `chrome-devtools` MCP version + raise `MCP_TIMEOUT`; harden `job-search` against silent fallback
+- **Date:** 2026-07-01
+- **Decision:** Two tooling fixes, after a `/jobsearch` run silently degraded to logged-out web search
+  because the `chrome-devtools` MCP tools were absent for the whole session:
+  1. **Config (root cause):** `.mcp.json` pins `chrome-devtools-mcp@1.4.0` (was `@latest`); new committed
+     `.claude/settings.json` sets `env.MCP_TIMEOUT=60000`.
+  2. **Skill:** `.claude/skills/job-search/SKILL.md` gains a **Preflight** gate (assert
+     `mcp__chrome-devtools__*` is loaded before any LinkedIn/Glassdoor step) and a **no-silent-fallback**
+     hard rule (if the logged-in path is unavailable, name the gap and ask permission — never quietly use
+     guest `WebSearch`/`WebFetch` or a non-session browser).
+- **Root cause (from MCP logs):** session-start spawn of `npx -y chrome-devtools-mcp@latest` cold-downloaded
+  the package and exceeded Claude Code's hard 30 000 ms MCP startup timeout → server marked failed → tools
+  absent all session (a warm reconnect took 1.7 s). `@latest` made this recur on every upstream release.
+  Trust and `:9222` were never the problem (`chrome-devtools` was already in `enabledMcpjsonServers`).
+- **Why:** Pinning removes the recurring re-download; the larger timeout covers one-time cold installs and
+  Windows AV-scan latency; the skill changes stop the agent from masking a fixable connection failure with
+  a lower-quality logged-out search. Skill edit verified TDD-style (control reproduced the silent fallback;
+  both treatments stopped and asked).
+- **Rejected:** Global pre-install of the MCP binary (adds a system dependency for little gain over pin +
+  warm npx cache); leaving `@latest` (re-triggers the timeout on every release); soft "prefer logged-in"
+  guidance in the skill (a prohibition + red flag binds under pressure where soft guidance does not).
+- **Consequence:** Config changes take effect on the next session start / `/mcp` reconnect; the pinned npx
+  cache was pre-warmed so the next spawn is fast. A future `chrome-devtools-mcp` bump is a deliberate edit
+  to the pinned version here.
+
