@@ -1,17 +1,13 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import type { KeyboardEvent } from 'react';
 import { Link } from 'react-router';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
+import { MapPin, CalendarClock, TriangleAlert } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { JobStatusDropdown } from './JobStatusDropdown';
+import { isOverdue, formatRelativeDate, formatLocation, getPriorityPresentation } from './jobPresentation';
 import type { JobDto } from '@/lib/api/model';
 import { cn } from '@/lib/utils';
-
-const PRIORITY_COLOR = {
-  Low: 'bg-slate-100 text-slate-600',
-  Medium: 'bg-blue-100 text-blue-700',
-  High: 'bg-red-100 text-red-700',
-} as const;
 
 interface Props {
   job: JobDto;
@@ -20,18 +16,23 @@ interface Props {
 }
 
 export function JobCard({ job, onClick, isDragging }: Props) {
-  const isOverdue = job.nextActionAtUtc && new Date(job.nextActionAtUtc) < new Date();
+  const overdue = isOverdue(job.nextActionAtUtc);
+  const nextRelative = formatRelativeDate(job.nextActionAtUtc);
+  const location = formatLocation(job);
+  const priority = getPriorityPresentation(job.priority);
+  const showMeta = Boolean(location) || job.remoteMode !== 'OnSite';
 
   const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    isDragging: isBeingDragged,
+    attributes, listeners, setNodeRef, transform, isDragging: isBeingDragged,
   } = useDraggable({ id: job.id });
 
-  const style = {
-    transform: transform ? CSS.Translate.toString(transform) : undefined,
+  const style = { transform: transform ? CSS.Translate.toString(transform) : undefined };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick();
+    }
   };
 
   return (
@@ -40,57 +41,64 @@ export function JobCard({ job, onClick, isDragging }: Props) {
       style={style}
       {...attributes}
       {...listeners}
+      role="button"
+      tabIndex={0}
+      aria-label={`${job.companyName} — ${job.title}`}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
       className={cn(
-        'cursor-pointer hover:shadow-md transition-shadow select-none',
+        'relative cursor-pointer select-none rounded-lg py-0 shadow-sm transition-[box-shadow,background-color] duration-150 ease-out motion-reduce:transition-none',
+        'hover:bg-muted/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         (isDragging || isBeingDragged) && 'opacity-40',
       )}
-      onClick={onClick}
     >
-      <CardContent className="p-3 space-y-1.5">
-        <div className="flex items-center justify-between">
+      {priority.show && (
+        <span aria-hidden className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-destructive" />
+      )}
+      <CardContent className="space-y-1.5 p-3">
+        <div className="flex items-start justify-between gap-2">
+          <p className="truncate text-xs text-muted-foreground">{job.companyName}</p>
+          {priority.show && (
+            <span className="shrink-0 text-[10px] font-medium text-destructive">{priority.label}</span>
+          )}
+        </div>
+
+        <p className="line-clamp-2 text-sm font-medium leading-snug">{job.title}</p>
+
+        {showMeta && (
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <MapPin aria-hidden className="size-3 shrink-0" />
+            {location && <span className="truncate">{location}</span>}
+            {location && job.remoteMode !== 'OnSite' && <span aria-hidden>·</span>}
+            {job.remoteMode !== 'OnSite' && <span>{job.remoteMode}</span>}
+          </div>
+        )}
+
+        <div className="flex items-center justify-between gap-2">
+          {nextRelative ? (
+            <span className={cn('flex items-center gap-1 text-[11px]', overdue ? 'text-destructive' : 'text-muted-foreground')}>
+              {overdue
+                ? <TriangleAlert aria-hidden className="size-3 shrink-0" />
+                : <CalendarClock aria-hidden className="size-3 shrink-0" />}
+              Next {nextRelative}
+            </span>
+          ) : (
+            <span />
+          )}
           <Link
             to={`/jobs/${job.id}`}
             target="_blank"
             rel="noopener noreferrer"
             onClick={e => e.stopPropagation()}
             onPointerDown={e => e.stopPropagation()}
-            className="text-[10px] font-mono text-muted-foreground hover:text-foreground hover:underline"
+            className="shrink-0 font-mono text-[10px] text-muted-foreground hover:text-foreground hover:underline"
           >
             JOB-{job.id}
           </Link>
-          <Badge className={cn('text-[10px] px-1.5 py-0 shrink-0', PRIORITY_COLOR[job.priority])}>
-            {job.priority}
-          </Badge>
         </div>
-        <div className="flex items-start gap-2">
-          <div className="min-w-0 flex-1">
-            <p className="text-xs text-muted-foreground truncate">{job.companyName}</p>
-            <p className="font-medium text-sm leading-tight truncate">{job.title}</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          {job.country && <span>{job.country}</span>}
-          {job.country && job.remoteMode !== 'OnSite' && <span>·</span>}
-          {job.remoteMode !== 'OnSite' && <span>{job.remoteMode}</span>}
-        </div>
-
-        {job.salaryMin && (
-          <p className="text-[11px] text-muted-foreground">
-            {job.salaryCurrency ?? ''} {(job.salaryMin as number).toLocaleString()}
-            {job.salaryMax ? `–${(job.salaryMax as number).toLocaleString()}` : '+'}
-          </p>
-        )}
-
-        {job.nextActionAtUtc && (
-          <p className={cn('text-[11px]', isOverdue ? 'text-red-500 font-medium' : 'text-muted-foreground')}>
-            Next: {new Date(job.nextActionAtUtc).toLocaleDateString()}
-            {isOverdue && ' ⚠'}
-          </p>
-        )}
 
         <div onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
-          <JobStatusDropdown jobId={job.id as number} currentStatus={job.status} />
+          <JobStatusDropdown jobId={job.id as number} currentStatus={job.status} variant="chip" />
         </div>
       </CardContent>
     </Card>
