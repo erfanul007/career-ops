@@ -29,35 +29,35 @@ export default function JobsPage() {
       j.title.toLowerCase().includes(s) ||
       j.companyName.toLowerCase().includes(s) ||
       j.sourceUrl?.toLowerCase().includes(s) ||
-      j.notes?.toLowerCase().includes(s)
+      j.notes?.toLowerCase().includes(s),
     );
   }, [jobsData, filters.search]);
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold">Jobs</h1>
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex flex-wrap items-center gap-3">
           <JobFilterBar filters={filters} onChange={setFilters} />
           <JobQuickAdd />
         </div>
       </div>
 
-      <Tabs defaultValue="board">
+      <Tabs defaultValue="board" className="flex min-h-0 flex-1 flex-col">
         <TabsList>
           <TabsTrigger value="board">Board</TabsTrigger>
           <TabsTrigger value="table">Table</TabsTrigger>
         </TabsList>
-        <TabsContent value="board">
+        <TabsContent value="board" className="min-h-0 flex-1">
           {isError ? (
             <div className="py-8 text-center text-sm text-destructive">Failed to load jobs. Check your connection.</div>
           ) : isLoading ? (
-            <div className="text-sm text-muted-foreground py-8 text-center">Loading…</div>
+            <div className="py-8 text-center text-sm text-muted-foreground">Loading…</div>
           ) : (
             <JobsBoard jobs={filtered} groupBy={filters.groupBy} listParams={params} onJobClick={setSelectedJobId} />
           )}
         </TabsContent>
-        <TabsContent value="table">
+        <TabsContent value="table" className="min-h-0 flex-1 overflow-y-auto">
           <JobsTable jobs={filtered} onJobClick={setSelectedJobId} />
         </TabsContent>
       </Tabs>

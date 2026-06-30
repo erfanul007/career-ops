@@ -3,7 +3,7 @@ import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent, closes
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { BoardColumn } from './BoardColumn';
-import { JobCard } from './JobCard';
+import { JobCardPreview } from './JobCardPreview';
 import { useJobMutations } from './useJobMutations';
 import { getListJobsQueryKey } from '@/lib/api/jobs/jobs';
 import type { JobDto, JobStatus, ListJobsParams } from '@/lib/api/model';
@@ -41,12 +41,12 @@ export function JobsBoard({ jobs, groupBy, listParams, onJobClick }: Props) {
   const { transition } = useJobMutations();
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
 
   if (jobs.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-2">
+      <div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground">
         <p className="text-sm">No jobs found.</p>
         <p className="text-xs">Add a job to get started.</p>
       </div>
@@ -73,17 +73,19 @@ export function JobsBoard({ jobs, groupBy, listParams, onJobClick }: Props) {
     const key = getListJobsQueryKey(listParams);
     const prevData = qc.getQueryData(key);
     qc.setQueryData(key, (old: { data?: JobDto[] } | undefined) =>
-      old ? { ...old, data: old.data?.map(j => j.id === job.id ? { ...j, status: toStatus } : j) } : old
+      old ? { ...old, data: old.data?.map(j => j.id === job.id ? { ...j, status: toStatus } : j) } : old,
     );
 
     transition.mutate(
       { id: job.id as number, data: { toStatus, notes: null } },
-      { onError: () => qc.setQueryData(key, prevData) }
+      { onError: () => qc.setQueryData(key, prevData) },
     );
   };
 
+  const isDragActive = activeJob !== null;
+
   const columns = (
-    <div className="space-y-2">
+    <div className="flex h-full min-h-0 flex-col gap-2">
       {groupBy === 'status' && (
         <div className="flex justify-end">
           <Button variant="ghost" size="sm" onClick={() => setShowClosed(v => !v)} className="text-xs">
@@ -91,9 +93,15 @@ export function JobsBoard({ jobs, groupBy, listParams, onJobClick }: Props) {
           </Button>
         </div>
       )}
-      <div className="flex gap-3 overflow-x-auto pb-4">
+      <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-2">
         {visibleGroups.map(group => (
-          <BoardColumn key={group.key} label={group.label} jobs={group.jobs} onJobClick={onJobClick} />
+          <BoardColumn
+            key={group.key}
+            label={group.label}
+            jobs={group.jobs}
+            onJobClick={onJobClick}
+            isDragActive={isDragActive}
+          />
         ))}
       </div>
     </div>
@@ -108,7 +116,11 @@ export function JobsBoard({ jobs, groupBy, listParams, onJobClick }: Props) {
     >
       {columns}
       <DragOverlay>
-        {activeJob && <JobCard job={activeJob} onClick={() => {}} isDragging />}
+        {activeJob && (
+          <div className="pointer-events-none rotate-[0.5deg] scale-[1.01] rounded-lg shadow-xl ring-1 ring-ring/40 transform-gpu">
+            <JobCardPreview job={activeJob} />
+          </div>
+        )}
       </DragOverlay>
     </DndContext>
   ) : columns;
