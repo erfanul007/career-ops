@@ -24,9 +24,9 @@ export function AppLayout() {
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon">
-        <SidebarHeader className="flex-row items-center gap-2 px-3 py-2">
+        <SidebarHeader className="flex-row items-center gap-2 px-3 py-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
           <Logo className="size-7 shrink-0" />
-          <span className="text-lg font-semibold">CareerOps</span>
+          <span className="text-lg font-semibold group-data-[collapsible=icon]:hidden">CareerOps</span>
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
@@ -49,7 +49,7 @@ export function AppLayout() {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter className="px-3 py-2 text-sm text-muted-foreground">
+        <SidebarFooter className="px-3 py-2 text-sm text-muted-foreground group-data-[collapsible=icon]:hidden">
           {name || "Set up your profile"}
         </SidebarFooter>
       </Sidebar>
