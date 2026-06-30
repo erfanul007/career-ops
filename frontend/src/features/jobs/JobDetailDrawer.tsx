@@ -19,7 +19,7 @@ export function JobDetailDrawer({ jobId, onClose }: Props) {
   return (
     <Sheet open={jobId !== null} onOpenChange={open => !open && onClose()}>
       <SheetContent
-        className="flex w-[min(860px,calc(100vw-2rem))] flex-col gap-0 overflow-hidden p-0 sm:max-w-[min(860px,calc(100vw-2rem))]"
+        className="flex w-[min(1100px,calc(100vw-2rem))] flex-col gap-0 overflow-hidden p-0 sm:max-w-[min(1100px,calc(100vw-2rem))]"
       >
         {isLoading || !job ? (
           <div className="space-y-3 p-5">
