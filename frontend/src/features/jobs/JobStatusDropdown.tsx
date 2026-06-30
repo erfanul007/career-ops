@@ -1,5 +1,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useJobMutations } from './useJobMutations';
+import { getStatusPresentation } from './jobPresentation';
+import { cn } from '@/lib/utils';
 import type { JobStatus } from '@/lib/api/model';
 
 const ALL_STATUSES: JobStatus[] = [
@@ -7,24 +9,13 @@ const ALL_STATUSES: JobStatus[] = [
   'Rejected', 'Ghosted', 'Withdrawn', 'Archived',
 ];
 
-const STATUS_COLORS: Record<JobStatus, string> = {
-  Discovered: 'text-slate-500',
-  Interested: 'text-blue-500',
-  Applied: 'text-indigo-500',
-  Interviewing: 'text-violet-500',
-  Offered: 'text-green-600',
-  Rejected: 'text-red-500',
-  Ghosted: 'text-orange-400',
-  Withdrawn: 'text-yellow-600',
-  Archived: 'text-gray-400',
-};
-
 interface Props {
   jobId: number;
   currentStatus: JobStatus;
+  variant?: 'default' | 'chip';
 }
 
-export function JobStatusDropdown({ jobId, currentStatus }: Props) {
+export function JobStatusDropdown({ jobId, currentStatus, variant = 'default' }: Props) {
   const { transition } = useJobMutations();
 
   const handleChange = (value: string) => {
@@ -33,17 +24,40 @@ export function JobStatusDropdown({ jobId, currentStatus }: Props) {
     transition.mutate({ id: jobId, data: { toStatus, notes: null } });
   };
 
+  const current = getStatusPresentation(currentStatus);
+
   return (
     <Select value={currentStatus} onValueChange={handleChange}>
-      <SelectTrigger className="w-36 h-7 text-xs">
-        <SelectValue />
+      <SelectTrigger
+        size="sm"
+        className={cn(
+          'text-xs transition-colors motion-reduce:transition-none',
+          variant === 'chip'
+            ? 'h-6 w-fit gap-1 border-transparent bg-transparent px-1.5 text-muted-foreground hover:bg-muted'
+            : 'w-40',
+        )}
+      >
+        {variant === 'chip' ? (
+          <span className="flex items-center gap-1.5">
+            <span aria-hidden className={cn('size-2 rounded-full', current.dotClassName)} />
+            {current.label}
+          </span>
+        ) : (
+          <SelectValue />
+        )}
       </SelectTrigger>
       <SelectContent>
-        {ALL_STATUSES.map(s => (
-          <SelectItem key={s} value={s}>
-            <span className={STATUS_COLORS[s]}>{s}</span>
-          </SelectItem>
-        ))}
+        {ALL_STATUSES.map(s => {
+          const p = getStatusPresentation(s);
+          return (
+            <SelectItem key={s} value={s}>
+              <span className="flex items-center gap-2">
+                <span aria-hidden className={cn('size-2 rounded-full', p.dotClassName)} />
+                {s}
+              </span>
+            </SelectItem>
+          );
+        })}
       </SelectContent>
     </Select>
   );
