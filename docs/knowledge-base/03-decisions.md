@@ -875,6 +875,22 @@ only by adding a new dated entry here — never silently. All entries below are 
 - **Counterargument / risk:** a shared shell is one more abstraction and a forced rhythm some pages might
   fight. Accepted — two tiny components, no ceremony, and the `width`/`variant` props cover the real cases.
 
+### D60 — Jobs board overhaul: swimlane layout, DnD, grouping, priority endpoint, hard delete
+- **Date:** 2026-06-30
+- **Decision:** A set of locked design choices for the jobs board overhaul (spec `2026-06-29-careerops-jobs-ui-polish.md`):
+  - **Board columns are always status.** Country/company/priority grouping produces horizontal Jira-style lanes; `groupBy='status'` is a single unbannered lane (`__all__`).
+  - **Layout:** per-lane grids share one fixed column track (`--board-col: 18rem`); the status header row is sticky-top; lane banners are not sticky.
+  - **DnD:** drag-and-drop changes status only and ignores cross-lane drops; it is enabled in all groupings. Droppable id is `${laneKey}::${status}`, parsed with `lastIndexOf('::')`.
+  - **Hidden-columns ("Columns") menu** applies to all groupings; collapse store key `careerops:jobs:collapsed-lanes` is keyed `${groupBy}:${laneKey}` and shared between board and table views.
+  - **Priority editing:** priority is editable inline via a dedicated `POST /jobs/{id}/priority` endpoint (full-PUT-from-card was rejected to avoid data loss); priority is shown as a chip on card, table row, and drawer; High keeps its destructive accent bar; priority colours use design tokens.
+  - **Group-by-priority lane order:** High → Medium → Low.
+  - **Hard delete:** available from card/row kebab menu and drawer behind a confirm `AlertDialog`; relies on the existing `FollowUpTask.Job` cascade (no orphans); distinct from the Archive status.
+- **Additional notes:**
+  - `@testing-library/user-event` added as a dev-only dependency (user-approved deviation from the no-new-deps guardrail; needed to drive Radix portal menus in jsdom — D57 harness).
+  - **Deferred:** the generated API client has drifted from the live backend (new endpoints not reflected). A dedicated `gen:client` sync task (rebuild API + regen) is required as a follow-up; it is explicitly out of scope for this feature branch.
+- **Why:** Gives the board real grouping flexibility without a column-redesign per grouping; a shared column track and one status-header row keeps the layout coherent. A dedicated priority endpoint avoids the data-loss risk of a full PUT from a partial card form. Hard delete (behind confirm) is the correct UX complement to Archive — soft-delete-via-status for workflow, hard delete for explicit removal.
+- **Rejected:** full-PUT-from-card for priority (data loss risk); per-grouping DnD models (status is always the drop axis); lane banners sticky (they conflict with the sticky status header row); separate collapse stores for board and table (needless divergence).
+
 ### D59 — Calm design-token colors with one risk accent; status-dot legend retained
 - **Date:** 2026-06-30
 - **Decision:** Replace raw Tailwind palette classes (`text-red-500`, `bg-*-100`, etc.) and the `⚠` glyph
