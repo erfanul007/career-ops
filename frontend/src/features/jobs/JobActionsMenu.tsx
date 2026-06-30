@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { DeleteJobDialog } from './DeleteJobDialog';
+import { EditJobDialog } from './EditJobDialog';
 
 interface Props {
   jobId: number;
@@ -17,6 +18,7 @@ interface Props {
 
 export function JobActionsMenu({ jobId, jobLabel, onDeleted }: Props) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   return (
     <>
@@ -27,6 +29,9 @@ export function JobActionsMenu({ jobId, jobLabel, onDeleted }: Props) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+            Edit
+          </DropdownMenuItem>
           <DropdownMenuItem
             variant="destructive"
             onSelect={() => setConfirmOpen(true)}
@@ -35,6 +40,7 @@ export function JobActionsMenu({ jobId, jobLabel, onDeleted }: Props) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <EditJobDialog open={editOpen} onOpenChange={setEditOpen} jobId={jobId} />
       <DeleteJobDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}

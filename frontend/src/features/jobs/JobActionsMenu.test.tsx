@@ -30,4 +30,11 @@ describe('JobActionsMenu', () => {
     await user.click(screen.getByRole('button', { name: /^Delete$/ }));
     expect(removeMutate.mock.calls[0][0]).toEqual({ id: 12 });
   });
+
+  it('offers an Edit action in the menu', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<JobActionsMenu jobId={12} jobLabel="JOB-12 — Acme Dev" />);
+    await user.click(screen.getByRole('button', { name: /job actions/i }));
+    expect(await screen.findByText('Edit')).toBeInTheDocument();
+  });
 });
