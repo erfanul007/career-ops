@@ -18,7 +18,7 @@ describe("JobsBoard", () => {
     renderWithProviders(
       <JobsBoard jobs={[job(1, "Applied")]} groupBy="status" listParams={{}} onJobClick={() => {}} />,
     );
-    expect(screen.getAllByText("Applied").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Applied").length).toBeGreaterThanOrEqual(2); // column header + card status chip
     expect(screen.getByText("Role 1")).toBeInTheDocument();
   });
 
