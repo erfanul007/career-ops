@@ -49,9 +49,17 @@ export function AttachmentsTab({ job }: Props) {
                   {a.url && <> · <a href={a.url} target="_blank" rel="noopener" className="underline">Link</a></>}
                 </p>
               </div>
-              <div className="flex gap-1">
-                <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => setEditing(a.id as number)}>Edit</Button>
-                <Button size="sm" variant="ghost" className="h-6 text-xs text-red-500" onClick={() => remove.mutate({ id: jobId, attachmentId: a.id as number })}>Delete</Button>
+              <div className="flex shrink-0 gap-1">
+                <Button size="xs" variant="ghost" onClick={() => setEditing(a.id as number)}>Edit</Button>
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  aria-label={`Delete ${a.title}`}
+                  className="text-muted-foreground hover:text-destructive"
+                  onClick={() => remove.mutate({ id: jobId, attachmentId: a.id as number })}
+                >
+                  Delete
+                </Button>
               </div>
             </div>
           )}
