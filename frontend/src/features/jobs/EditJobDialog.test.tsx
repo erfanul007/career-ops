@@ -10,9 +10,9 @@ const detail: JobDetailDto = {
   jobDescription: 'PRESERVE ME', country: 'Norway', city: 'Oslo', locationText: null,
   remoteMode: 'Remote', employmentType: 'FullTime', salaryMin: null, salaryMax: null,
   salaryCurrency: null, salaryPeriod: 'Annual', deadlineAtUtc: null, appliedAtUtc: null,
-  lastContactedAtUtc: null, nextActionAtUtc: null, fitScore: null,
-  resumeLabel: 'KEEP', resumeAngle: null, coverLetterNotes: null, offerSalary: null,
-  offerCurrency: null, offerDeadlineAtUtc: null, offerNotes: null, rejectionReason: null,
+  lastContactedAtUtc: '2026-05-01T00:00:00Z', nextActionAtUtc: null, fitScore: null,
+  resumeLabel: 'KEEP', resumeAngle: 'ANGLE', coverLetterNotes: 'COVER', offerSalary: '500000',
+  offerCurrency: 'NOK', offerDeadlineAtUtc: '2026-07-01T00:00:00Z', offerNotes: 'OFFER', rejectionReason: 'REASON',
   notes: null, createdAtUtc: '2026-06-01T00:00:00Z', updatedAtUtc: '2026-06-01T00:00:00Z',
   activities: [], properties: [], attachments: [], followUps: [],
 };
@@ -45,5 +45,14 @@ describe('EditJobDialog', () => {
     expect(arg.data.companyId).toBe(3);                  // preserved
     expect(arg.data.jobDescription).toBe('PRESERVE ME'); // preserved (not in form)
     expect(arg.data.resumeLabel).toBe('KEEP');           // preserved (not in form)
+    // every unshown passthrough field survives — guards the non-destructive PUT invariant
+    expect(arg.data.resumeAngle).toBe('ANGLE');
+    expect(arg.data.coverLetterNotes).toBe('COVER');
+    expect(arg.data.offerSalary).toBe('500000');
+    expect(arg.data.offerCurrency).toBe('NOK');
+    expect(arg.data.offerDeadlineAtUtc).toBe('2026-07-01T00:00:00Z');
+    expect(arg.data.offerNotes).toBe('OFFER');
+    expect(arg.data.rejectionReason).toBe('REASON');
+    expect(arg.data.lastContactedAtUtc).toBe('2026-05-01T00:00:00Z');
   });
 });
