@@ -12,7 +12,7 @@ import { useJobMutations } from './useJobMutations';
 import { getListJobsQueryKey } from '@/lib/api/jobs/jobs';
 import type { JobDto, JobStatus, ListJobsParams } from '@/lib/api/model';
 
-export type GroupBy = 'status' | 'country' | 'company';
+export type GroupBy = 'status' | 'country' | 'company' | 'priority';
 
 const ACTIVE_STATUSES: JobStatus[] = ['Discovered', 'Interested', 'Applied', 'Interviewing', 'Offered'];
 const CLOSED_STATUSES: JobStatus[] = ['Rejected', 'Ghosted', 'Withdrawn', 'Archived'];
