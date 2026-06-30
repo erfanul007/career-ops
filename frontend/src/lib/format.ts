@@ -33,7 +33,7 @@ export function formatSalary(
   currency?: string | null,
   period?: string | null,
 ): string | null {
-  if (min == null) return null;
+  if (min == null || min === "") return null;
   const cur = currency ?? "";
   const lo = formatNumber(min);
   const hi = max != null ? `–${formatNumber(max)}` : "+";

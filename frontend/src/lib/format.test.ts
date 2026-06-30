@@ -8,6 +8,7 @@ describe("format", () => {
     expect(formatDate("not-a-date")).toBeNull();
     expect(formatNumber(null)).toBeNull();
     expect(formatSalary(null)).toBeNull();
+    expect(formatSalary("")).toBeNull();
   });
 
   it("formats an ISO date to a locale date string", () => {
