@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MoreVertical } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -30,13 +30,13 @@ export function JobActionsMenu({ jobId, jobLabel, onDeleted }: Props) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => setEditOpen(true)}>
-            Edit
+            <Pencil aria-hidden /> Edit
           </DropdownMenuItem>
           <DropdownMenuItem
             variant="destructive"
             onSelect={() => setConfirmOpen(true)}
           >
-            Delete
+            <Trash2 aria-hidden /> Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

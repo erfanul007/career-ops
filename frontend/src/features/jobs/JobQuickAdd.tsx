@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Plus } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -68,7 +69,7 @@ export function JobQuickAdd() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>+ Add job</Button>
+        <Button><Plus aria-hidden className="size-4" /> Add job</Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>

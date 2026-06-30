@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Plus, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -50,7 +51,7 @@ export function AttachmentsTab({ job }: Props) {
                 </p>
               </div>
               <div className="flex shrink-0 gap-1">
-                <Button size="xs" variant="ghost" onClick={() => setEditing(a.id as number)}>Edit</Button>
+                <Button size="xs" variant="ghost" onClick={() => setEditing(a.id as number)}><Pencil aria-hidden className="size-4" /> Edit</Button>
                 <Button
                   size="xs"
                   variant="ghost"
@@ -76,7 +77,7 @@ export function AttachmentsTab({ job }: Props) {
           } })} onCancel={() => setAdding(false)} />
         </div>
       ) : (
-        <Button size="sm" variant="outline" onClick={() => setAdding(true)}>+ Add attachment</Button>
+        <Button size="sm" variant="outline" onClick={() => setAdding(true)}><Plus aria-hidden className="size-4" /> Add attachment</Button>
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MoreVertical } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2, Check, Plus } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
@@ -66,19 +66,19 @@ export function ActivitiesTab({ job }: Props) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setEditing(a.id as number)}>Edit</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setEditing(a.id as number)}><Pencil aria-hidden /> Edit</DropdownMenuItem>
                       {a.status !== 'Completed' && (
                         <DropdownMenuItem
                           onClick={() => complete.mutate({ id: jobId, activityId: a.id as number, data: { outcome: 'Passed', feedback: null, notes: null, createFollowUp: false } })}
                         >
-                          Mark complete
+                          <Check aria-hidden /> Mark complete
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuItem
                         variant="destructive"
                         onClick={() => remove.mutate({ id: jobId, activityId: a.id as number })}
                       >
-                        Delete
+                        <Trash2 aria-hidden /> Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -106,7 +106,7 @@ export function ActivitiesTab({ job }: Props) {
           />
         </div>
       ) : (
-        <Button size="sm" variant="outline" onClick={() => setAdding(true)}>+ Add activity</Button>
+        <Button size="sm" variant="outline" onClick={() => setAdding(true)}><Plus aria-hidden className="size-4" /> Add activity</Button>
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,7 +53,7 @@ export function DeleteJobDialog({ open, onOpenChange, jobId, jobLabel, onDeleted
             onClick={confirm}
             className={cn(buttonVariants({ variant: 'destructive' }))}
           >
-            Delete
+            <Trash2 aria-hidden /> Delete
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -41,6 +41,15 @@ describe('buildLanes', () => {
     ], 'priority');
     expect(lanes.map(l => l.label)).toEqual(['High', 'Low']);
   });
+
+  it('status lane jobs are ordered by updatedAtUtc descending', () => {
+    const lanes = buildLanes([
+      job({ id: 1, updatedAtUtc: '2026-06-01T00:00:00Z' }),
+      job({ id: 3, updatedAtUtc: '2026-06-03T00:00:00Z' }),
+      job({ id: 2, updatedAtUtc: '2026-06-02T00:00:00Z' }),
+    ], 'status');
+    expect(lanes[0].jobs.map(j => j.id)).toEqual([3, 2, 1]);
+  });
 });
 
 describe('laneKeyOf', () => {

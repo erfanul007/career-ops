@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert, Plus } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useCreateJobFollowUp, getGetJobQueryKey } from '@/lib/api/jobs/jobs';
@@ -67,7 +67,7 @@ export function NextActionsBlock({ job }: Props) {
           />
         </div>
       ) : (
-        <Button size="sm" variant="outline" onClick={() => setAdding(true)}>+ Add follow-up</Button>
+        <Button size="sm" variant="outline" onClick={() => setAdding(true)}><Plus aria-hidden className="size-4" /> Add follow-up</Button>
       )}
     </section>
   );
