@@ -19,5 +19,6 @@ describe("BoardColumn", () => {
   it("shows the drop target only while dragging", () => {
     renderWithProviders(<BoardColumn label="Applied" jobs={[]} onJobClick={() => {}} isDragActive />);
     expect(screen.getByText(/Drop here/i)).toBeInTheDocument();
+    expect(screen.queryByText(/No jobs/i)).not.toBeInTheDocument();
   });
 });
