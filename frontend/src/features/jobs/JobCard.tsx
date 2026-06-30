@@ -117,7 +117,11 @@ export function JobCard({ job, onClick, isDragging }: Props) {
           </Link>
         </div>
 
-        <div data-card-interactive>
+        <div
+          data-card-interactive
+          onPointerDown={e => e.stopPropagation()}
+          onClick={e => e.stopPropagation()}
+        >
           <JobStatusDropdown jobId={job.id as number} currentStatus={job.status} variant="chip" />
         </div>
       </CardContent>

@@ -46,7 +46,7 @@ export function JobStatusDropdown({ jobId, currentStatus, variant = 'default' }:
           <SelectValue />
         )}
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent position="popper">
         {ALL_STATUSES.map(s => {
           const p = getStatusPresentation(s);
           return (
