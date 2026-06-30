@@ -29,7 +29,7 @@ describe("JobDetailDrawer", () => {
   it("renders the work-item header identity", () => {
     renderWithProviders(<JobDetailDrawer jobId={12} onClose={() => {}} />);
     expect(screen.getByText("Senior Backend Engineer")).toBeInTheDocument();
-    expect(screen.getAllByText("Northwind Synthetics").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Northwind Synthetics")).toHaveLength(2);
     expect(screen.getByText(/JOB-12/)).toBeInTheDocument();
     const jobLink = screen.getByRole("link", { name: /JOB-12/ });
     expect(jobLink).toHaveAttribute("href", "/jobs/12");
