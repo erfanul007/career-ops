@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -59,7 +59,7 @@ export function AttachmentsTab({ job }: Props) {
                   className="text-muted-foreground hover:text-destructive"
                   onClick={() => remove.mutate({ id: jobId, attachmentId: a.id as number })}
                 >
-                  Delete
+                  <Trash2 aria-hidden className="size-4" /> Delete
                 </Button>
               </div>
             </div>
