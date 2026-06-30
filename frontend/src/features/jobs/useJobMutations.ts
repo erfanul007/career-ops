@@ -5,6 +5,7 @@ import {
   useUpdateJob,
   useDeleteJob,
   useTransitionJob,
+  useSetJobPriority,
   getListJobsQueryKey,
   getGetJobQueryKey,
 } from '@/lib/api/jobs/jobs';
@@ -50,5 +51,15 @@ export function useJobMutations() {
     },
   });
 
-  return { create, update, remove, transition };
+  const setPriority = useSetJobPriority({
+    mutation: {
+      onSuccess: (_, vars) => {
+        invalidateJobs();
+        qc.invalidateQueries({ queryKey: getGetJobQueryKey(vars.id) });
+      },
+      onError: () => toast.error('Failed to update priority'),
+    },
+  });
+
+  return { create, update, remove, transition, setPriority };
 }
