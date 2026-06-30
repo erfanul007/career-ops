@@ -35,7 +35,7 @@ export default function DashboardPage() {
       <PageHeader title="Dashboard" />
 
       <section>
-        <h2 className="text-sm font-medium text-muted-foreground mb-3">Active pipeline</h2>
+        <h2 className="text-sm font-medium text-muted-foreground mb-2">Active pipeline</h2>
         <div className="flex gap-3 flex-wrap">
           {STATUS_ORDER.map(status => (
             <Card key={status} className="flex-1 min-w-[100px]">

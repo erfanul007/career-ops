@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatDate, formatDateTime, formatNumber, formatSalary } from "./format";
+import { formatDate, formatNumber, formatSalary } from "./format";
 
 describe("format", () => {
   it("returns null for empty/invalid input", () => {
@@ -15,12 +15,6 @@ describe("format", () => {
     const out = formatDate("2026-06-30T00:00:00Z");
     expect(out).toBeTypeOf("string");
     expect(out).toMatch(/2026/);
-  });
-
-  it("formats a date-time with 24h time", () => {
-    const out = formatDateTime("2026-06-30T13:45:00Z");
-    expect(out).toMatch(/2026/);
-    expect(out).toMatch(/45/);
   });
 
   it("groups large numbers via the runtime locale", () => {

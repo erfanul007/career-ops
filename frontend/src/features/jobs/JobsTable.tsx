@@ -36,7 +36,7 @@ export function JobsTable({ jobs, onJobClick }: Props) {
       </TableHeader>
       <TableBody>
         {jobs.map(job => {
-          const isOverdue = job.nextActionAtUtc && new Date(job.nextActionAtUtc) < new Date();
+          const isOverdue = Boolean(job.nextActionAtUtc && new Date(job.nextActionAtUtc) < new Date());
           return (
             <TableRow
               key={job.id as number}

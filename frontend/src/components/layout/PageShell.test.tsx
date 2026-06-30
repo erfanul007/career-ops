@@ -17,4 +17,14 @@ describe("PageShell", () => {
     const { container } = render(<PageShell variant="full"><p>x</p></PageShell>);
     expect(container.querySelector(".h-full.min-h-0")).not.toBeNull();
   });
+
+  it("uses the default max width for the contained variant", () => {
+    const { container } = render(<PageShell><p>x</p></PageShell>);
+    expect(container.querySelector(".max-w-5xl")).not.toBeNull();
+  });
+
+  it("uses a full-height flex column with gap for the board variant", () => {
+    const { container } = render(<PageShell variant="full"><p>x</p></PageShell>);
+    expect(container.querySelector(".flex.flex-col.gap-4")).not.toBeNull();
+  });
 });
