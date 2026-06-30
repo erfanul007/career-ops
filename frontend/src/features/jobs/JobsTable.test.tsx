@@ -16,15 +16,30 @@ const job = (over: Partial<JobDto> = {}): JobDto => ({
 
 describe("JobsTable", () => {
   it("renders a row and an overdue alert icon (no ⚠ glyph)", () => {
-    const { container } = renderWithProviders(<JobsTable jobs={[job()]} onJobClick={vi.fn()} />);
+    const { container } = renderWithProviders(<JobsTable jobs={[job()]} groupBy="status" onJobClick={vi.fn()} />);
     expect(screen.getByText("Backend Engineer")).toBeInTheDocument();
     expect(container.querySelector("[data-overdue]")).not.toBeNull();
     expect(container.textContent).not.toContain("⚠");
   });
 
   it("renders the priority with a token badge, not a raw palette class", () => {
-    const { container } = renderWithProviders(<JobsTable jobs={[job({ priority: "High" })]} onJobClick={vi.fn()} />);
+    const { container } = renderWithProviders(<JobsTable jobs={[job({ priority: "High" })]} groupBy="status" onJobClick={vi.fn()} />);
     expect(screen.getByText("High")).toBeInTheDocument();
     expect(container.querySelector(".bg-red-100,.bg-blue-100,.bg-slate-100")).toBeNull();
+  });
+
+  it("renders a banner row when grouped by country", () => {
+    renderWithProviders(
+      <JobsTable
+        jobs={[
+          job({ id: 1, country: "Norway" }),
+          job({ id: 2, country: "Germany" }),
+        ]}
+        groupBy="country"
+        onJobClick={() => {}}
+      />,
+    );
+    expect(screen.getByRole("button", { name: /Norway/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Germany/ })).toBeInTheDocument();
   });
 });

@@ -56,7 +56,7 @@ export default function JobsPage() {
           )}
         </TabsContent>
         <TabsContent value="table" className="min-h-0 flex-1 overflow-y-auto">
-          <JobsTable jobs={filtered} onJobClick={setSelectedJobId} />
+          <JobsTable jobs={filtered} groupBy={filters.groupBy} onJobClick={setSelectedJobId} />
         </TabsContent>
       </Tabs>
       <JobDetailDrawer jobId={selectedJobId} onClose={() => setSelectedJobId(null)} />
