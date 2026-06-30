@@ -1,0 +1,30 @@
+import { describe, it, expect, vi } from "vitest";
+import { screen } from "@testing-library/react";
+import { renderWithProviders } from "@/test/utils";
+import { JobsTable } from "./JobsTable";
+import type { JobDto } from "@/lib/api/model";
+
+const job = (over: Partial<JobDto> = {}): JobDto => ({
+  id: 1, companyId: 1, companyName: "Northwind Synthetics", title: "Backend Engineer",
+  status: "Applied", priority: "High", source: "CompanySite", sourceUrl: null,
+  country: "Norway", city: "Oslo", locationText: null, remoteMode: "Remote", employmentType: "FullTime",
+  salaryMin: 800000, salaryMax: 950000, salaryCurrency: "NOK", salaryPeriod: "Annual",
+  deadlineAtUtc: null, appliedAtUtc: null, lastContactedAtUtc: null,
+  nextActionAtUtc: "2000-01-01T00:00:00Z", fitScore: null, notes: null,
+  createdAtUtc: "2026-06-01T00:00:00Z", updatedAtUtc: "2026-06-01T00:00:00Z", ...over,
+});
+
+describe("JobsTable", () => {
+  it("renders a row and an overdue alert icon (no ⚠ glyph)", () => {
+    const { container } = renderWithProviders(<JobsTable jobs={[job()]} onJobClick={vi.fn()} />);
+    expect(screen.getByText("Backend Engineer")).toBeInTheDocument();
+    expect(container.querySelector("[data-overdue]")).not.toBeNull();
+    expect(container.textContent).not.toContain("⚠");
+  });
+
+  it("renders the priority with a token badge, not a raw palette class", () => {
+    const { container } = renderWithProviders(<JobsTable jobs={[job({ priority: "High" })]} onJobClick={vi.fn()} />);
+    expect(screen.getByText("High")).toBeInTheDocument();
+    expect(container.querySelector(".bg-red-100,.bg-blue-100,.bg-slate-100")).toBeNull();
+  });
+});

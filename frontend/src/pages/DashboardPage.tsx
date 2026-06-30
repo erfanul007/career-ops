@@ -62,7 +62,7 @@ export default function DashboardPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Overdue</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className={`text-2xl font-bold ${Number(summary.overdueFollowUps) > 0 ? 'text-red-500' : ''}`}>
+            <p className={`text-2xl font-bold ${Number(summary.overdueFollowUps) > 0 ? 'text-destructive' : ''}`}>
               {Number(summary.overdueFollowUps)}
             </p>
           </CardContent>
@@ -73,7 +73,7 @@ export default function DashboardPage() {
               <CardTitle className="text-sm font-medium text-muted-foreground">Days until deadline</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className={`text-2xl font-bold ${Number(summary.daysUntilSearchDeadline) <= 7 ? 'text-orange-500' : ''}`}>
+              <p className={`text-2xl font-bold ${Number(summary.daysUntilSearchDeadline) <= 7 ? 'text-destructive' : ''}`}>
                 {Number(summary.daysUntilSearchDeadline)}
               </p>
             </CardContent>

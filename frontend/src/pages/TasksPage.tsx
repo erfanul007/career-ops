@@ -15,13 +15,14 @@ import type { FollowUpStatus } from '@/lib/api/model';
 import { toast } from 'sonner';
 import { PageShell } from '@/components/layout/PageShell';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { formatDate } from '@/lib/format';
 
 type DueFilter = 'all' | 'today' | 'overdue';
 
-const STATUS_BADGE: Record<FollowUpStatus, string> = {
-  Pending: 'bg-yellow-100 text-yellow-800',
-  Completed: 'bg-green-100 text-green-800',
-  Skipped: 'bg-gray-100 text-gray-600',
+const STATUS_VARIANT: Record<FollowUpStatus, 'secondary' | 'outline'> = {
+  Pending: 'secondary',
+  Completed: 'outline',
+  Skipped: 'outline',
 };
 
 export default function TasksPage() {
@@ -100,15 +101,12 @@ export default function TasksPage() {
                     </Link>
                   )}
                   <div className="flex items-center gap-2 mt-1">
-                    <Badge
-                      variant="outline"
-                      className={`text-[10px] px-1.5 py-0 ${STATUS_BADGE[task.status] ?? ''}`}
-                    >
+                    <Badge variant={STATUS_VARIANT[task.status]} className="text-[10px]">
                       {task.status}
                     </Badge>
                     {task.dueAtUtc && (
-                      <span className={`text-[11px] ${isOverdue ? 'text-red-500 font-medium' : 'text-muted-foreground'}`}>
-                        {new Date(task.dueAtUtc).toLocaleDateString()}{isOverdue ? ' · overdue' : ''}
+                      <span className={`text-[11px] ${isOverdue ? 'font-medium text-destructive' : 'text-muted-foreground'}`}>
+                        {formatDate(task.dueAtUtc)}{isOverdue ? ' · overdue' : ''}
                       </span>
                     )}
                   </div>

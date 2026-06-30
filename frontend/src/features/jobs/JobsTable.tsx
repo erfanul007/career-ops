@@ -1,14 +1,17 @@
 import { Link } from 'react-router';
+import { TriangleAlert } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { JobStatusDropdown } from './JobStatusDropdown';
-import type { JobDto } from '@/lib/api/model';
+import { cn } from '@/lib/utils';
+import { formatDate, formatSalary } from '@/lib/format';
+import type { JobDto, Priority } from '@/lib/api/model';
 
-const PRIORITY_COLOR = {
-  Low: 'bg-slate-100 text-slate-600',
-  Medium: 'bg-blue-100 text-blue-700',
-  High: 'bg-red-100 text-red-700',
-} as const;
+const PRIORITY_VARIANT: Record<Priority, 'secondary' | 'outline' | 'destructive'> = {
+  Low: 'outline',
+  Medium: 'secondary',
+  High: 'destructive',
+};
 
 interface Props {
   jobs: JobDto[];
@@ -26,7 +29,7 @@ export function JobsTable({ jobs, onJobClick }: Props) {
           <TableHead>Status</TableHead>
           <TableHead>Priority</TableHead>
           <TableHead>Location</TableHead>
-          <TableHead>Salary</TableHead>
+          <TableHead className="text-right">Salary</TableHead>
           <TableHead>Applied</TableHead>
           <TableHead>Next action</TableHead>
         </TableRow>
@@ -56,23 +59,26 @@ export function JobsTable({ jobs, onJobClick }: Props) {
                 <JobStatusDropdown jobId={job.id as number} currentStatus={job.status} />
               </TableCell>
               <TableCell>
-                <Badge className={PRIORITY_COLOR[job.priority]}>{job.priority}</Badge>
+                <Badge variant={PRIORITY_VARIANT[job.priority]}>{job.priority}</Badge>
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
                 {[job.city, job.country].filter(Boolean).join(', ')}
                 {job.remoteMode !== 'OnSite' && ` · ${job.remoteMode}`}
               </TableCell>
-              <TableCell className="text-sm">
-                {job.salaryMin
-                  ? `${job.salaryCurrency ?? ''} ${(job.salaryMin as number).toLocaleString()}${job.salaryMax ? `–${(job.salaryMax as number).toLocaleString()}` : '+'}`
-                  : '—'}
+              <TableCell className="text-right text-sm tabular-nums">
+                {formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency) ?? '—'}
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
-                {job.appliedAtUtc ? new Date(job.appliedAtUtc).toLocaleDateString() : '—'}
+                {formatDate(job.appliedAtUtc) ?? '—'}
               </TableCell>
-              <TableCell className={`text-sm ${isOverdue ? 'text-red-500 font-medium' : 'text-muted-foreground'}`}>
-                {job.nextActionAtUtc ? new Date(job.nextActionAtUtc).toLocaleDateString() : '—'}
-                {isOverdue && ' ⚠'}
+              <TableCell
+                data-overdue={isOverdue || undefined}
+                className={cn('text-sm', isOverdue ? 'text-destructive' : 'text-muted-foreground')}
+              >
+                <span className="inline-flex items-center gap-1">
+                  {isOverdue && <TriangleAlert aria-hidden className="size-3.5 shrink-0" />}
+                  {formatDate(job.nextActionAtUtc) ?? '—'}
+                </span>
               </TableCell>
             </TableRow>
           );
