@@ -1,4 +1,5 @@
 import { formatDistance } from "date-fns";
+import { formatDate, formatSalary } from "@/lib/format";
 import type { JobDto, JobStatus, Priority } from "@/lib/api/model";
 
 export function isOverdue(value?: string | null, now: Date = new Date()): boolean {
@@ -12,8 +13,7 @@ export function formatRelativeDate(value?: string | null, now: Date = new Date()
 }
 
 export function formatShortDate(value?: string | null): string | null {
-  if (!value) return null;
-  return new Date(value).toLocaleDateString();
+  return formatDate(value);
 }
 
 export function formatMoneyRange(
@@ -22,12 +22,7 @@ export function formatMoneyRange(
   currency?: string | null,
   period?: string | null,
 ): string | null {
-  if (min == null) return null;
-  const cur = currency ?? "";
-  const lo = Number(min).toLocaleString();
-  const hi = max != null ? `–${Number(max).toLocaleString()}` : "+";
-  const per = period ? ` / ${period}` : "";
-  return `${cur} ${lo}${hi}${per}`.trim();
+  return formatSalary(min, max, currency, period);
 }
 
 export function formatLocation(
