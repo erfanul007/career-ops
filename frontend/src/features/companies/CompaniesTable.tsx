@@ -13,7 +13,7 @@ export function CompaniesTable({ companies, onEdit, onDelete }: Props) {
       <TableHeader>
         <TableRow>
           <TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>Market</TableHead>
-          <TableHead>Comp.</TableHead><TableHead>Location</TableHead><TableHead></TableHead>
+          <TableHead>Compensation</TableHead><TableHead>Location</TableHead><TableHead className="w-0"></TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
