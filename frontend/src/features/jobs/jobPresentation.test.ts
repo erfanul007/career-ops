@@ -37,10 +37,13 @@ describe("formatLocation", () => {
 });
 
 describe("getPriorityPresentation", () => {
-  it("shows only High", () => {
-    expect(getPriorityPresentation("High").show).toBe(true);
-    expect(getPriorityPresentation("Medium").show).toBe(false);
-    expect(getPriorityPresentation("Low").show).toBe(false);
+  it("returns a label, a dot class, and a High flag", () => {
+    const high = getPriorityPresentation("High");
+    expect(high.label).toBe("High");
+    expect(high.isHigh).toBe(true);
+    expect(high.dotClassName.length).toBeGreaterThan(0);
+    expect(getPriorityPresentation("Medium").isHigh).toBe(false);
+    expect(getPriorityPresentation("Low").isHigh).toBe(false);
   });
 });
 

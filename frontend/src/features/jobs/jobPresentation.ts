@@ -33,8 +33,14 @@ export function formatLocation(
   return job.locationText ?? null;
 }
 
-export function getPriorityPresentation(priority: Priority): { label: string; show: boolean } {
-  return { label: priority, show: priority === "High" };
+const PRIORITY_DOT: Record<Priority, string> = {
+  Low: "bg-muted-foreground/40",
+  Medium: "bg-muted-foreground/70",
+  High: "bg-destructive",
+};
+
+export function getPriorityPresentation(priority: Priority): { label: Priority; dotClassName: string; isHigh: boolean } {
+  return { label: priority, dotClassName: PRIORITY_DOT[priority], isHigh: priority === "High" };
 }
 
 const STATUS_DOT: Record<JobStatus, string> = {

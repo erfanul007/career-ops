@@ -73,13 +73,13 @@ export function JobCard({ job, onClick, isDragging }: Props) {
         (isDragging || isBeingDragged) && 'opacity-40',
       )}
     >
-      {priority.show && (
+      {priority.isHigh && (
         <span aria-hidden className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-destructive" />
       )}
       <CardContent className="space-y-1.5 p-3">
         <div className="flex items-start justify-between gap-2">
           <p className="truncate text-xs text-muted-foreground">{job.companyName}</p>
-          {priority.show && (
+          {priority.isHigh && (
             <span className="shrink-0 text-[10px] font-medium text-destructive">{priority.label}</span>
           )}
         </div>
