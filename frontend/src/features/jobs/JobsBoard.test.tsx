@@ -4,23 +4,24 @@ import { renderWithProviders } from "@/test/utils";
 import { JobsBoard } from "./JobsBoard";
 import type { JobDto } from "@/lib/api/model";
 
-const job = (id: number, status: JobDto["status"]): JobDto => ({
+const job = (id: number, status: JobDto["status"], over: Partial<JobDto> = {}): JobDto => ({
   id, companyId: 1, companyName: "Northwind Synthetics", title: `Role ${id}`,
   status, priority: "Medium", source: "CompanySite", sourceUrl: null,
   country: "Norway", city: null, locationText: null, remoteMode: "Remote", employmentType: "FullTime",
   salaryMin: null, salaryMax: null, salaryCurrency: null, salaryPeriod: "Annual",
   deadlineAtUtc: null, appliedAtUtc: null, lastContactedAtUtc: null, nextActionAtUtc: null,
   fitScore: null, notes: null, createdAtUtc: "2026-06-01T00:00:00Z", updatedAtUtc: "2026-06-01T00:00:00Z",
+  ...over,
 });
 
 describe("JobsBoard", () => {
   beforeEach(() => localStorage.clear());
 
-  it("renders active status columns with their cards", () => {
+  it("renders the status column header and a card", () => {
     renderWithProviders(
       <JobsBoard jobs={[job(1, "Applied")]} groupBy="status" listParams={{}} onJobClick={() => {}} />,
     );
-    expect(screen.getAllByText("Applied").length).toBeGreaterThanOrEqual(2); // column header + card status chip
+    expect(screen.getAllByText("Applied").length).toBeGreaterThanOrEqual(2); // header + card chip
     expect(screen.getByText("Role 1")).toBeInTheDocument();
   });
 
@@ -33,15 +34,22 @@ describe("JobsBoard", () => {
     renderWithProviders(
       <JobsBoard jobs={[job(1, "Applied"), job(2, "Rejected")]} groupBy="status" listParams={{}} onJobClick={() => {}} />,
     );
-    expect(screen.getAllByText("Applied").length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText("Rejected")).not.toBeInTheDocument();
     expect(screen.queryByText("Role 2")).not.toBeInTheDocument();
   });
 
-  it("offers a Columns menu to toggle status-column visibility", () => {
+  it("offers a Columns menu in every grouping", () => {
     renderWithProviders(
-      <JobsBoard jobs={[job(1, "Applied")]} groupBy="status" listParams={{}} onJobClick={() => {}} />,
+      <JobsBoard jobs={[job(1, "Applied")]} groupBy="country" listParams={{}} onJobClick={() => {}} />,
     );
     expect(screen.getByRole("button", { name: /columns/i })).toBeInTheDocument();
+  });
+
+  it("renders a lane banner when grouped by country", () => {
+    renderWithProviders(
+      <JobsBoard jobs={[job(1, "Applied", { country: "Norway" })]} groupBy="country" listParams={{}} onJobClick={() => {}} />,
+    );
+    expect(screen.getByRole("button", { name: /Norway/ })).toBeInTheDocument();
+    expect(screen.getByText("Role 1")).toBeInTheDocument();
   });
 });

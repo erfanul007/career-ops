@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent, closestCenter, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { ChevronDown } from 'lucide-react';
@@ -6,9 +6,12 @@ import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu';
-import { BoardColumn } from './BoardColumn';
+import { BoardColumnHeader } from './BoardColumnHeader';
+import { BoardLane } from './BoardLane';
 import { JobCardPreview } from './JobCardPreview';
 import { useJobMutations } from './useJobMutations';
+import { useCollapsedLanes } from './useCollapsedLanes';
+import { buildLanes, laneKeyOf } from './jobGrouping';
 import { getListJobsQueryKey } from '@/lib/api/jobs/jobs';
 import type { JobDto, JobStatus, ListJobsParams } from '@/lib/api/model';
 
@@ -18,9 +21,8 @@ const ACTIVE_STATUSES: JobStatus[] = ['Discovered', 'Interested', 'Applied', 'In
 const CLOSED_STATUSES: JobStatus[] = ['Rejected', 'Ghosted', 'Withdrawn', 'Archived'];
 const ALL_STATUSES: JobStatus[] = [...ACTIVE_STATUSES, ...CLOSED_STATUSES];
 const HIDDEN_STORAGE_KEY = 'careerops:jobs:hidden-status-columns';
+const BOARD_COL_WIDTH = '18rem';
 
-// Which status columns are hidden. Persisted across reloads; defaults to the
-// closed statuses so the board opens focused on the active pipeline.
 function loadHiddenStatuses(): JobStatus[] {
   try {
     const raw = localStorage.getItem(HIDDEN_STORAGE_KEY);
@@ -40,29 +42,14 @@ interface Props {
   onJobClick: (id: number) => void;
 }
 
-function groupJobs(jobs: JobDto[], groupBy: GroupBy): { key: string; label: string; jobs: JobDto[] }[] {
-  if (groupBy === 'country') {
-    const keys = [...new Set(jobs.map(j => j.country ?? 'Unknown'))].sort();
-    return keys.map(k => ({ key: k, label: k, jobs: jobs.filter(j => (j.country ?? 'Unknown') === k) }));
-  }
-  if (groupBy === 'company') {
-    const keys = [...new Set(jobs.map(j => j.companyName))].sort();
-    return keys.map(k => ({ key: k, label: k, jobs: jobs.filter(j => j.companyName === k) }));
-  }
-  return ALL_STATUSES.map(s => ({
-    key: s, label: s, jobs: jobs.filter(j => j.status === s),
-  }));
-}
-
 export function JobsBoard({ jobs, groupBy, listParams, onJobClick }: Props) {
   const [hiddenStatuses, setHiddenStatuses] = useState<JobStatus[]>(loadHiddenStatuses);
   const [activeJob, setActiveJob] = useState<JobDto | null>(null);
+  const { isCollapsed, toggle } = useCollapsedLanes(groupBy);
   const qc = useQueryClient();
   const { transition } = useJobMutations();
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   const toggleStatusColumn = (status: JobStatus) => {
     setHiddenStatuses(prev => {
@@ -81,10 +68,9 @@ export function JobsBoard({ jobs, groupBy, listParams, onJobClick }: Props) {
     );
   }
 
-  const allGroups = groupJobs(jobs, groupBy);
-  const visibleGroups = groupBy === 'status'
-    ? allGroups.filter(g => !hiddenStatuses.includes(g.key as JobStatus))
-    : allGroups;
+  const visibleStatuses = ALL_STATUSES.filter(s => !hiddenStatuses.includes(s));
+  const lanes = buildLanes(jobs, groupBy);
+  const showBanner = groupBy !== 'status';
 
   const handleDragStart = ({ active }: DragStartEvent) => {
     setActiveJob(jobs.find(j => j.id === active.id) ?? null);
@@ -92,11 +78,19 @@ export function JobsBoard({ jobs, groupBy, listParams, onJobClick }: Props) {
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     setActiveJob(null);
-    if (groupBy !== 'status' || !over) return;
+    if (!over) return;
 
     const job = jobs.find(j => j.id === active.id);
-    const toStatus = over.id as JobStatus;
-    if (!job || job.status === toStatus) return;
+    if (!job) return;
+
+    const raw = String(over.id);
+    const idx = raw.lastIndexOf('::');
+    if (idx < 0) return;
+    const toLaneKey = raw.slice(0, idx);
+    const toStatus = raw.slice(idx + 2) as JobStatus;
+
+    if (job.status === toStatus) return;
+    if (laneKeyOf(job, groupBy) !== toLaneKey) return; // ignore cross-lane drops
 
     const key = getListJobsQueryKey(listParams);
     const prevData = qc.getQueryData(key);
@@ -111,10 +105,16 @@ export function JobsBoard({ jobs, groupBy, listParams, onJobClick }: Props) {
   };
 
   const isDragActive = activeJob !== null;
+  const boardStyle = { '--board-col': BOARD_COL_WIDTH } as CSSProperties;
 
-  const columns = (
-    <div className="flex h-full min-h-0 flex-col gap-2">
-      {groupBy === 'status' && (
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="flex h-full min-h-0 flex-col gap-2">
         <div className="flex justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -137,35 +137,34 @@ export function JobsBoard({ jobs, groupBy, listParams, onJobClick }: Props) {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      )}
-      <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-2">
-        {visibleGroups.length === 0 ? (
+
+        {visibleStatuses.length === 0 ? (
           <p className="m-auto text-sm text-muted-foreground">
             All status columns are hidden. Use the Columns menu to show some.
           </p>
         ) : (
-          visibleGroups.map(group => (
-            <BoardColumn
-              key={group.key}
-              label={group.label}
-              jobs={group.jobs}
-              onJobClick={onJobClick}
-              isDragActive={isDragActive}
-            />
-          ))
+          <div className="min-h-0 flex-1 overflow-auto pb-2">
+            <div className="min-w-max" style={boardStyle}>
+              <BoardColumnHeader statuses={visibleStatuses} />
+              <div className="flex flex-col gap-3 pt-2">
+                {lanes.map(lane => (
+                  <BoardLane
+                    key={lane.key}
+                    lane={lane}
+                    statuses={visibleStatuses}
+                    showBanner={showBanner}
+                    collapsed={isCollapsed(lane.key)}
+                    onToggle={toggle}
+                    onJobClick={onJobClick}
+                    isDragActive={isDragActive}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
         )}
       </div>
-    </div>
-  );
 
-  return groupBy === 'status' ? (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      {columns}
       <DragOverlay>
         {activeJob && (
           <div className="pointer-events-none rotate-[0.5deg] scale-[1.01] rounded-lg shadow-xl ring-1 ring-ring/40 transform-gpu">
@@ -174,5 +173,5 @@ export function JobsBoard({ jobs, groupBy, listParams, onJobClick }: Props) {
         )}
       </DragOverlay>
     </DndContext>
-  ) : columns;
+  );
 }
