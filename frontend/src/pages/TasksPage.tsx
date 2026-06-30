@@ -15,7 +15,9 @@ import type { FollowUpStatus } from '@/lib/api/model';
 import { toast } from 'sonner';
 import { PageShell } from '@/components/layout/PageShell';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { EmptyState } from '@/components/EmptyState';
 import { formatDate } from '@/lib/format';
+import { CheckSquare } from 'lucide-react';
 
 type DueFilter = 'all' | 'today' | 'overdue';
 
@@ -82,7 +84,7 @@ export default function TasksPage() {
           {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
         </div>
       ) : tasks.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-4">No tasks found.</p>
+        <EmptyState icon={CheckSquare} title="No tasks found" hint="Follow-ups you create on jobs show up here." />
       ) : (
         <div className="space-y-2">
           {tasks.map(task => {
