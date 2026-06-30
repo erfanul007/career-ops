@@ -856,3 +856,41 @@ only by adding a new dated entry here — never silently. All entries below are 
 - **Counterargument / risk:** a new dev toolchain + config surface to maintain, and `tsc -b` now typechecks
   `*.test.tsx`. Accepted — small, conventional Vite + Vitest setup; tests are colocated and focused.
 
+### D58 — Shared `PageShell`/`PageHeader` own page padding, width, and rhythm
+- **Date:** 2026-06-30
+- **Decision:** `AppLayout`'s content region is `min-h-0 flex-1 overflow-hidden` (no padding, no scroll);
+  `PageShell` is the **sole** owner of page padding (`px-6 py-6`), centered width, scroll, and the
+  `space-y-6` section rhythm. Two width tokens: `default` (`max-w-5xl`) for data/list/table/detail pages,
+  `narrow` (`max-w-2xl`) for single-column forms. The Jobs board uses `variant="full"`
+  (`flex h-full min-h-0 flex-col gap-4`) and keeps its own horizontal scroll. `PageHeader` owns the single
+  page-title treatment (`text-xl font-semibold`) + optional description + an actions slot. Spec/plan:
+  `2026-06-30-careerops-ui-alignment-restructure-*`.
+- **Why:** Every page previously invented its own container (5 different widths, double-`p-6` on
+  Dashboard/Tasks, `text-xl` vs `text-2xl` headings). Enforcing the container once makes alignment
+  **structural** — pages cannot double-pad or drift again by construction. Highest-RoI, lowest-maintenance
+  fix; no new dependencies.
+- **Rejected:** per-page container fixes (drift returns); full-bleed everywhere (loses the calm,
+  intentional reading width); a single app-wide width incl. the board (board needs full-bleed + horizontal
+  scroll).
+- **Counterargument / risk:** a shared shell is one more abstraction and a forced rhythm some pages might
+  fight. Accepted — two tiny components, no ceremony, and the `width`/`variant` props cover the real cases.
+
+### D59 — Calm design-token colors with one risk accent; status-dot legend retained
+- **Date:** 2026-06-30
+- **Decision:** Replace raw Tailwind palette classes (`text-red-500`, `bg-*-100`, etc.) and the `⚠` glyph
+  across the changed pages/tables with design tokens and shadcn `Badge` variants; the single `destructive`
+  token is the only accent, reserved for overdue/urgent (overdue uses the `TriangleAlert` icon). **Exception
+  (intentional, not a miss):** the 9-way status-dot legend (`STATUS_DOT`/`STATUS_ACCENT` in
+  `jobPresentation.ts`) is **retained** as a deliberate categorical encoding (Linear/Jira-style) — calming it
+  to neutral would destroy at-a-glance column differentiation. Dashboard's three identical bordered rows were
+  extracted into a shared `ListRow`; the **Tasks** row was **not** folded in (single instance, different
+  shape — badge + two action buttons — so YAGNI).
+- **Why:** Org "calm, no noisy colors" direction + design-token system + dark-mode correctness (raw `*-100`
+  classes don't adapt). One accent keeps risk legible without noise.
+- **Out of scope (tracked follow-up):** the `JobDetailDrawer` internals (`ActivitiesTab`, `TimelineTab`)
+  still carry raw palette + a bare `toLocaleString` — deliberately left "as-is" by the restructure spec
+  (just-polished). A later slice should tokenize them and route their dates through `lib/format.ts` so the
+  "calm tokens + locale formatting everywhere" goal is repo-complete.
+- **Rejected:** keeping semantic green/yellow/red badges (noisy, off-direction); calming the status dots too
+  (loses categorical meaning).
+
