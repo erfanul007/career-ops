@@ -38,6 +38,15 @@ describe("JobCard", () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
+  it("opens on Space and prevents default scroll", () => {
+    const onClick = vi.fn();
+    renderWithProviders(<JobCard job={baseJob} onClick={onClick} />);
+    const card = screen.getByRole("button", { name: /Northwind Synthetics/ });
+    const prevented = !fireEvent.keyDown(card, { key: " " });
+    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(prevented).toBe(true);
+  });
+
   it("flags an overdue next action with an alert", () => {
     renderWithProviders(
       <JobCard job={{ ...baseJob, nextActionAtUtc: "2000-01-01T00:00:00Z" }} onClick={() => {}} />,

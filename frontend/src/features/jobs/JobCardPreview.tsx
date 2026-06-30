@@ -44,10 +44,10 @@ export function JobCardPreview({ job }: { job: JobDto }) {
           )}
           <span className="shrink-0 font-mono text-[10px] text-muted-foreground">JOB-{job.id}</span>
         </div>
-        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span aria-hidden className={cn('size-2 rounded-full', status.dotClassName)} />
           {status.label}
-        </span>
+        </p>
       </CardContent>
     </Card>
   );
