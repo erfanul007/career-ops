@@ -831,3 +831,28 @@ only by adding a new dated entry here — never silently. All entries below are 
   in `Directory.Packages.props` (harmless under central package management; other projects pull EF
   Core transitively via Relational/Npgsql/InMemory).
 
+### D57 — Dev-only Vitest + React Testing Library harness for the frontend
+- **Date:** 2026-06-30
+- **Decision:** Add a frontend test harness — `vitest`, `@testing-library/react`, `@testing-library/jest-dom`,
+  `jsdom` — as **dev-only** dependencies (installed via `npm --prefix frontend install -D`, per D19).
+  Config: a `test` block in `vite.config.ts` (jsdom env, `globals`, `src/test/setup.ts`), `vitest/globals`
+  added to `tsconfig.app.json` `types`, and `test` / `test:watch` scripts in `package.json`. Tests assert
+  behaviour / accessibility / data presence — never Tailwind class strings; drag, sticky-scroll, responsive
+  widths, and motion stay manual QA.
+- **Why:** The Jobs UI polish work (spec `2026-06-29-careerops-jobs-ui-polish.md`) introduces a pure
+  presentation helper module (`jobPresentation.ts`) and several recomposed components whose behaviour
+  (card hierarchy, keyboard-open, overdue flagging, 3-tab structure, collapsible toggle) is worth
+  regression-testing. The frontend previously had no test runner; the org rule "include tests with
+  non-trivial changes" applies.
+- **Scope / impact:** **Dev-only** — zero runtime/bundle impact; `vite build` output unchanged. `just verify`
+  keeps its frontend gate (typecheck + build); `npm --prefix frontend run test` runs per task during the UI
+  work and may be wired into `just verify` / CI later.
+- **Supersedes:** the "no frontend test runner (intentional)" note in **D26** and the
+  server-authoritative-only framing of **D23**, for **test tooling only** — both still stand for
+  runtime/validation concerns.
+- **Rejected:** runner in runtime deps (wrong scope); a heavier stack (Playwright / MSW) before any unit
+  need (YAGNI — drag/responsive stay manual); staying typecheck+build-only (loses regression cover on the
+  new pure helpers + recomposed components).
+- **Counterargument / risk:** a new dev toolchain + config surface to maintain, and `tsc -b` now typechecks
+  `*.test.tsx`. Accepted — small, conventional Vite + Vitest setup; tests are colocated and focused.
+
