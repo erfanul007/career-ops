@@ -1,10 +1,11 @@
-import { Link } from 'react-router';
 import { useGetDashboardSummary } from '@/lib/api/dashboard/dashboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { JobStatus } from '@/lib/api/model';
 import { PageShell } from '@/components/layout/PageShell';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { ListRow } from '@/components/ListRow';
+import { formatDate } from '@/lib/format';
 
 const STATUS_ORDER: JobStatus[] = ['Discovered', 'Interested', 'Applied', 'Interviewing', 'Offered'];
 
@@ -85,16 +86,13 @@ export default function DashboardPage() {
           <h2 className="text-sm font-medium text-muted-foreground mb-2">Upcoming activities (next 7 days)</h2>
           <div className="space-y-2">
             {summary.upcomingActivities.map(a => (
-              <div key={a.activityId as number} className="flex items-center justify-between p-3 rounded-md border text-sm">
-                <div>
-                  <Link to={`/jobs/${a.jobId}`} className="font-medium hover:underline">{a.jobTitle}</Link>
-                  <span className="text-muted-foreground"> · {a.companyName}</span>
-                  <p className="text-xs text-muted-foreground">{a.activityLabel}</p>
-                </div>
-                <p className="text-xs text-muted-foreground shrink-0">
-                  {new Date(a.scheduledAtUtc).toLocaleDateString()}
-                </p>
-              </div>
+              <ListRow
+                key={a.activityId as number}
+                to={`/jobs/${a.jobId}`}
+                title={a.jobTitle}
+                subtitle={`${a.companyName} — ${a.activityLabel}`}
+                meta={formatDate(a.scheduledAtUtc)}
+              />
             ))}
           </div>
         </section>
@@ -105,13 +103,7 @@ export default function DashboardPage() {
           <h2 className="text-sm font-medium text-muted-foreground mb-2">Stale jobs</h2>
           <div className="space-y-2">
             {summary.staleJobs.map(j => (
-              <div key={j.id as number} className="flex items-center justify-between p-3 rounded-md border text-sm">
-                <div>
-                  <Link to={`/jobs/${j.id}`} className="font-medium hover:underline">{j.title}</Link>
-                  <span className="text-muted-foreground"> · {j.companyName}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">{j.status}</p>
-              </div>
+              <ListRow key={j.id as number} to={`/jobs/${j.id}`} title={j.title} subtitle={j.companyName} meta={j.status} />
             ))}
           </div>
         </section>
@@ -122,15 +114,13 @@ export default function DashboardPage() {
           <h2 className="text-sm font-medium text-muted-foreground mb-2">Offer deadlines</h2>
           <div className="space-y-2">
             {summary.offerDeadlines.map(o => (
-              <div key={o.jobId as number} className="flex items-center justify-between p-3 rounded-md border text-sm">
-                <div>
-                  <Link to={`/jobs/${o.jobId}`} className="font-medium hover:underline">{o.title}</Link>
-                  <span className="text-muted-foreground"> · {o.companyName}</span>
-                </div>
-                <p className="text-xs font-medium text-orange-500">
-                  {new Date(o.offerDeadlineAtUtc).toLocaleDateString()}
-                </p>
-              </div>
+              <ListRow
+                key={o.jobId as number}
+                to={`/jobs/${o.jobId}`}
+                title={o.title}
+                subtitle={o.companyName}
+                meta={<span className="font-medium text-destructive">{formatDate(o.offerDeadlineAtUtc)}</span>}
+              />
             ))}
           </div>
         </section>
