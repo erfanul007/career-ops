@@ -94,3 +94,11 @@ public sealed class UpsertPropertyRequestValidator : AbstractValidator<UpsertPro
         RuleFor(x => x.Value).MaximumLength(4000).When(x => x.Value is not null);
     }
 }
+
+public sealed class SetJobPriorityRequestValidator : AbstractValidator<SetJobPriorityRequest>
+{
+    public SetJobPriorityRequestValidator()
+    {
+        RuleFor(x => x.ToPriority).IsInEnum();
+    }
+}

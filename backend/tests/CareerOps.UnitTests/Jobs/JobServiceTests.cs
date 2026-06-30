@@ -141,4 +141,30 @@ public sealed class JobServiceTests
         Assert.Equal("Engineer", job.Title);
         Assert.Equal("Acme", job.CompanyName);
     }
+
+    [Fact]
+    public async Task SetPriorityAsync_updates_priority()
+    {
+        var clock = new TestClock(new DateTime(2026, 6, 30, 0, 0, 0, DateTimeKind.Utc));
+        await using var db = NewDb(clock);
+        var company = await SeedCompany(db);
+        var svc = MakeService(db, clock);
+        var created = await svc.CreateJobAsync(NewJob(companyId: company.Id));
+
+        var ok = await svc.SetPriorityAsync(created.Id, Priority.High);
+
+        Assert.True(ok);
+        var reloaded = await svc.GetJobDetailAsync(created.Id);
+        Assert.Equal(Priority.High, reloaded!.Priority);
+    }
+
+    [Fact]
+    public async Task SetPriorityAsync_returns_false_when_missing()
+    {
+        var clock = new TestClock(new DateTime(2026, 6, 30, 0, 0, 0, DateTimeKind.Utc));
+        await using var db = NewDb(clock);
+        var svc = MakeService(db, clock);
+
+        Assert.False(await svc.SetPriorityAsync(999, Priority.High));
+    }
 }

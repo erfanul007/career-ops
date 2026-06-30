@@ -64,6 +64,14 @@ public static class JobEndpoints
         .WithName("TransitionJob")
         .AddEndpointFilter<ValidationFilter<TransitionJobRequest>>();
 
+        jobs.MapPost("/{id:int}/priority", async (int id, SetJobPriorityRequest req, JobService svc) =>
+        {
+            var updated = await svc.SetPriorityAsync(id, req.ToPriority);
+            return updated ? Results.NoContent() : Results.NotFound();
+        })
+        .WithName("SetJobPriority")
+        .AddEndpointFilter<ValidationFilter<SetJobPriorityRequest>>();
+
         jobs.MapGet("/{id:int}/timeline", async (int id, JobTimelineService svc) =>
             TypedResults.Ok(await svc.GetTimelineAsync(id)))
             .WithName("GetJobTimeline");

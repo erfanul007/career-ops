@@ -1,5 +1,6 @@
 using CareerOps.Application.Common;
 using CareerOps.Application.Companies;
+using CareerOps.Domain.Common;
 using CareerOps.Domain.Jobs;
 using Mapster;
 
@@ -114,6 +115,15 @@ public sealed class JobService(
         var job = await jobs.FindByIdAsync(id, ct);
         if (job is null) return false;
         jobs.Remove(job);
+        await uow.SaveChangesAsync(ct);
+        return true;
+    }
+
+    public async Task<bool> SetPriorityAsync(int id, Priority priority, CancellationToken ct = default)
+    {
+        var job = await jobs.FindByIdAsync(id, ct);
+        if (job is null) return false;
+        job.Priority = priority;
         await uow.SaveChangesAsync(ct);
         return true;
     }
