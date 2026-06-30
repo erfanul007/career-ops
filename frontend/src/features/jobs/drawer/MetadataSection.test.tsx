@@ -14,4 +14,10 @@ describe("MetadataSection", () => {
     const { container } = render(<MetadataSection title="Location" rows={[["City", null], ["Country", ""]]} />);
     expect(container).toBeEmptyDOMElement();
   });
+
+  it("keeps a falsy-but-valid value (0)", () => {
+    render(<MetadataSection title="Stats" rows={[["Count", 0]]} />);
+    expect(screen.getByText("Count")).toBeInTheDocument();
+    expect(screen.getByText("0")).toBeInTheDocument();
+  });
 });
