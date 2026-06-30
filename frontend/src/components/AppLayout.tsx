@@ -6,6 +6,7 @@ import {
   SidebarProvider, SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { useGetUserProfile } from "@/lib/api/settings/settings";
+import { Logo } from "@/components/Logo";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -23,7 +24,10 @@ export function AppLayout() {
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon">
-        <SidebarHeader className="px-3 py-2 text-lg font-semibold">CareerOps</SidebarHeader>
+        <SidebarHeader className="flex-row items-center gap-2 px-3 py-2">
+          <Logo className="size-7 shrink-0" />
+          <span className="text-lg font-semibold">CareerOps</span>
+        </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupContent>
