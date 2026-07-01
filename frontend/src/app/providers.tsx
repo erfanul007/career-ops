@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider, MutationCache } from "@tanstack/react-query";
 import type { PropsWithChildren } from "react";
+import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -13,9 +14,11 @@ const queryClient: QueryClient = new QueryClient({
 
 export function Providers({ children }: PropsWithChildren) {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider delayDuration={0}>{children}</TooltipProvider>
-      <Toaster richColors position="top-right" />
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider delayDuration={0}>{children}</TooltipProvider>
+        <Toaster richColors position="top-right" />
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }

@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useGetUserProfile } from "@/lib/api/settings/settings";
 import { Logo } from "@/components/Logo";
+import { ModeToggle } from "@/components/ModeToggle";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -56,6 +57,9 @@ export function AppLayout() {
       <SidebarInset className="h-svh overflow-hidden">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger />
+          <div className="ml-auto flex items-center gap-2">
+            <ModeToggle />
+          </div>
         </header>
         <div className="min-h-0 flex-1 overflow-hidden">
           <Outlet />

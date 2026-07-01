@@ -991,3 +991,16 @@ Comparator (`compareJobs`) sorts nulls last in both directions; priority ranks
 High > Medium > Low. No backend/API/orval change (jobs are fully client-loaded; filtering
 is already client-side). No audit-trail, approval-workflow, or document-control impact.
 
+### D65 — Dark mode via next-themes (2026-07-01)
+Added app-wide Light/Dark/System theming using `next-themes`. `ThemeProvider`
+(`components/theme-provider.tsx`) wraps the app outermost in `app/providers.tsx`, applying
+the resolved theme as a class on `<html>`. A `ModeToggle` dropdown (sun/moon icon button,
+Light/Dark/System items) is mounted in the `AppLayout` header, right-aligned next to the
+sidebar trigger. The dark palette reuses the shadcn-generated `.dark` block already shipped
+in `index.css`, with one fix: `--sidebar-primary`/`--sidebar-primary-foreground` were a stray
+non-neutral blue (`oklch(0.488 0.243 264.376)`) left over from the template; changed to the
+neutral grays (`oklch(0.922 0 0)` / `oklch(0.205 0 0)`) consistent with the rest of the dark
+palette. Theme choice persists via `next-themes`' own localStorage key; System mode follows
+OS `prefers-color-scheme`. No backend/API/orval change — client-only presentation change,
+no audit-trail, approval-workflow, or document-control impact.
+
