@@ -7,6 +7,7 @@ import { JobPriorityDropdown } from './JobPriorityDropdown';
 import { JobActionsMenu } from './JobActionsMenu';
 import { buildLanes } from './jobGrouping';
 import { useCollapsedLanes } from './useCollapsedLanes';
+import { TABLE_COLUMNS, type TableColumnKey } from './jobTableColumns';
 import { cn } from '@/lib/utils';
 import { formatDate, formatSalary } from '@/lib/format';
 import type { JobDto } from '@/lib/api/model';
@@ -15,47 +16,73 @@ import type { GroupBy } from './jobFilters';
 interface Props {
   jobs: JobDto[];
   groupBy: GroupBy;
+  hiddenColumns?: TableColumnKey[];
   onJobClick: (id: number) => void;
 }
 
-function JobRow({ job, onJobClick }: { job: JobDto; onJobClick: (id: number) => void }) {
-  const isOverdue = Boolean(job.nextActionAtUtc && new Date(job.nextActionAtUtc) < new Date());
+function Cell({ column, job }: { column: TableColumnKey; job: JobDto }) {
+  switch (column) {
+    case 'id':
+      return (
+        <TableCell onClick={e => e.stopPropagation()}>
+          <Link to={`/jobs/${job.id}`} target="_blank" rel="noopener noreferrer"
+            className="font-mono text-xs text-muted-foreground hover:text-foreground hover:underline">
+            JOB-{job.id}
+          </Link>
+        </TableCell>
+      );
+    case 'company':
+      return <TableCell className="font-medium">{job.companyName}</TableCell>;
+    case 'title':
+      return <TableCell>{job.title}</TableCell>;
+    case 'status':
+      return (
+        <TableCell onClick={e => e.stopPropagation()}>
+          <JobStatusDropdown jobId={job.id as number} currentStatus={job.status} />
+        </TableCell>
+      );
+    case 'priority':
+      return (
+        <TableCell onClick={e => e.stopPropagation()}>
+          <JobPriorityDropdown jobId={job.id as number} currentPriority={job.priority} />
+        </TableCell>
+      );
+    case 'location':
+      return (
+        <TableCell className="text-sm text-muted-foreground">
+          {[job.city, job.country].filter(Boolean).join(', ')}
+          {job.remoteMode !== 'OnSite' && ` · ${job.remoteMode}`}
+        </TableCell>
+      );
+    case 'salary':
+      return (
+        <TableCell className="text-right text-sm tabular-nums">
+          {formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency) ?? '—'}
+        </TableCell>
+      );
+    case 'applied':
+      return <TableCell className="text-sm text-muted-foreground">{formatDate(job.appliedAtUtc) ?? '—'}</TableCell>;
+    case 'nextAction': {
+      const isOverdue = Boolean(job.nextActionAtUtc && new Date(job.nextActionAtUtc) < new Date());
+      return (
+        <TableCell
+          data-overdue={isOverdue || undefined}
+          className={cn('text-sm', isOverdue ? 'text-destructive' : 'text-muted-foreground')}
+        >
+          <span className="inline-flex items-center gap-1">
+            {isOverdue && <TriangleAlert aria-hidden className="size-3.5 shrink-0" />}
+            {formatDate(job.nextActionAtUtc) ?? '—'}
+          </span>
+        </TableCell>
+      );
+    }
+  }
+}
+
+function JobRow({ columns, job, onJobClick }: { columns: TableColumnKey[]; job: JobDto; onJobClick: (id: number) => void }) {
   return (
-    <TableRow
-      className="cursor-pointer hover:bg-muted/50"
-      onClick={() => onJobClick(job.id as number)}
-    >
-      <TableCell onClick={e => e.stopPropagation()}>
-        <Link to={`/jobs/${job.id}`} target="_blank" rel="noopener noreferrer"
-          className="font-mono text-xs text-muted-foreground hover:text-foreground hover:underline">
-          JOB-{job.id}
-        </Link>
-      </TableCell>
-      <TableCell className="font-medium">{job.companyName}</TableCell>
-      <TableCell>{job.title}</TableCell>
-      <TableCell onClick={e => e.stopPropagation()}>
-        <JobStatusDropdown jobId={job.id as number} currentStatus={job.status} />
-      </TableCell>
-      <TableCell onClick={e => e.stopPropagation()}>
-        <JobPriorityDropdown jobId={job.id as number} currentPriority={job.priority} />
-      </TableCell>
-      <TableCell className="text-sm text-muted-foreground">
-        {[job.city, job.country].filter(Boolean).join(', ')}
-        {job.remoteMode !== 'OnSite' && ` · ${job.remoteMode}`}
-      </TableCell>
-      <TableCell className="text-right text-sm tabular-nums">
-        {formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency) ?? '—'}
-      </TableCell>
-      <TableCell className="text-sm text-muted-foreground">{formatDate(job.appliedAtUtc) ?? '—'}</TableCell>
-      <TableCell
-        data-overdue={isOverdue || undefined}
-        className={cn('text-sm', isOverdue ? 'text-destructive' : 'text-muted-foreground')}
-      >
-        <span className="inline-flex items-center gap-1">
-          {isOverdue && <TriangleAlert aria-hidden className="size-3.5 shrink-0" />}
-          {formatDate(job.nextActionAtUtc) ?? '—'}
-        </span>
-      </TableCell>
+    <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => onJobClick(job.id as number)}>
+      {columns.map(c => <Cell key={c} column={c} job={job} />)}
       <TableCell onClick={e => e.stopPropagation()} className="w-8">
         <JobActionsMenu jobId={job.id as number} jobLabel={`JOB-${job.id} — ${job.companyName}`} />
       </TableCell>
@@ -63,25 +90,20 @@ function JobRow({ job, onJobClick }: { job: JobDto; onJobClick: (id: number) => 
   );
 }
 
-export function JobsTable({ jobs, groupBy, onJobClick }: Props) {
+export function JobsTable({ jobs, groupBy, hiddenColumns = [], onJobClick }: Props) {
   const { isCollapsed, toggle } = useCollapsedLanes(groupBy);
   const lanes = buildLanes(jobs, groupBy);
   const grouped = groupBy !== 'status';
-  const COLS = 10;
+  const columns = TABLE_COLUMNS.filter(c => !hiddenColumns.includes(c.key));
+  const colSpan = columns.length + 1;
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>ID</TableHead>
-          <TableHead>Company</TableHead>
-          <TableHead>Title</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Priority</TableHead>
-          <TableHead>Location</TableHead>
-          <TableHead className="text-right">Salary</TableHead>
-          <TableHead>Applied</TableHead>
-          <TableHead>Next action</TableHead>
+          {columns.map(c => (
+            <TableHead key={c.key} className={c.key === 'salary' ? 'text-right' : undefined}>{c.label}</TableHead>
+          ))}
           <TableHead className="w-8" />
         </TableRow>
       </TableHeader>
@@ -92,7 +114,7 @@ export function JobsTable({ jobs, groupBy, onJobClick }: Props) {
             <Fragment key={lane.key}>
               {grouped && (
                 <TableRow className="bg-muted/40 hover:bg-muted/40">
-                  <TableCell colSpan={COLS} className="py-1.5">
+                  <TableCell colSpan={colSpan} className="py-1.5">
                     <button
                       type="button"
                       onClick={() => toggle(lane.key)}
@@ -108,7 +130,7 @@ export function JobsTable({ jobs, groupBy, onJobClick }: Props) {
                   </TableCell>
                 </TableRow>
               )}
-              {!collapsed && lane.jobs.map(job => <JobRow key={job.id as number} job={job} onJobClick={onJobClick} />)}
+              {!collapsed && lane.jobs.map(job => <JobRow key={job.id as number} columns={columns.map(c => c.key)} job={job} onJobClick={onJobClick} />)}
             </Fragment>
           );
         })}

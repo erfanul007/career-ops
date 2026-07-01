@@ -42,4 +42,31 @@ describe("JobsTable", () => {
     expect(screen.getByRole("button", { name: /Norway/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Germany/ })).toBeInTheDocument();
   });
+
+  it('renders every column header when nothing is hidden', () => {
+    renderWithProviders(<JobsTable jobs={[job()]} groupBy="status" hiddenColumns={[]} onJobClick={vi.fn()} />);
+    for (const header of ['ID', 'Company', 'Title', 'Status', 'Priority', 'Location', 'Salary', 'Applied', 'Next action']) {
+      expect(screen.getByRole('columnheader', { name: header })).toBeInTheDocument();
+    }
+    expect(screen.getByText('JOB-1')).toBeInTheDocument();
+  });
+
+  it('omits hidden columns from header and body', () => {
+    const { container } = renderWithProviders(
+      <JobsTable jobs={[job()]} groupBy="status" hiddenColumns={['id', 'nextAction']} onJobClick={vi.fn()} />,
+    );
+    expect(screen.queryByRole('columnheader', { name: 'ID' })).toBeNull();
+    expect(screen.queryByRole('columnheader', { name: 'Next action' })).toBeNull();
+    expect(screen.queryByText('JOB-1')).toBeNull();
+    expect(container.querySelector('[data-overdue]')).toBeNull();
+    expect(screen.getByRole('columnheader', { name: 'Company' })).toBeInTheDocument();
+  });
+
+  it('spans the grouped lane header across the visible columns plus actions', () => {
+    renderWithProviders(
+      <JobsTable jobs={[job({ country: 'Norway' })]} groupBy="country" hiddenColumns={['id', 'nextAction']} onJobClick={vi.fn()} />,
+    );
+    const banner = screen.getByRole('button', { name: /Norway/ }).closest('td');
+    expect(banner).toHaveAttribute('colspan', '8');
+  });
 });
