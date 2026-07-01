@@ -1,5 +1,6 @@
 import type { JobDto, JobStatus, Priority, RemoteMode, EmploymentType, JobSource } from '@/lib/api/model';
 import { formatDate, formatNumber } from '@/lib/format';
+import { DEFAULT_SORT, SORT_FIELDS, type SortField, type SortDir } from './jobSort';
 
 export type GroupBy = 'status' | 'country' | 'company' | 'priority';
 
@@ -17,6 +18,8 @@ export interface JobFilters {
   appliedFrom?: string; // YYYY-MM-DD
   appliedTo?: string;   // YYYY-MM-DD
   groupBy: GroupBy;
+  sortField: SortField;
+  sortDir: SortDir;
 }
 
 export const DEFAULT_FILTERS: JobFilters = {
@@ -25,6 +28,8 @@ export const DEFAULT_FILTERS: JobFilters = {
   sources: [], countries: [], companyIds: [],
   salaryMin: undefined, salaryMax: undefined, appliedFrom: undefined, appliedTo: undefined,
   groupBy: 'status',
+  sortField: DEFAULT_SORT.field,
+  sortDir: DEFAULT_SORT.dir,
 };
 
 export interface FacetOption { value: string; label: string; count: number; }
@@ -185,6 +190,8 @@ export function filtersToUrl(f: JobFilters): URLSearchParams {
   if (f.appliedFrom != null) sp.set('appliedfrom', f.appliedFrom);
   if (f.appliedTo != null) sp.set('appliedto', f.appliedTo);
   if (f.groupBy !== DEFAULT_FILTERS.groupBy) sp.set('group', f.groupBy);
+  if (f.sortField !== DEFAULT_SORT.field) sp.set('sort', f.sortField);
+  if (f.sortDir !== DEFAULT_SORT.dir) sp.set('dir', f.sortDir);
   return sp;
 }
 
@@ -201,6 +208,10 @@ export function parseFiltersFromUrl(sp: URLSearchParams): JobFilters {
   };
   const groupRaw = sp.get('group');
   const groupBy = GROUP_VALUES.includes(groupRaw as GroupBy) ? (groupRaw as GroupBy) : 'status';
+  const sortRaw = sp.get('sort');
+  const sortField: SortField = SORT_FIELDS.some(o => o.value === sortRaw) ? (sortRaw as SortField) : DEFAULT_SORT.field;
+  const dirRaw = sp.get('dir');
+  const sortDir: SortDir = dirRaw === 'asc' || dirRaw === 'desc' ? dirRaw : DEFAULT_SORT.dir;
   return {
     search: sp.get('q') ?? '',
     statuses: sp.getAll('status') as JobStatus[],
@@ -215,5 +226,7 @@ export function parseFiltersFromUrl(sp: URLSearchParams): JobFilters {
     appliedFrom: date('appliedfrom'),
     appliedTo: date('appliedto'),
     groupBy,
+    sortField,
+    sortDir,
   };
 }

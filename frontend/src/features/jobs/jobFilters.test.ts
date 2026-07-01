@@ -151,3 +151,34 @@ describe('URL round-trip', () => {
     expect(parseFiltersFromUrl(new URLSearchParams('appliedto=nope')).appliedTo).toBeUndefined();
   });
 });
+
+describe('sort persistence', () => {
+  it('DEFAULT_FILTERS defaults sort to updated/desc', () => {
+    expect(DEFAULT_FILTERS.sortField).toBe('updated');
+    expect(DEFAULT_FILTERS.sortDir).toBe('desc');
+  });
+
+  it('omits sort params from the URL when they equal the default', () => {
+    const sp = filtersToUrl({ ...DEFAULT_FILTERS });
+    expect(sp.has('sort')).toBe(false);
+    expect(sp.has('dir')).toBe(false);
+  });
+
+  it('encodes non-default sort field and direction', () => {
+    const sp = filtersToUrl({ ...DEFAULT_FILTERS, sortField: 'salary', sortDir: 'asc' });
+    expect(sp.get('sort')).toBe('salary');
+    expect(sp.get('dir')).toBe('asc');
+  });
+
+  it('parses sort field and direction from the URL', () => {
+    const f = parseFiltersFromUrl(new URLSearchParams('sort=company&dir=asc'));
+    expect(f.sortField).toBe('company');
+    expect(f.sortDir).toBe('asc');
+  });
+
+  it('falls back to the default for invalid sort params', () => {
+    const f = parseFiltersFromUrl(new URLSearchParams('sort=bogus&dir=sideways'));
+    expect(f.sortField).toBe('updated');
+    expect(f.sortDir).toBe('desc');
+  });
+});
