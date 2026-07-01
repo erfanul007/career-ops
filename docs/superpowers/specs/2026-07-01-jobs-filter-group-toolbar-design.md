@@ -17,6 +17,21 @@ Design target: a clean Jobs page header with **four controls only** — Search, 
 - **Columns folded into the Group popover.** The board's status-column show/hide control moves out of the board body and into the Group popover; the state is lifted into a shared hook.
 - **Search stays client-side** and renders as its own chip.
 
+### Refinements from review (2026-07-01)
+
+Incorporated after external review:
+
+1. **`companyIds: string[]`**, not `number[]` — `JobDto.companyId` is `number | string`; compare via `String(job.companyId)` to avoid casts and URL-parse mismatch.
+2. **`GroupBy` moves into `jobFilters.ts`** (it is a `JobFilters` field). The 5 current importers (`JobsBoard`, `jobGrouping`, `JobsTable`, `useCollapsedLanes`, and the deleted `JobFilterBar`) repoint to it. *(Differ from review: no new `jobTypes.ts` — one union does not warrant a file.)*
+3. **URL uses repeated params, not CSV** — `?status=Applied&status=Interviewing`, parsed with `URLSearchParams.getAll()`. Robust against comma-bearing values; native idiom.
+4. **Salary filter = range overlap**, not naive floor/ceiling (see §3).
+5. **Applied-date filter = `YYYY-MM-DD` string compare**, inclusive both bounds (see §3).
+6. **All filter/search/group URL writes use `replace: true`** — no browser-history spam. `SearchControl` holds local input state (instant feel) and commits debounced (~250 ms).
+7. **`GroupPopover` columns section gets a single "Reset to default"** action (default = closed statuses hidden). *(Differ from review: one reset, not both "Show all" + "Reset default" — KISS.)*
+8. **Add shadcn `radio-group`** for the group-by control (accessible single-select in the popover).
+9. **Stale/absent selected values stay removable** — `filtersToChips` builds chips from the *selected values*, not from facets; facets only supply labels/counts. Unknown company id → `Company #<id>`, unknown country/source/etc. → raw value. `FacetSection` pins selected values to the top even when absent from the loaded data (see §4, §6).
+10. **Preserve the board's lane/grid model and cross-lane drag guard** — only lift hidden-status state out and remove the in-body Columns dropdown (see §7).
+
 ---
 
 ## 1. Current state assessment
@@ -63,6 +78,9 @@ Rendered in `PageHeader` actions. Four controls, left→right:
 ### `JobFilters` (rewritten `jobFilters.ts`)
 
 ```ts
+// GroupBy is defined here (moved out of JobsBoard); it is a JobFilters field.
+export type GroupBy = 'status' | 'country' | 'company' | 'priority';
+
 export interface JobFilters {
   search: string;
   statuses: JobStatus[];
@@ -71,11 +89,11 @@ export interface JobFilters {
   employmentTypes: EmploymentType[];
   sources: JobSource[];
   countries: string[];
-  companyIds: number[];
+  companyIds: string[];  // String(job.companyId) — DTO id is number | string
   salaryMin?: number;
   salaryMax?: number;
-  appliedFrom?: string; // ISO 8601 date
-  appliedTo?: string;   // ISO 8601 date
+  appliedFrom?: string; // YYYY-MM-DD (date input value)
+  appliedTo?: string;   // YYYY-MM-DD (date input value)
   groupBy: GroupBy;
 }
 
@@ -91,12 +109,22 @@ export const DEFAULT_FILTERS: JobFilters = {
 
 ### Pure helpers (unit-tested)
 
-- `facets(jobs): Facets` — single pass producing, per categorical field, `{ value, label, count }[]` sorted by count desc (companies carry `id` + `name`). Options = distinct values **present in the data**; a category with no jobs yields no options.
-- `applyFilters(jobs, filters): JobDto[]` — OR within each category (`arr.length === 0 || arr.includes(job.x)`), AND across categories; salary/date range comparisons; search folded in (title / company / sourceUrl / notes, case-insensitive — same fields as today).
+- `toNumberOrNull(v: number | string | null | undefined): number | null` — normalizes the generated `number | string | null` numeric fields (salary) before comparison.
+- `facets(jobs): Facets` — single pass producing, per categorical field, `{ value, label, count }[]` sorted by count desc (companies carry `id` = `String(companyId)` + `name`). Options = distinct values **present in the data**; a category with no jobs yields no options.
+- `applyFilters(jobs, filters): JobDto[]` — OR within each category (`arr.length === 0 || arr.includes(key(job))`), AND across categories; companies compared as `String(job.companyId)`; search folded in (title / company / sourceUrl / notes, case-insensitive — same fields as today). Range semantics:
+  - **Salary — range overlap** (not naive floor/ceiling). With `min = toNumberOrNull(job.salaryMin)`, `max = toNumberOrNull(job.salaryMax)`:
+    - `salaryMin` bound: keep if `(max ?? min) >= filter.salaryMin`.
+    - `salaryMax` bound: keep if `(min ?? max) <= filter.salaryMax`.
+    - a job with both salary values null fails any active salary bound.
+    - Rationale: filtering "≥ 100k" must keep an 80k–120k posting (it can pay 100k); the naive backend `SalaryMin >= x` would wrongly drop it. Board is its own consumer, so diverging from the backend predicate is intentional. Currency is ignored (existing limitation).
+  - **Applied date — `YYYY-MM-DD` string compare** on `d = job.appliedAtUtc?.slice(0, 10)`:
+    - `appliedFrom` inclusive: keep if `d && d >= appliedFrom`.
+    - `appliedTo` inclusive: keep if `d && d <= appliedTo`.
+    - a job with null `appliedAtUtc` fails any active applied-date bound. (UTC-date basis; deterministic, no timezone math.)
 - `activeFilterCount(filters): number` — count for the Filter badge (categorical selections + active range bounds; excludes `search` and `groupBy`).
-- `filtersToChips(filters, facets): Chip[]` — chip descriptors: one chip per selected value for categorical fields; one chip per active range (salary/applied-date bounds, dates formatted locale-aware); search as its own chip. Each chip carries a `key` used by `removeChip`.
+- `filtersToChips(filters, facets): Chip[]` — chip descriptors built from the **selected values in `filters`** (not from facets), so a value absent from the loaded data still yields a removable chip. Facets supply labels/counts; fallback labels: company → `Company #<id>` when the id is not in facets, other categoricals → the raw value. One chip per selected categorical value; one chip per active range bound (salary; applied-date formatted locale-aware); search as its own chip. Each chip carries a `key` used by `removeChip`.
 - `removeChip(filters, key): JobFilters` — returns filters with that single value/bound cleared.
-- `parseFiltersFromUrl(searchParams): JobFilters` and `filtersToUrl(filters): URLSearchParams` — round-trip; csv per multi category; only non-default keys written.
+- `parseFiltersFromUrl(searchParams): JobFilters` and `filtersToUrl(filters): URLSearchParams` — round-trip. **Repeated params for multi categories** (`getAll()`), single params for search/ranges/groupBy; only non-default keys written. Keys: `q`, `status`, `priority`, `remote`, `employment`, `source`, `country`, `company`, `salmin`, `salmax`, `appliedfrom`, `appliedto`, `group`.
 
 ---
 
@@ -118,22 +146,23 @@ Anchored, non-blocking. One `FacetSection` per categorical filter, plus two rang
 
 ### `FacetSection` (reusable)
 
-- Renders the **top 6** options by count; the remainder collapse behind **`+ N more`**.
+- **Selected values pin to the top** and stay visible — including a value absent from the loaded data (label falls back per `filtersToChips`: `Company #<id>` / raw value), so it is always uncheckable here as well as via its chip. No invisible dead-end filters.
+- Below the pinned selection, renders the **top 6** options by count; the remainder collapse behind **`+ N more`**.
 - When an expanded list has **> 15 options** (mainly Company), a small **type-to-narrow box** at the top of that section filters *which checkboxes are shown* — selection is still by checkbox, no free-text data entry.
-- Each option: `☐ Label (count)`. Selected options remain visible above the fold.
+- Each option: `☐ Label (count)`.
 
 Popover footer: **Clear all** (resets categorical + range filters, keeps groupBy + search) and **Done** (closes).
 
-**Flagged limitation:** salary range compares raw numeric values regardless of `salaryCurrency` (mirrors existing backend behavior). Currency-aware bands are out of scope.
+**Flagged limitation:** the salary predicate is range-overlap (§3), and it compares raw numeric values **regardless of `salaryCurrency`** — currency is the part that mirrors existing backend behavior. Currency-aware comparison/bands are out of scope.
 
 ---
 
 ## 5. Group popover — `GroupPopover`
 
-- **Group by**: radio — `Status · Country · Company · Priority` (existing `GroupBy` union; grouping semantics unchanged, still per D60: board columns are always status, non-status grouping produces horizontal lanes).
-- **Board columns** (folded in): checkbox list of the status columns to show/hide, labeled as affecting the board view. This lifts the board's current `localStorage`-backed hidden-status state into a shared hook `useHiddenStatuses` consumed by both `GroupPopover` and `JobsBoard`.
+- **Group by**: a shadcn **`radio-group`** — `Status · Country · Company · Priority` (`GroupBy` union; grouping semantics unchanged, still per D60: board columns are always status, non-status grouping produces horizontal lanes). Radio-group gives correct keyboard/ARIA single-select in the popover.
+- **Board columns** (folded in): checkbox list of the status columns to show/hide, labeled as affecting the board view, plus a single **"Reset to default"** action. This lifts the board's current `localStorage`-backed hidden-status state into a shared hook `useHiddenStatuses` consumed by both `GroupPopover` and `JobsBoard`.
 
-`useHiddenStatuses` owns the `careerops:jobs:hidden-status-columns` key (default: closed statuses hidden) and exposes `{ hiddenStatuses, toggleStatus }`. `JobsBoard` stops owning this state and reads the hook.
+`useHiddenStatuses` owns the `careerops:jobs:hidden-status-columns` key (default: closed statuses hidden) and exposes `{ hiddenStatuses, toggleStatus, reset }` (`reset` restores the default). `JobsBoard` stops owning this state and reads the hook.
 
 ---
 
@@ -153,16 +182,21 @@ A row directly beneath the toolbar, rendered only when ≥1 filter (including se
 
 `JobsPage`:
 
-- Replace local `useState(DEFAULT_FILTERS)` with `useJobFilters()` — a hook backed by react-router `useSearchParams` (`parseFiltersFromUrl` / `filtersToUrl`), returning `{ filters, setFilters }`.
+- Replace local `useState(DEFAULT_FILTERS)` with `useJobFilters()` — a hook where **`useSearchParams` is the source of truth** (`parseFiltersFromUrl` / `filtersToUrl`), returning `{ filters, setFilters }`. **All writes use `setSearchParams(next, { replace: true })`** so filter/group/search changes never push browser-history entries.
 - `const { data: jobs } = useJobs()` (param-less).
 - `const facetModel = useMemo(() => facets(jobs ?? []), [jobs])`.
 - `const filtered = useMemo(() => applyFilters(jobs ?? [], filters), [jobs, filters])`.
 - Header actions: `<JobToolbar filters={filters} facets={facetModel} onChange={setFilters} />`; below it `<FilterChips filters={filters} facets={facetModel} onChange={setFilters} />`.
 - Board/Table receive `filtered` and `filters.groupBy` as today.
 
+`SearchControl`:
+
+- Holds **local input state** for an instant-feeling field; commits to `filters.search` **debounced (~250 ms)** via `onChange`. Local state seeds from `filters.search` so a URL-loaded search shows in the field. (Filtering follows the debounced commit — imperceptible for a client-side set.)
+
 `JobsBoard`:
 
 - Reads `useHiddenStatuses()` instead of owning hidden-status state; the in-body "Columns" dropdown is removed (moved to `GroupPopover`).
+- **The lane/grid model and DnD behavior are preserved unchanged** — non-status groupings still render horizontal lanes, and the cross-lane drop guard (`laneKeyOf(job, groupBy) !== toLaneKey`) stays. This is *not* a revert to status-only columns; the only board changes are lifting hidden-status state and removing the in-body dropdown.
 - The DnD optimistic update keys off the same **param-less** `getListJobsQueryKey()` used by `useJobs()` (single stable key), keeping the optimistic write consistent.
 
 `filtersToParams` and all `ListJobsParams` usage on the Jobs page are deleted.
@@ -182,33 +216,35 @@ New:
 - `features/jobs/useJobFilters.ts`
 
 Rewritten:
-- `features/jobs/jobFilters.ts` (new `JobFilters`, `facets`, `applyFilters`, `activeFilterCount`, `filtersToChips`, `removeChip`, URL round-trip).
+- `features/jobs/jobFilters.ts` (owns `GroupBy`; new `JobFilters`, `toNumberOrNull`, `facets`, `applyFilters`, `activeFilterCount`, `filtersToChips`, `removeChip`, URL round-trip).
 
 Deleted:
 - `features/jobs/JobFilterBar.tsx`
 
 Edited:
 - `pages/JobsPage.tsx` (use `useJobFilters`, param-less fetch, `applyFilters`, new toolbar + chips)
-- `features/jobs/JobsBoard.tsx` (lifted hidden-status hook, remove in-body Columns menu, param-less query key)
+- `features/jobs/JobsBoard.tsx` (lifted hidden-status hook, remove in-body Columns menu, param-less query key; lane/grid + DnD preserved)
+- `features/jobs/jobGrouping.ts`, `features/jobs/JobsTable.tsx`, `features/jobs/useCollapsedLanes.ts` — repoint `import type { GroupBy }` from `./JobsBoard` to `./jobFilters` (mechanical).
 
-shadcn primitives needed: `popover`, `checkbox`. Add via the shadcn CLI (D19 — no hand-authored deps). Reuse existing `badge`, `button`, `input`, `label`, `select`, `separator`.
+shadcn primitives needed: `popover`, `checkbox`, `radio-group`. Add via the shadcn CLI (D19 — no hand-authored deps). Reuse existing `badge`, `button`, `input`, `label`, `separator`.
 
 ---
 
 ## 9. Testing (TDD)
 
 Unit (pure):
-- `facets()` — distinct values, correct counts, frequency-desc sort, company id+name, empty input.
-- `applyFilters()` — each category independently; OR within a category; AND across categories; salary/date range bounds; search field coverage; empty filters = identity.
-- `activeFilterCount()`, `filtersToChips()`, `removeChip()` — including range chips and search chip.
-- URL round-trip: `parseFiltersFromUrl(filtersToUrl(f))` equals `f`; defaults omitted from the URL.
+- `toNumberOrNull()` — number, numeric string, null/undefined.
+- `facets()` — distinct values, correct counts, frequency-desc sort, company `String(id)`+name, empty input.
+- `applyFilters()` — each category independently; OR within a category; AND across categories; search field coverage; empty filters = identity. **Salary overlap**: `80k–120k` kept by `salaryMin=100k` and by `salaryMax=150k`; both-null salary dropped when a bound is set. **Applied date**: inclusive `from`/`to` on `appliedAtUtc.slice(0,10)`; null `appliedAtUtc` dropped when a bound is set.
+- `activeFilterCount()`, `filtersToChips()`, `removeChip()` — including range chips and search chip; **stale value** (company id / country not in facets) still yields a removable chip with fallback label.
+- URL round-trip: `parseFiltersFromUrl(filtersToUrl(f))` equals `f`; **repeated params** for multi categories (`getAll`); defaults omitted from the URL.
 
 Component:
-- `FacetSection` — top-6 render, `+ N more` expand, type-to-narrow box for > 15 options, checkbox toggle → `onChange`.
+- `FacetSection` — top-6 render, `+ N more` expand, type-to-narrow box for > 15 options, checkbox toggle → `onChange`, **selected value pinned to top even when absent from options**.
 - `FilterPopover` — toggling an option updates filters; Clear all; badge count.
-- `GroupPopover` — group-by radio; column checkbox toggles `useHiddenStatuses`.
-- `FilterChips` — renders active chips (incl. search + range), `×` removes one value, Clear all.
-- `SearchControl` — expand/collapse, debounced change.
+- `GroupPopover` — group-by radio-group; column checkbox toggles `useHiddenStatuses`; **"Reset to default"** restores default hidden set.
+- `FilterChips` — renders active chips (incl. search + range), `×` removes one value, Clear all, **stale value chip renders + removes**.
+- `SearchControl` — expand/collapse, debounced commit, seeds from `filters.search`.
 
 Update:
 - `JobsBoard.test` — lifted hidden-status hook; param-less query key; no in-body Columns menu.
