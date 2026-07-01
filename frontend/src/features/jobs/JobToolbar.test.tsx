@@ -4,12 +4,16 @@ import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/test/utils';
 import { JobToolbar } from './JobToolbar';
 import { DEFAULT_FILTERS, facets } from './jobFilters';
+import type { ColumnsSection } from './GroupPopover';
+
+const columns: ColumnsSection = {
+  title: 'Board columns', options: [], hidden: [], onToggle: () => {}, onReset: () => {},
+};
 
 describe('JobToolbar', () => {
   it('renders the search field, Filter, Group and Add controls', () => {
     renderWithProviders(
-      <JobToolbar filters={DEFAULT_FILTERS} facets={facets([])} onChange={() => {}}
-        hiddenStatuses={[]} onToggleStatus={() => {}} onResetColumns={() => {}} />,
+      <JobToolbar filters={DEFAULT_FILTERS} facets={facets([])} onChange={() => {}} columns={columns} />,
     );
     expect(screen.getByPlaceholderText(/search jobs/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /filter/i })).toBeInTheDocument();
@@ -20,8 +24,7 @@ describe('JobToolbar', () => {
   it('reports typed search text', async () => {
     const onChange = vi.fn();
     renderWithProviders(
-      <JobToolbar filters={DEFAULT_FILTERS} facets={facets([])} onChange={onChange}
-        hiddenStatuses={[]} onToggleStatus={() => {}} onResetColumns={() => {}} />,
+      <JobToolbar filters={DEFAULT_FILTERS} facets={facets([])} onChange={onChange} columns={columns} />,
     );
     await userEvent.type(screen.getByPlaceholderText(/search jobs/i), 'a');
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ search: 'a' }));

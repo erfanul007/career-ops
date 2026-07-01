@@ -1,20 +1,17 @@
 import { Input } from '@/components/ui/input';
 import { FilterPopover } from './FilterPopover';
-import { GroupPopover } from './GroupPopover';
+import { GroupPopover, type ColumnsSection } from './GroupPopover';
 import { JobQuickAdd } from './JobQuickAdd';
 import type { GroupBy, JobFilters, Facets } from './jobFilters';
-import type { JobStatus } from '@/lib/api/model';
 
 interface Props {
   filters: JobFilters;
   facets: Facets;
   onChange: (f: JobFilters) => void;
-  hiddenStatuses: JobStatus[];
-  onToggleStatus: (s: JobStatus) => void;
-  onResetColumns: () => void;
+  columns: ColumnsSection;
 }
 
-export function JobToolbar({ filters, facets, onChange, hiddenStatuses, onToggleStatus, onResetColumns }: Props) {
+export function JobToolbar({ filters, facets, onChange, columns }: Props) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Input
@@ -27,9 +24,7 @@ export function JobToolbar({ filters, facets, onChange, hiddenStatuses, onToggle
       <GroupPopover
         groupBy={filters.groupBy}
         onGroupChange={(g: GroupBy) => onChange({ ...filters, groupBy: g })}
-        hiddenStatuses={hiddenStatuses}
-        onToggleStatus={onToggleStatus}
-        onResetColumns={onResetColumns}
+        columns={columns}
       />
       <JobQuickAdd />
     </div>
