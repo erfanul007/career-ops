@@ -1,4 +1,5 @@
 import type { JobDto, JobStatus, Priority, RemoteMode, EmploymentType, JobSource } from '@/lib/api/model';
+import { formatDate, formatNumber } from '@/lib/format';
 
 export type GroupBy = 'status' | 'country' | 'company' | 'priority';
 
@@ -114,4 +115,101 @@ export function activeFilterCount(f: JobFilters): number {
     (f.salaryMin != null ? 1 : 0) + (f.salaryMax != null ? 1 : 0) +
     (f.appliedFrom != null ? 1 : 0) + (f.appliedTo != null ? 1 : 0)
   );
+}
+
+export function filtersToChips(f: JobFilters, fac: Facets): Chip[] {
+  const chips: Chip[] = [];
+  if (f.search.trim()) chips.push({ key: 'search', label: `"${f.search.trim()}"` });
+
+  const labelFromFacet = (opts: FacetOption[], v: string, fallback: string) =>
+    opts.find(o => o.value === v)?.label ?? fallback;
+  const push = (cat: string, values: string[], prefix: string, labelFor: (v: string) => string) => {
+    for (const v of values) chips.push({ key: `${cat}:${v}`, label: `${prefix}: ${labelFor(v)}` });
+  };
+
+  push('status', f.statuses, 'Status', v => v);
+  push('priority', f.priorities, 'Priority', v => v);
+  push('remote', f.remoteModes, 'Remote', v => v);
+  push('employment', f.employmentTypes, 'Type', v => v);
+  push('source', f.sources, 'Source', v => v);
+  push('country', f.countries, 'Country', v => v);
+  push('company', f.companyIds, 'Company', v => labelFromFacet(fac.companies, v, `Company #${v}`));
+
+  if (f.salaryMin != null) chips.push({ key: 'salaryMin', label: `Salary ≥ ${formatNumber(f.salaryMin)}` });
+  if (f.salaryMax != null) chips.push({ key: 'salaryMax', label: `Salary ≤ ${formatNumber(f.salaryMax)}` });
+  if (f.appliedFrom != null) chips.push({ key: 'appliedFrom', label: `Applied ≥ ${formatDate(f.appliedFrom)}` });
+  if (f.appliedTo != null) chips.push({ key: 'appliedTo', label: `Applied ≤ ${formatDate(f.appliedTo)}` });
+
+  return chips;
+}
+
+export function removeChip(f: JobFilters, key: string): JobFilters {
+  switch (key) {
+    case 'search': return { ...f, search: '' };
+    case 'salaryMin': return { ...f, salaryMin: undefined };
+    case 'salaryMax': return { ...f, salaryMax: undefined };
+    case 'appliedFrom': return { ...f, appliedFrom: undefined };
+    case 'appliedTo': return { ...f, appliedTo: undefined };
+  }
+  const idx = key.indexOf(':');
+  if (idx < 0) return f;
+  const cat = key.slice(0, idx);
+  const val = key.slice(idx + 1);
+  const drop = (arr: string[]) => arr.filter(x => x !== val);
+  switch (cat) {
+    case 'status': return { ...f, statuses: drop(f.statuses) as JobStatus[] };
+    case 'priority': return { ...f, priorities: drop(f.priorities) as Priority[] };
+    case 'remote': return { ...f, remoteModes: drop(f.remoteModes) as RemoteMode[] };
+    case 'employment': return { ...f, employmentTypes: drop(f.employmentTypes) as EmploymentType[] };
+    case 'source': return { ...f, sources: drop(f.sources) as JobSource[] };
+    case 'country': return { ...f, countries: drop(f.countries) };
+    case 'company': return { ...f, companyIds: drop(f.companyIds) };
+    default: return f;
+  }
+}
+
+const GROUP_VALUES: GroupBy[] = ['status', 'country', 'company', 'priority'];
+
+export function filtersToUrl(f: JobFilters): URLSearchParams {
+  const sp = new URLSearchParams();
+  if (f.search.trim()) sp.set('q', f.search.trim());
+  f.statuses.forEach(v => sp.append('status', v));
+  f.priorities.forEach(v => sp.append('priority', v));
+  f.remoteModes.forEach(v => sp.append('remote', v));
+  f.employmentTypes.forEach(v => sp.append('employment', v));
+  f.sources.forEach(v => sp.append('source', v));
+  f.countries.forEach(v => sp.append('country', v));
+  f.companyIds.forEach(v => sp.append('company', v));
+  if (f.salaryMin != null) sp.set('salmin', String(f.salaryMin));
+  if (f.salaryMax != null) sp.set('salmax', String(f.salaryMax));
+  if (f.appliedFrom != null) sp.set('appliedfrom', f.appliedFrom);
+  if (f.appliedTo != null) sp.set('appliedto', f.appliedTo);
+  if (f.groupBy !== DEFAULT_FILTERS.groupBy) sp.set('group', f.groupBy);
+  return sp;
+}
+
+export function parseFiltersFromUrl(sp: URLSearchParams): JobFilters {
+  const num = (k: string) => {
+    const raw = sp.get(k);
+    if (raw == null) return undefined;
+    const n = Number(raw);
+    return Number.isNaN(n) ? undefined : n;
+  };
+  const groupRaw = sp.get('group');
+  const groupBy = GROUP_VALUES.includes(groupRaw as GroupBy) ? (groupRaw as GroupBy) : 'status';
+  return {
+    search: sp.get('q') ?? '',
+    statuses: sp.getAll('status') as JobStatus[],
+    priorities: sp.getAll('priority') as Priority[],
+    remoteModes: sp.getAll('remote') as RemoteMode[],
+    employmentTypes: sp.getAll('employment') as EmploymentType[],
+    sources: sp.getAll('source') as JobSource[],
+    countries: sp.getAll('country'),
+    companyIds: sp.getAll('company'),
+    salaryMin: num('salmin'),
+    salaryMax: num('salmax'),
+    appliedFrom: sp.get('appliedfrom') ?? undefined,
+    appliedTo: sp.get('appliedto') ?? undefined,
+    groupBy,
+  };
 }

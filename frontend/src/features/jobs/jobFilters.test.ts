@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { facets, toNumberOrNull, applyFilters, activeFilterCount, DEFAULT_FILTERS } from './jobFilters';
+import { facets, toNumberOrNull, applyFilters, activeFilterCount, DEFAULT_FILTERS, filtersToChips, removeChip, filtersToUrl, parseFiltersFromUrl } from './jobFilters';
 import type { JobDto } from '@/lib/api/model';
+import { formatNumber } from '@/lib/format';
 
 const job = (over: Partial<JobDto> = {}): JobDto => ({
   id: 1, companyId: 1, companyName: 'Northwind Synthetics', title: 'Role', status: 'Applied',
@@ -97,5 +98,44 @@ describe('activeFilterCount', () => {
     expect(activeFilterCount(DEFAULT_FILTERS)).toBe(0);
     expect(activeFilterCount({ ...DEFAULT_FILTERS, search: 'x', groupBy: 'country' })).toBe(0);
     expect(activeFilterCount({ ...DEFAULT_FILTERS, statuses: ['Applied', 'Offered'], salaryMin: 1 })).toBe(3);
+  });
+});
+
+describe('filtersToChips', () => {
+  const fac = facets([job({ companyId: 1, companyName: 'Acme' })]);
+
+  it('builds chips from selected values incl. search and ranges', () => {
+    const chips = filtersToChips(
+      { ...DEFAULT_FILTERS, search: 'react', statuses: ['Applied'], salaryMin: 50000 }, fac,
+    );
+    expect(chips.map(c => c.key)).toEqual(['search', 'status:Applied', 'salaryMin']);
+    expect(chips.find(c => c.key === 'salaryMin')!.label).toBe(`Salary ≥ ${formatNumber(50000)}`);
+  });
+
+  it('renders a removable chip for a company id absent from facets', () => {
+    const chips = filtersToChips({ ...DEFAULT_FILTERS, companyIds: ['99'] }, fac);
+    expect(chips).toHaveLength(1);
+    expect(chips[0]).toEqual({ key: 'company:99', label: 'Company: Company #99' });
+  });
+});
+
+describe('removeChip', () => {
+  it('removes a single categorical value and clears scalars', () => {
+    expect(removeChip({ ...DEFAULT_FILTERS, statuses: ['Applied', 'Offered'] }, 'status:Applied').statuses).toEqual(['Offered']);
+    expect(removeChip({ ...DEFAULT_FILTERS, search: 'x' }, 'search').search).toBe('');
+    expect(removeChip({ ...DEFAULT_FILTERS, salaryMin: 1 }, 'salaryMin').salaryMin).toBeUndefined();
+  });
+});
+
+describe('URL round-trip', () => {
+  it('round-trips filters via repeated params and omits defaults', () => {
+    const f = {
+      ...DEFAULT_FILTERS, search: 'react', statuses: ['Applied', 'Offered'] as const,
+      countries: ['Norway'], companyIds: ['2'], salaryMin: 50000, appliedFrom: '2026-06-01', groupBy: 'country' as const,
+    };
+    const sp = filtersToUrl(f);
+    expect(sp.getAll('status')).toEqual(['Applied', 'Offered']);
+    expect(parseFiltersFromUrl(sp)).toEqual(f);
+    expect(filtersToUrl(DEFAULT_FILTERS).toString()).toBe('');
   });
 });
