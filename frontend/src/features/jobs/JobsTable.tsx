@@ -10,7 +10,7 @@ import { useCollapsedLanes } from './useCollapsedLanes';
 import { cn } from '@/lib/utils';
 import { formatDate, formatSalary } from '@/lib/format';
 import type { JobDto } from '@/lib/api/model';
-import type { GroupBy } from './JobsBoard';
+import type { GroupBy } from './jobFilters';
 
 interface Props {
   jobs: JobDto[];

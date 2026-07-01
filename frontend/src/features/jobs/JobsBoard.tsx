@@ -14,8 +14,7 @@ import { useCollapsedLanes } from './useCollapsedLanes';
 import { buildLanes, laneKeyOf } from './jobGrouping';
 import { getListJobsQueryKey } from '@/lib/api/jobs/jobs';
 import type { JobDto, JobStatus, ListJobsParams } from '@/lib/api/model';
-
-export type GroupBy = 'status' | 'country' | 'company' | 'priority';
+import type { GroupBy } from './jobFilters';
 
 const ACTIVE_STATUSES: JobStatus[] = ['Discovered', 'Interested', 'Applied', 'Interviewing', 'Offered'];
 const CLOSED_STATUSES: JobStatus[] = ['Rejected', 'Ghosted', 'Withdrawn', 'Archived'];

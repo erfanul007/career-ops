@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { GroupBy } from './JobsBoard';
+import type { GroupBy } from './jobFilters';
 
 const STORAGE_KEY = 'careerops:jobs:collapsed-lanes';
 

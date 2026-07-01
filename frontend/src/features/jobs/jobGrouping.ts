@@ -1,5 +1,5 @@
 import type { JobDto, Priority } from '@/lib/api/model';
-import type { GroupBy } from './JobsBoard';
+import type { GroupBy } from './jobFilters';
 
 export const LANE_STATUS_KEY = '__all__';
 const UNKNOWN = 'Unknown';
