@@ -972,3 +972,13 @@ only by adding a new dated entry here — never silently. All entries below are 
   `appliedfrom`/`appliedto` URL params are validated on parse (invalid → undefined), mirroring the salary
   `num()` guard, to avoid silently dropping all dated jobs.
 
+### D63 — Group popover column toggle is view-aware (2026-07-01)
+The Group popover's column show/hide section reflects the active view: status
+lanes ("Board columns") in Board view, data fields ("Table columns") in Table
+view. View is persisted (`careerops:jobs:view`). Table column visibility is
+persisted (`careerops:jobs:hidden-table-columns`), default-hidden = id +
+nextAction, nothing locked. `GroupPopover` is view-agnostic (renders a generic
+`ColumnsSection` descriptor built by `JobsPage`); the hidden-set localStorage
+logic is shared via `useHiddenSet`. Frontend display pref only — no audit-trail,
+approval-workflow, or document-control impact.
+
