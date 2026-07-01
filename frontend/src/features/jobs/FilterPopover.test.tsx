@@ -24,4 +24,20 @@ describe('FilterPopover', () => {
     );
     expect(screen.getByText('2')).toBeInTheDocument();
   });
+
+  it.each([
+    ['Applied', 'statuses', 'Applied'],
+    ['High', 'priorities', 'High'],
+    ['Remote', 'remoteModes', 'Remote'],
+    ['FullTime', 'employmentTypes', 'FullTime'],
+    ['LinkedIn', 'sources', 'LinkedIn'],
+    ['Norway', 'countries', 'Norway'],
+    ['Acme', 'companyIds', '1'],
+  ])('toggling the %s facet updates filters.%s', async (label, field, value) => {
+    const onChange = vi.fn();
+    renderWithProviders(<FilterPopover filters={DEFAULT_FILTERS} facets={facets(jobs)} onChange={onChange} />);
+    await userEvent.click(screen.getByRole('button', { name: /filter/i }));
+    await userEvent.click(await screen.findByLabelText(label));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ [field]: [value] }));
+  });
 });
