@@ -12,11 +12,13 @@ import { cn } from '@/lib/utils';
 import { formatDate, formatSalary } from '@/lib/format';
 import type { JobDto } from '@/lib/api/model';
 import type { GroupBy } from './jobFilters';
+import { DEFAULT_SORT, type JobSort } from './jobSort';
 
 interface Props {
   jobs: JobDto[];
   groupBy: GroupBy;
   hiddenColumns?: TableColumnKey[];
+  sort?: JobSort;
   onJobClick: (id: number) => void;
 }
 
@@ -90,9 +92,9 @@ function JobRow({ columns, job, onJobClick }: { columns: TableColumnKey[]; job: 
   );
 }
 
-export function JobsTable({ jobs, groupBy, hiddenColumns = [], onJobClick }: Props) {
+export function JobsTable({ jobs, groupBy, hiddenColumns = [], sort = DEFAULT_SORT, onJobClick }: Props) {
   const { isCollapsed, toggle } = useCollapsedLanes(groupBy);
-  const lanes = buildLanes(jobs, groupBy);
+  const lanes = buildLanes(jobs, groupBy, sort);
   const grouped = groupBy !== 'status';
   const columns = TABLE_COLUMNS.filter(c => !hiddenColumns.includes(c.key));
   const colSpan = columns.length + 1;

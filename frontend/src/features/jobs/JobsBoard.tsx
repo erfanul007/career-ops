@@ -11,6 +11,7 @@ import { ALL_STATUSES } from './useHiddenStatuses';
 import { getListJobsQueryKey } from '@/lib/api/jobs/jobs';
 import type { JobDto, JobStatus } from '@/lib/api/model';
 import type { GroupBy } from './jobFilters';
+import { DEFAULT_SORT, type JobSort } from './jobSort';
 
 const BOARD_COL_WIDTH = '18rem';
 
@@ -18,10 +19,11 @@ interface Props {
   jobs: JobDto[];
   groupBy: GroupBy;
   hiddenStatuses: JobStatus[];
+  sort?: JobSort;
   onJobClick: (id: number) => void;
 }
 
-export function JobsBoard({ jobs, groupBy, hiddenStatuses, onJobClick }: Props) {
+export function JobsBoard({ jobs, groupBy, hiddenStatuses, sort = DEFAULT_SORT, onJobClick }: Props) {
   const [activeJob, setActiveJob] = useState<JobDto | null>(null);
   const { isCollapsed, toggle } = useCollapsedLanes(groupBy);
   const qc = useQueryClient();
@@ -39,7 +41,7 @@ export function JobsBoard({ jobs, groupBy, hiddenStatuses, onJobClick }: Props) 
   }
 
   const visibleStatuses = ALL_STATUSES.filter(s => !hiddenStatuses.includes(s));
-  const lanes = buildLanes(jobs, groupBy);
+  const lanes = buildLanes(jobs, groupBy, sort);
   const showBanner = groupBy !== 'status';
 
   const handleDragStart = ({ active }: DragStartEvent) => {

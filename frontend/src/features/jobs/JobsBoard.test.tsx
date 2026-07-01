@@ -47,4 +47,21 @@ describe("JobsBoard", () => {
     expect(screen.getByRole("button", { name: /Norway/ })).toBeInTheDocument();
     expect(screen.getByText("Role 1")).toBeInTheDocument();
   });
+
+  it("orders cards within a status column by the given sort", () => {
+    const { container } = renderWithProviders(
+      <JobsBoard
+        jobs={[
+          job(1, "Applied", { updatedAtUtc: "2026-06-01T00:00:00Z" }),
+          job(2, "Applied", { updatedAtUtc: "2026-06-05T00:00:00Z" }),
+        ]}
+        groupBy="status"
+        hiddenStatuses={CLOSED}
+        sort={{ field: "updated", dir: "asc" }}
+        onJobClick={() => {}}
+      />,
+    );
+    const text = container.textContent ?? "";
+    expect(text.indexOf("Role 1")).toBeLessThan(text.indexOf("Role 2"));
+  });
 });

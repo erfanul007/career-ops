@@ -69,4 +69,18 @@ describe("JobsTable", () => {
     const banner = screen.getByRole('button', { name: /Norway/ }).closest('td');
     expect(banner).toHaveAttribute('colspan', '8');
   });
+
+  it('orders rows by the given sort (company ascending)', () => {
+    const { container } = renderWithProviders(
+      <JobsTable
+        jobs={[job({ id: 1, companyName: 'Zeta Corp' }), job({ id: 2, companyName: 'Alpha Corp' })]}
+        groupBy="status"
+        sort={{ field: 'company', dir: 'asc' }}
+        onJobClick={vi.fn()}
+      />,
+    );
+    const rows = container.querySelectorAll('tbody tr');
+    expect(rows[0].textContent).toContain('Alpha Corp');
+    expect(rows[1].textContent).toContain('Zeta Corp');
+  });
 });
