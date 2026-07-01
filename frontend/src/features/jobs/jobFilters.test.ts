@@ -138,4 +138,16 @@ describe('URL round-trip', () => {
     expect(parseFiltersFromUrl(sp)).toEqual(f);
     expect(filtersToUrl(DEFAULT_FILTERS).toString()).toBe('');
   });
+
+  it('validates appliedfrom as YYYY-MM-DD; invalid values become undefined', () => {
+    expect(parseFiltersFromUrl(new URLSearchParams('appliedfrom=garbage')).appliedFrom).toBeUndefined();
+  });
+
+  it('accepts valid appliedfrom in YYYY-MM-DD format', () => {
+    expect(parseFiltersFromUrl(new URLSearchParams('appliedfrom=2026-06-01')).appliedFrom).toBe('2026-06-01');
+  });
+
+  it('validates appliedto as YYYY-MM-DD; invalid values become undefined', () => {
+    expect(parseFiltersFromUrl(new URLSearchParams('appliedto=nope')).appliedTo).toBeUndefined();
+  });
 });

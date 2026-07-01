@@ -137,8 +137,8 @@ export function filtersToChips(f: JobFilters, fac: Facets): Chip[] {
 
   if (f.salaryMin != null) chips.push({ key: 'salaryMin', label: `Salary ≥ ${formatNumber(f.salaryMin)}` });
   if (f.salaryMax != null) chips.push({ key: 'salaryMax', label: `Salary ≤ ${formatNumber(f.salaryMax)}` });
-  if (f.appliedFrom != null) chips.push({ key: 'appliedFrom', label: `Applied ≥ ${formatDate(f.appliedFrom)}` });
-  if (f.appliedTo != null) chips.push({ key: 'appliedTo', label: `Applied ≤ ${formatDate(f.appliedTo)}` });
+  if (f.appliedFrom != null) chips.push({ key: 'appliedFrom', label: `Applied ≥ ${formatDate(f.appliedFrom) ?? f.appliedFrom}` });
+  if (f.appliedTo != null) chips.push({ key: 'appliedTo', label: `Applied ≤ ${formatDate(f.appliedTo) ?? f.appliedTo}` });
 
   return chips;
 }
@@ -195,6 +195,10 @@ export function parseFiltersFromUrl(sp: URLSearchParams): JobFilters {
     const n = Number(raw);
     return Number.isNaN(n) ? undefined : n;
   };
+  const date = (k: string) => {
+    const raw = sp.get(k);
+    return raw && /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : undefined;
+  };
   const groupRaw = sp.get('group');
   const groupBy = GROUP_VALUES.includes(groupRaw as GroupBy) ? (groupRaw as GroupBy) : 'status';
   return {
@@ -208,8 +212,8 @@ export function parseFiltersFromUrl(sp: URLSearchParams): JobFilters {
     companyIds: sp.getAll('company'),
     salaryMin: num('salmin'),
     salaryMax: num('salmax'),
-    appliedFrom: sp.get('appliedfrom') ?? undefined,
-    appliedTo: sp.get('appliedto') ?? undefined,
+    appliedFrom: date('appliedfrom'),
+    appliedTo: date('appliedto'),
     groupBy,
   };
 }
