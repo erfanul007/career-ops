@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { facets, toNumberOrNull, applyFilters, activeFilterCount, DEFAULT_FILTERS, filtersToChips, removeChip, filtersToUrl, parseFiltersFromUrl } from './jobFilters';
+import { facets, toNumberOrNull, applyFilters, activeFilterCount, DEFAULT_FILTERS, filtersToChips, removeChip, filtersToUrl, parseFiltersFromUrl, type JobFilters } from './jobFilters';
 import type { JobDto } from '@/lib/api/model';
 import { formatNumber } from '@/lib/format';
 
@@ -129,9 +129,9 @@ describe('removeChip', () => {
 
 describe('URL round-trip', () => {
   it('round-trips filters via repeated params and omits defaults', () => {
-    const f = {
-      ...DEFAULT_FILTERS, search: 'react', statuses: ['Applied', 'Offered'] as const,
-      countries: ['Norway'], companyIds: ['2'], salaryMin: 50000, appliedFrom: '2026-06-01', groupBy: 'country' as const,
+    const f: JobFilters = {
+      ...DEFAULT_FILTERS, search: 'react', statuses: ['Applied', 'Offered'],
+      countries: ['Norway'], companyIds: ['2'], salaryMin: 50000, appliedFrom: '2026-06-01', groupBy: 'country',
     };
     const sp = filtersToUrl(f);
     expect(sp.getAll('status')).toEqual(['Applied', 'Offered']);

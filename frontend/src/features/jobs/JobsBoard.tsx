@@ -1,62 +1,33 @@
 import { useState, type CSSProperties } from 'react';
 import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent, closestCenter, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { useQueryClient } from '@tanstack/react-query';
-import { ChevronDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem,
-} from '@/components/ui/dropdown-menu';
 import { BoardColumnHeader } from './BoardColumnHeader';
 import { BoardLane } from './BoardLane';
 import { JobCardPreview } from './JobCardPreview';
 import { useJobMutations } from './useJobMutations';
 import { useCollapsedLanes } from './useCollapsedLanes';
 import { buildLanes, laneKeyOf } from './jobGrouping';
+import { ALL_STATUSES } from './useHiddenStatuses';
 import { getListJobsQueryKey } from '@/lib/api/jobs/jobs';
-import type { JobDto, JobStatus, ListJobsParams } from '@/lib/api/model';
+import type { JobDto, JobStatus } from '@/lib/api/model';
 import type { GroupBy } from './jobFilters';
 
-const ACTIVE_STATUSES: JobStatus[] = ['Discovered', 'Interested', 'Applied', 'Interviewing', 'Offered'];
-const CLOSED_STATUSES: JobStatus[] = ['Rejected', 'Ghosted', 'Withdrawn', 'Archived'];
-const ALL_STATUSES: JobStatus[] = [...ACTIVE_STATUSES, ...CLOSED_STATUSES];
-const HIDDEN_STORAGE_KEY = 'careerops:jobs:hidden-status-columns';
 const BOARD_COL_WIDTH = '18rem';
-
-function loadHiddenStatuses(): JobStatus[] {
-  try {
-    const raw = localStorage.getItem(HIDDEN_STORAGE_KEY);
-    if (raw === null) return [...CLOSED_STATUSES];
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [...CLOSED_STATUSES];
-    return parsed.filter((s): s is JobStatus => ALL_STATUSES.includes(s as JobStatus));
-  } catch {
-    return [...CLOSED_STATUSES];
-  }
-}
 
 interface Props {
   jobs: JobDto[];
   groupBy: GroupBy;
-  listParams: ListJobsParams;
+  hiddenStatuses: JobStatus[];
   onJobClick: (id: number) => void;
 }
 
-export function JobsBoard({ jobs, groupBy, listParams, onJobClick }: Props) {
-  const [hiddenStatuses, setHiddenStatuses] = useState<JobStatus[]>(loadHiddenStatuses);
+export function JobsBoard({ jobs, groupBy, hiddenStatuses, onJobClick }: Props) {
   const [activeJob, setActiveJob] = useState<JobDto | null>(null);
   const { isCollapsed, toggle } = useCollapsedLanes(groupBy);
   const qc = useQueryClient();
   const { transition } = useJobMutations();
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
-
-  const toggleStatusColumn = (status: JobStatus) => {
-    setHiddenStatuses(prev => {
-      const next = prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status];
-      try { localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
-      return next;
-    });
-  };
 
   if (jobs.length === 0) {
     return (
@@ -91,7 +62,7 @@ export function JobsBoard({ jobs, groupBy, listParams, onJobClick }: Props) {
     if (job.status === toStatus) return;
     if (laneKeyOf(job, groupBy) !== toLaneKey) return; // ignore cross-lane drops
 
-    const key = getListJobsQueryKey(listParams);
+    const key = getListJobsQueryKey();
     const prevData = qc.getQueryData(key);
     qc.setQueryData(key, (old: { data?: JobDto[] } | undefined) =>
       old ? { ...old, data: old.data?.map(j => j.id === job.id ? { ...j, status: toStatus } : j) } : old,
@@ -114,32 +85,9 @@ export function JobsBoard({ jobs, groupBy, listParams, onJobClick }: Props) {
       onDragEnd={handleDragEnd}
     >
       <div className="flex h-full min-h-0 flex-col gap-2">
-        <div className="flex justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-1 text-xs">
-                Columns
-                <ChevronDown aria-hidden className="size-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {ALL_STATUSES.map(s => (
-                <DropdownMenuCheckboxItem
-                  key={s}
-                  checked={!hiddenStatuses.includes(s)}
-                  onCheckedChange={() => toggleStatusColumn(s)}
-                  onSelect={e => e.preventDefault()}
-                >
-                  {s}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
         {visibleStatuses.length === 0 ? (
           <p className="m-auto text-sm text-muted-foreground">
-            All status columns are hidden. Use the Columns menu to show some.
+            All status columns are hidden. Use the Group menu to show some.
           </p>
         ) : (
           <div className="min-h-0 flex-1 overflow-auto pb-2">
