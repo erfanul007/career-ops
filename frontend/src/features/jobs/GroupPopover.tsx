@@ -5,9 +5,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { ALL_STATUSES } from './useHiddenStatuses';
 import type { GroupBy } from './jobFilters';
-import type { JobStatus } from '@/lib/api/model';
 
 const GROUPS: { value: GroupBy; label: string }[] = [
   { value: 'status', label: 'Status' },
@@ -16,15 +14,21 @@ const GROUPS: { value: GroupBy; label: string }[] = [
   { value: 'priority', label: 'Priority' },
 ];
 
+export interface ColumnsSection {
+  title: string;
+  options: { value: string; label: string }[];
+  hidden: string[];
+  onToggle: (value: string) => void;
+  onReset: () => void;
+}
+
 interface Props {
   groupBy: GroupBy;
   onGroupChange: (g: GroupBy) => void;
-  hiddenStatuses: JobStatus[];
-  onToggleStatus: (s: JobStatus) => void;
-  onResetColumns: () => void;
+  columns: ColumnsSection;
 }
 
-export function GroupPopover({ groupBy, onGroupChange, hiddenStatuses, onToggleStatus, onResetColumns }: Props) {
+export function GroupPopover({ groupBy, onGroupChange, columns }: Props) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -48,16 +52,16 @@ export function GroupPopover({ groupBy, onGroupChange, hiddenStatuses, onToggleS
           <Separator />
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-muted-foreground">Board columns</p>
-              <Button variant="ghost" size="sm" className="h-6 px-1 text-xs" onClick={onResetColumns}>Reset</Button>
+              <p className="text-xs font-medium text-muted-foreground">{columns.title}</p>
+              <Button variant="ghost" size="sm" className="h-6 px-1 text-xs" onClick={columns.onReset}>Reset</Button>
             </div>
             <div className="space-y-1">
-              {ALL_STATUSES.map(s => {
-                const id = `col-${s}`;
+              {columns.options.map(o => {
+                const id = `col-${o.value}`;
                 return (
-                  <div key={s} className="flex items-center gap-2">
-                    <Checkbox id={id} checked={!hiddenStatuses.includes(s)} onCheckedChange={() => onToggleStatus(s)} />
-                    <Label htmlFor={id} className="cursor-pointer text-sm font-normal">{s}</Label>
+                  <div key={o.value} className="flex items-center gap-2">
+                    <Checkbox id={id} checked={!columns.hidden.includes(o.value)} onCheckedChange={() => columns.onToggle(o.value)} />
+                    <Label htmlFor={id} className="cursor-pointer text-sm font-normal">{o.label}</Label>
                   </div>
                 );
               })}
