@@ -982,3 +982,12 @@ nextAction, nothing locked. `GroupPopover` is view-agnostic (renders a generic
 logic is shared via `useHiddenSet`. Frontend display pref only — no audit-trail,
 approval-workflow, or document-control impact.
 
+### D64 — Jobs configurable sort (2026-07-01)
+Added a Sort popover to the Jobs toolbar: field (Updated, Applied, Company, Priority,
+Salary) + direction (Descending/Ascending), applied client-side within lanes across both
+views. Default `updated`/`desc` reproduces the prior hardcoded order (no regression).
+Sort state persists in the URL alongside filters and `groupBy` (`sort`, `dir` params).
+Comparator (`compareJobs`) sorts nulls last in both directions; priority ranks
+High > Medium > Low. No backend/API/orval change (jobs are fully client-loaded; filtering
+is already client-side). No audit-trail, approval-workflow, or document-control impact.
+

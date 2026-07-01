@@ -11,6 +11,7 @@ import { useHiddenTableColumns } from '@/features/jobs/useHiddenTableColumns';
 import { useJobsView, type JobsView } from '@/features/jobs/useJobsView';
 import { facets, applyFilters } from '@/features/jobs/jobFilters';
 import { TABLE_COLUMNS, type TableColumnKey } from '@/features/jobs/jobTableColumns';
+import type { JobSort } from '@/features/jobs/jobSort';
 import type { ColumnsSection } from '@/features/jobs/GroupPopover';
 import { JobDetailDrawer } from '@/features/jobs/JobDetailDrawer';
 import type { JobDto, JobStatus } from '@/lib/api/model';
@@ -29,6 +30,7 @@ export default function JobsPage() {
 
   const facetModel = useMemo(() => facets(jobs), [jobs]);
   const filtered = useMemo(() => applyFilters(jobs, filters), [jobs, filters]);
+  const sort: JobSort = { field: filters.sortField, dir: filters.sortDir };
 
   const columnsSection: ColumnsSection = useMemo(
     () =>
@@ -54,7 +56,16 @@ export default function JobsPage() {
     <PageShell variant="full">
       <PageHeader
         title="Jobs"
-        actions={<JobToolbar filters={filters} facets={facetModel} onChange={setFilters} columns={columnsSection} />}
+        actions={
+          <JobToolbar
+            filters={filters}
+            facets={facetModel}
+            onChange={setFilters}
+            columns={columnsSection}
+            sort={sort}
+            onSortChange={s => setFilters({ ...filters, sortField: s.field, sortDir: s.dir })}
+          />
+        }
       />
       <FilterChips filters={filters} facets={facetModel} onChange={setFilters} />
       <Tabs value={view} onValueChange={v => setView(v as JobsView)} className="flex min-h-0 flex-1 flex-col">
@@ -68,11 +79,11 @@ export default function JobsPage() {
           ) : isLoading ? (
             <div className="py-8 text-center text-sm text-muted-foreground">Loading…</div>
           ) : (
-            <JobsBoard jobs={filtered} groupBy={filters.groupBy} hiddenStatuses={hiddenStatuses} onJobClick={setSelectedJobId} />
+            <JobsBoard jobs={filtered} groupBy={filters.groupBy} hiddenStatuses={hiddenStatuses} sort={sort} onJobClick={setSelectedJobId} />
           )}
         </TabsContent>
         <TabsContent value="table" className="min-h-0 flex-1 overflow-y-auto">
-          <JobsTable jobs={filtered} groupBy={filters.groupBy} hiddenColumns={hiddenColumns} onJobClick={setSelectedJobId} />
+          <JobsTable jobs={filtered} groupBy={filters.groupBy} hiddenColumns={hiddenColumns} sort={sort} onJobClick={setSelectedJobId} />
         </TabsContent>
       </Tabs>
       <JobDetailDrawer jobId={selectedJobId} onClose={() => setSelectedJobId(null)} />
