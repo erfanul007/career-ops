@@ -61,3 +61,30 @@ describe('laneKeyOf', () => {
     expect(laneKeyOf(job({}), 'status')).toBe(LANE_STATUS_KEY);
   });
 });
+
+describe('buildLanes sorting', () => {
+  it('orders a status lane by the given sort (company ascending)', () => {
+    const lanes = buildLanes([
+      job({ id: 1, companyName: 'Zeta' }),
+      job({ id: 2, companyName: 'Alpha' }),
+    ], 'status', { field: 'company', dir: 'asc' });
+    expect(lanes[0].jobs.map(j => j.id)).toEqual([2, 1]);
+  });
+
+  it('keeps salary nulls last regardless of direction', () => {
+    const jobs = [
+      job({ id: 1, salaryMax: null, salaryMin: null }),
+      job({ id: 2, salaryMax: 900000 }),
+    ];
+    expect(buildLanes(jobs, 'status', { field: 'salary', dir: 'desc' })[0].jobs.map(j => j.id)).toEqual([2, 1]);
+    expect(buildLanes(jobs, 'status', { field: 'salary', dir: 'asc' })[0].jobs.map(j => j.id)).toEqual([2, 1]);
+  });
+
+  it('defaults to updated descending when no sort is passed', () => {
+    const lanes = buildLanes([
+      job({ id: 1, updatedAtUtc: '2026-06-01T00:00:00Z' }),
+      job({ id: 2, updatedAtUtc: '2026-06-02T00:00:00Z' }),
+    ], 'status');
+    expect(lanes[0].jobs.map(j => j.id)).toEqual([2, 1]);
+  });
+});

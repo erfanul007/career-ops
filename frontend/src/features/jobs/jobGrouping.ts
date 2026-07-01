@@ -1,5 +1,6 @@
 import type { JobDto, Priority } from '@/lib/api/model';
 import type { GroupBy } from './jobFilters';
+import { compareJobs, DEFAULT_SORT, type JobSort } from './jobSort';
 
 export const LANE_STATUS_KEY = '__all__';
 const UNKNOWN = 'Unknown';
@@ -20,8 +21,8 @@ export function laneKeyOf(job: JobDto, groupBy: GroupBy): string {
   }
 }
 
-export function buildLanes(jobs: JobDto[], groupBy: GroupBy): Lane[] {
-  const sorted = [...jobs].sort((a, b) => b.updatedAtUtc.localeCompare(a.updatedAtUtc));
+export function buildLanes(jobs: JobDto[], groupBy: GroupBy, sort: JobSort = DEFAULT_SORT): Lane[] {
+  const sorted = [...jobs].sort(compareJobs(sort));
 
   if (groupBy === 'status') {
     return [{ key: LANE_STATUS_KEY, label: '', jobs: sorted }];
