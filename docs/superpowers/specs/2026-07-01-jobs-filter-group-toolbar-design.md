@@ -1,7 +1,7 @@
 # CareerOps Jobs Filter/Group Toolbar Redesign — Design Spec
 
 Date: 2026-07-01
-Status: Approved direction (brainstorming), pre-implementation
+Status: Implemented (see decision D62). **Amendment:** during planning the user chose an **always-visible search `Input`** folded into `JobToolbar` over the click-to-expand `SearchControl` described in §2/§7, with **no debounce** (`replace:true` prevents history spam). Where this spec still says "expanding `SearchControl`", read "always-visible search field"; there is no separate `SearchControl` component. Search still renders as its own chip.
 Scope: Frontend only. Jobs page toolbar, filtering, grouping, and column visibility. No backend change, no API contract change, no generated `lib/api/**` edits. Backend `ListJobsQuery` filtering is left intact (still used by MCP/REST for agent parity); the board UI simply stops calling it.
 
 Design target: a clean Jobs page header with **four controls only** — Search, Filter, Group, Add — where Filter and Group open anchored, non-blocking popovers, and applied filters render as removable chips beneath the toolbar. Filtering is uniform, data-driven, and fully client-side.

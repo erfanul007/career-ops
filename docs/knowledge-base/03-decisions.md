@@ -935,3 +935,40 @@ only by adding a new dated entry here — never silently. All entries below are 
   cache was pre-warmed so the next spawn is fast. A future `chrome-devtools-mcp` bump is a deliberate edit
   to the pinned version here.
 
+### D62 — Jobs filter/group toolbar: data-driven checkbox facets, client-side filtering, URL state
+- **Date:** 2026-07-01
+- **Decision:** The Jobs page toolbar (spec `2026-07-01-jobs-filter-group-toolbar-design.md`, plan
+  `2026-07-01-jobs-filter-group-toolbar.md`) replaces the crowded inline `JobFilterBar` with:
+  - **Anchored popovers, not modals** — a Filter popover and a Group popover; the board stays visible and
+    updates live.
+  - **Data-driven checkbox facets** — every categorical filter (status, priority, remote mode, employment
+    type, source, country, company) renders as checkboxes whose options are the **distinct values present in
+    the loaded jobs, sorted by count desc, with counts**. Multi-select; **OR within a category, AND across**.
+    Salary + applied-date are range inputs.
+  - **Fully client-side filtering** — one broad param-less `useJobs()` fetch; `facets`/`applyFilters` run in
+    memory (`jobFilters.ts`). Backend `ListJobsQuery` is untouched and still serves MCP/REST.
+    **Salary is range-overlap** (a `80k–120k` posting is kept by a `≥100k` filter), intentionally diverging
+    from the backend's naive `SalaryMin >= x`.
+  - **URL persistence** — filter/search/group state lives in the URL via `useJobFilters` (`useSearchParams`,
+    **repeated params**, `replace: true` so filter changes never spam browser history). Board column
+    visibility stays in `localStorage` (`useHiddenStatuses`, key unchanged) and is surfaced in the Group
+    popover with a Reset.
+  - **Removable chips** under the toolbar; search is its own chip; stale/absent selected values still render
+    a removable chip (`Company #<id>` fallback).
+- **Always-visible search, no debounce (deviates from the spec's §2/§7 `SearchControl`):** the user chose an
+  always-visible slim search `Input` folded into `JobToolbar` over the spec's click-to-expand `SearchControl`
+  (simpler, more discoverable). No debounce — `replace: true` already prevents history spam and client-side
+  filtering of a personal-scale list per keystroke is free. The spec text describing the expanding
+  `SearchControl` is superseded by this entry; search still renders as its own chip.
+- **Why:** Checkbox facets remove free-text guessing and give a uniform OR/AND mental model; deriving options
+  from loaded jobs needs zero extra queries; one client-side filter path (vs. server params + client search)
+  is less code, snappier (no refetch per toggle), and enables uniform multi-select without a backend change.
+- **Rejected:** centered modal (hides results until closed); single-select for priority/remote/employment/
+  source (inconsistent mental model, and would need backend array params); server-side board filtering
+  (two code paths, refetch per toggle); a separate companies fetch for the company facet (extra dependency —
+  options come from the loaded jobs).
+- **Consequence:** Executed via subagent-driven development in 11 TDD tasks (117 frontend tests,
+  `just verify` green). `JobFilterBar` deleted; `GroupBy` moved to `jobFilters.ts`. Hand-edited
+  `appliedfrom`/`appliedto` URL params are validated on parse (invalid → undefined), mirroring the salary
+  `num()` guard, to avoid silently dropping all dated jobs.
+
