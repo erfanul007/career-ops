@@ -7,47 +7,37 @@ description: Use when finding, scouting, or sourcing job openings for the applic
 
 Find recent, visa-friendly, sub-5-year .NET roles abroad for a Bangladeshi engineer; tier survivors by fit and save them to careerops by priority. Be pessimistic — score low, raise only on evidence — but **don't discard close calls; drop only unrelated or low-value posts** (the user triages the rest by priority).
 
-**REQUIRED SUB-SKILLS:** score every survivor with `job-fit-scoring`; draw country targeting + the visa dimension from `bd-work-visa-routes`.
+**REQUIRED SUB-SKILLS:** score every survivor with `job-fit-scoring` (Sponsorship mode); draw country targeting + the visa dimension from `bd-work-visa-routes`.
 
-## Tooling — pick by task
-- **Logged-in / JS-heavy browsing** (LinkedIn job search + detail panes, Glassdoor) → **chrome-devtools MCP** (`mcp__chrome-devtools__*`), connect-only to Chrome at `:9222`. Flow: `list_pages` → `new_page`/`navigate_page` → `take_snapshot`.
-- **Open-web lookups** (sponsorship history, layoffs/scam, salary floors, Indeed/aggregator cross-checks) → built-in **`WebSearch`** + **`WebFetch`**.
-- **Fallback** (`WebSearch`/`WebFetch`, logged-out) → only after the Preflight gate below clears it. Guest/ATS post-dates often unreadable → mark `fresh=unknown`, verify before saving.
+Remote-from-Bangladesh search → use the `remote-job-search` skill instead (separate policy + scoring mode).
 
-**Preflight — run BEFORE any LinkedIn/Glassdoor step. Two independent failures, different fixes:**
-1. **chrome-devtools tools loaded?** Confirm `mcp__chrome-devtools__*` is actually available (ToolSearch `select:mcp__chrome-devtools__list_pages`). If ABSENT → the MCP server didn't connect this session and **you cannot load it yourself**. STOP, tell the user, ask them to enable it (`/mcp` approve `chrome-devtools`, or restart `claude --continue` with the CareerOps Chrome open); resume on confirmation. Absent tools ≠ unsupported task — it's a fixable connection failure, NOT a cue to switch modes.
-2. **`:9222` up?** Tools present → probe the port; if down, run the bootstrap below.
-
-**No silent fallback (hard rule).** If the logged-in path (chrome-devtools MCP + `:9222`) is unavailable, NEVER quietly drop to logged-out `WebSearch`/`WebFetch` or a non-session browser (e.g. containerized Playwright — it has no login). Name the gap and **ask permission** first. If the user OKs logged-out mode: tag every saved row `source=guest/logged-out`, treat post-dates as `fresh=unknown`, and queue a logged-in re-run to supersede. Red flag — catching yourself think *"the tool isn't there, I'll just use WebSearch"* IS the silent-fallback failure: STOP and ask.
-
-**Bootstrap `:9222` (PowerShell).** Profile **CareerOps** · user-data-dir `C:\Users\LENOVO\.chrome-mcp-debug` · profile-directory `Profile`.
-1. **Probe** `Invoke-RestMethod http://127.0.0.1:9222/json/version` → answers? use it.
-2. **Down → open** (Chrome auto-creates dir/profile if missing): `Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList '--remote-debugging-port=9222','--user-data-dir=C:\Users\LENOVO\.chrome-mcp-debug','--profile-directory=Profile','--no-first-run','--no-default-browser-check','about:blank'` → re-probe (~1s).
-3. **Fresh profile → login:** `navigate_page` to `linkedin.com`; on auth wall, apply the login gate below (cookies then persist on disk).
-- Keep the window open (closing drops `:9222`); re-bootstrap each session. A plain `chrome.exe` launch without the dedicated `--user-data-dir` hands off to normal Chrome and never binds the port.
-
-**Login gate (all platforms, every task).** If a step needs a logged-in session (LinkedIn, Glassdoor, any portal) and the page shows an auth wall / login redirect → **stop and ask the user to log in manually** in the CareerOps Chrome window, then resume on confirmation. Never enter credentials or work around the wall. If the locked source is non-essential, skip it and note `source-locked`; if it's required for the task, halt until logged in.
+## Platform skills (auto-select — user never names platforms)
+Load per phase via Skill tool; fan-out subagents get the explicit path (`.claude/skills/<name>/SKILL.md`) in their prompt — they can't auto-discover.
+- **Search:** `search-linkedin` — URL syntax + extraction mechanics there; this skill supplies the values (§1).
+- **Enrich:** `search-glassdoor` + open-web `WebSearch`/`WebFetch` (sponsorship history, layoffs/scam, salary floors, Indeed cross-checks).
+- **Infra (hard rules):** `browser-session` — preflight before any logged-in step; login gate and **no-silent-fallback** apply verbatim.
 
 ## Process (superpowers + caveman)
-- **Brainstorm only if inputs ambiguous** — country/keywords unclear or conflicting → run `superpowers:brainstorming` first. Explicit args → proceed.
+- **Clarify before searching** — one `AskUserQuestion` round (concrete options + a recommended default), then proceed. Ask when any predicate holds:
+  1. country given as a region, not a country ("Europe", "Scandinavia") → offer its Tier-1/Tier-2 members;
+  2. request also mentions remote/work-from-home (straddles `remote-job-search`) → confirm which leg(s) run before doubling cost;
+  3. keywords outside C#/.NET → confirm intent (this track is .NET-only by design).
+  No predicate holds → proceed without asking; absent inputs take their documented defaults silently (no country → Tier-1 sweep; no keywords → `C# .NET`). No answer available (headless) → recommended default, log the assumption in the run summary.
 - **Track phases** — `TaskCreate` one generic task per phase (target · search · enrich · score · save · summary); set in_progress/completed as you go.
 - **Fan out** — one generic agent per survivor (`superpowers:dispatching-parallel-agents`) for Glassdoor + portal + Indeed + web checks concurrently; each returns a **caveman-compressed** verdict (`caveman:caveman`): `visa-signal · glassdoor · risks · apply-link` — keeps main context lean.
 
 ## Inputs
-- `country` — explicit destination (e.g. `Germany`). **If absent, sweep the outbound shortlist** from `bd-work-visa-routes` (Tier-1 first: Ireland, Germany, Netherlands, Finland, Italy, New Zealand). `Bangladesh` still works when passed explicitly.
+- `country` — explicit destination (e.g. `Germany`). **If absent, sweep the Tier-1 shortlist only** from `bd-work-visa-routes` (Ireland, Germany, Netherlands, Finland, Italy, New Zealand); extend to Tier-2 only when the user asks or Tier-1 runs thin.
+- **`Bangladesh` = local mode:** onsite/hybrid in BD for a citizen — skip the no-sponsorship and visa-salary-floor hard rejects (§2) and score with `job-fit-scoring` **Remote mode**, eligibility ≈ local (~90). Remote-from-BD roles → `remote-job-search` instead.
 - `keywords` (default `C# .NET`). If a country's results are thin, broaden with the applicant's core stack from `applicant-profile` (e.g. `ASP.NET Core`, `EF Core`, `.NET backend`).
 
-## 1. Search (LinkedIn — chrome MCP after Preflight clears; logged-out fallback only with user OK)
-Per target country, open (`new_page`) then `take_snapshot`:
-```
-https://www.linkedin.com/jobs/search/?keywords=<KW>&location=<COUNTRY>&f_TPR=r604800&f_E=2,3,4&f_JT=F&f_WT=3,1&f_F=it,eng,cnsl&f_I=96,4&sortBy=R&distance=25
-```
-Locked filters: posted ≤7d (`f_TPR=r604800`) · Entry/Associate/Mid-Senior (`f_E=2,3,4`) · Full-time (`f_JT=F`) · Hybrid+On-site (`f_WT=3,1`; add `2` only if remote wanted) · functions IT/Eng/Consulting · industries IT-Services+Software-Dev (`f_I=96,4`) · relevance sort. URL-encode keywords and spaces (`C%23%20.NET`). Collect title, company, location, url, posted-date, Easy-Apply flag; open each detail pane for the full description.
+## 1. Search (per target country, via `search-linkedin`)
+Values: `location=<COUNTRY>` · `f_TPR=r604800` (≤7d) · `f_E=2,3,4` (Entry/Associate/Mid-Senior) · `f_JT=F` (full-time) · `f_WT=3,1` (hybrid + on-site; remote wanted → `remote-job-search`) · `f_F=it,eng,cnsl` · `f_I=96,4` · `sortBy=R` · `distance=25`. Collect title, company, location, url, posted-date, Easy-Apply flag, full JD per the platform skill's flow.
 
-**Enrich/verify per candidate** (fan-out agents — chrome MCP for Glassdoor/portal, `WebSearch`/`WebFetch` for the rest):
-- Glassdoor — rating + recent reviews (track record).
+**Enrich/verify per candidate** (fan-out agents):
+- `search-glassdoor` — rating + recent reviews (track record).
 - Company portal — real posting, **visa/relocation policy**, direct apply link.
-- Indeed — cross-post check (single-source ghost post = red flag).
+- Indeed — cross-post check via `WebSearch` (single-source ghost post = red flag).
 - Web search — "<company> visa sponsorship", recent layoffs/scam/mass-hiring.
 
 ## 2. Hard reject filters (fail any ⇒ drop, log reason)
@@ -67,7 +57,7 @@ Use `job-fit-scoring` (pessimistic 0–100, profile downplayed to 3–4y junior�
 ## 4. Auto-create scored matches in careerops
 For each survivor scoring ≥45:
 1. **Dedupe** — `list_jobs(search=<sourceUrl or "title company">)`; skip if present.
-2. `create_job`: `title` · `source` (`LinkedIn`|`Glassdoor`|`Indeed`|`CompanySite`) · `sourceUrl` (prefer portal apply link) · `companyName` · `country` (ISO, e.g. `DE`/`IE`/`BD`) · `city` · `remoteMode` (OnSite/Hybrid/Remote) · `employmentType` `FullTime` · `priority` (band: High/Medium/Low) · `status` `Discovered` · `jobDescription` (trimmed) · `notes` (`score/100 · band · route+visa-signal · why-fits · risks`).
+2. `create_job`: `title` · `source` (`LinkedIn`|`CompanySite` — whichever `sourceUrl` points at) · `sourceUrl` (prefer portal apply link) · `companyName` · `country` (ISO, e.g. `DE`/`IE`/`BD`) · `city` · `remoteMode` (OnSite/Hybrid/Remote) · `employmentType` `FullTime` · `priority` (band: High/Medium/Low) · `status` `Discovered` · `jobDescription` (trimmed) · `notes` (`score/100 · band · route+visa-signal · why-fits · risks`).
 
 ## 5. Run summary (always output)
 - **Saved** (by band, High→Low): title · company · country · score · priority · remoteMode · apply-link.

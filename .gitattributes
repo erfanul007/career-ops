@@ -1,0 +1,3 @@
+# Claude Code parses skill/command frontmatter only with LF line endings;
+# autocrlf checkout would silently break command registration.
+.claude/**/*.md text eol=lf

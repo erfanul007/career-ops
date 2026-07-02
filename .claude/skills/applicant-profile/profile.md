@@ -1,6 +1,6 @@
 # Applicant Profile — Md Erfanul Islam Bhuiyan (full, evidence-baked)
 
-> Sources: resume (`docs/resume/MD_ERFANUL-Resume-4y+C#NET-AI.pdf`), portfolio (erfanul007.github.io), Linktree (linktr.ee/erfanul007). Snapshot **2026-06**. Every line traces to a source; **no fabrication**. Self-rated figures flagged as such.
+> Sources: resume (`docs/resume/MD_ERFANUL-Resume-4y+C#NET-AI.pdf`), portfolio (erfanul007.github.io), Linktree (linktr.ee/erfanul007). Snapshot **2026-06**; Leadership & ways of working section applicant-stated **2026-07**. Every line traces to a source; **no fabrication**. Self-rated figures flagged as such.
 
 ## Identity & contact
 - **Name:** Md Erfanul Islam Bhuiyan
@@ -89,8 +89,15 @@ Backend + AI-focused SWE, 4+ yrs, building enterprise platforms, AI workflows (R
 - **Programming Trainer**, DIU ACM — May 2019 – Dec 2021.
 - **Problem Setter**, university/regional contests — 2019–2021.
 
+## Leadership & ways of working *(stated by applicant, 2026-07 — not yet on the 1-page résumé)*
+- Led a **6-engineer team**: task breakdown, technical direction, review.
+- Drives **technical discussions and requirements gathering directly with clients** — turning ambiguous business asks into specs.
+- **AI-assisted, fast-paced development** (Claude Code et al.) while maintaining quality and reliability — tests, review discipline.
+- **CI/CD + cloud infrastructure management at small scale** — pipelines, Azure/AWS resource setup and ops. Not a dedicated DevOps/platform profile; don't pitch as one.
+
 ## Job-search relevance
 - **Lead with:** C#, .NET 8/10, ASP.NET REST, EF Core, SQL Server, CQRS, distributed/event-driven (RabbitMQ, Quartz.NET), Azure (Entra/AD, Functions), microservices.
 - **Differentiator:** production AI — RAG/GraphRAG, document intelligence, agent workflows.
+- **Role archetypes:** Backend Engineer / .NET Developer (primary) · AI/Backend Engineer (Python/FastAPI/RAG) · **Forward Deployed Engineer** — client-facing + AI + backend + requirements-gathering evidence fits FDE JDs at AI companies. Archetypes widen matching in `remote-job-search`; the sponsorship track (`job-search`) stays .NET-only by design. They never disqualify a core .NET role.
 - **Visa/relocation:** IELTS C1 (English-ready); EU Blue Card salary-threshold candidate; open to relocation (see `bd-work-visa-routes`).
 - **Downplay** senior signals to 3–4y junior–mid when scoring with `job-fit-scoring`.
