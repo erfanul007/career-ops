@@ -1004,3 +1004,20 @@ palette. Theme choice persists via `next-themes`' own localStorage key; System m
 OS `prefers-color-scheme`. No backend/API/orval change — client-only presentation change,
 no audit-trail, approval-workflow, or document-control impact.
 
+
+### D66 — Pin patched `Microsoft.OpenApi` (2.7.5) to clear CVE-2026-49451 (2026-07-02)
+- **Decision:** Add a direct `PackageReference`/`PackageVersion` for `Microsoft.OpenApi`
+  pinned to **2.7.5**, overriding the vulnerable **2.0.0** pulled transitively by
+  `Microsoft.AspNetCore.OpenApi 10.0.9`.
+- **Why:** NuGet audit (default-on) flagged advisory GHSA-v5pm-xwqc-g5wc / CVE-2026-49451
+  (High, CVSS 7.5 — stack-overflow DoS on circular schema refs) against 2.0.0. Advisory
+  landed in the GitHub Advisory DB on **2026-07-01**, so fresh restores began failing;
+  `TreatWarningsAsErrors=true` promotes NU1903 to a build error, breaking the Docker build
+  (`just up`). 2.7.5 is the first patched release on the 2.x line — same major, SemVer-
+  compatible with AspNetCore.OpenApi 10.0.9.
+- **Rejected:** Suppressing the audit (`WarningsNotAsErrors=NU1903` / `NuGetAudit=false`) —
+  hides a real CVE, unacceptable in an ISO 27001 context. Bumping to 3.x — needless major
+  jump; 2.x patch is the minimal safe change.
+- **Consequence:** Revisit the direct pin when `Microsoft.AspNetCore.OpenApi` ships a patch
+  that references a fixed `Microsoft.OpenApi` transitively; the pin can then be removed.
+  No API/schema/audit-trail impact — build-dependency change only.
