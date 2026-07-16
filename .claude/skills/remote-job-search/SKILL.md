@@ -37,6 +37,7 @@ Track A is the preference; Track B is first-class — preference orders the summ
 
 ## 1. Search
 LinkedIn values: `location=<base>` · `f_WT=2` · `f_TPR=r604800` · `f_E=2,3,4` · `f_JT=F,C,P` · `f_F=it,eng,cnsl` · `f_I=96,4` · `sortBy=R`. Boards: worldwide/base-eligible categories, both tracks.
+Source signal (2026-07 run): Himalayas' country filter yields the real candidates; LinkedIn `location=<base>` remote results run staffing-mill-heavy — screen company names against the scam/mill battery (§2) before spending detail-pane checks.
 
 ## 2. Hard rejects (fail any ⇒ drop, log reason)
 - **Geo-ineligible:** employment locked to a country/region that doesn't include base — "must reside in <region>" not covering base, eligible-country list without base, W2-only/US-only when base ≠ US, "no international contractors". Region covers base but the clause may mean citizenship/right-to-work rather than residence → keep, add `verify-work-auth` to notes.
